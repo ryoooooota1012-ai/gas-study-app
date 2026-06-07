@@ -1554,6 +1554,28 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .cal-cell.cal-lv3 { background:#4ade80; border-color:#4ade80; }
 .cal-cell.cal-lv4 { background:#86efac; border-color:#86efac; }
 
+/* ===== Google Drive 同期ステータス ===== */
+.sync-status {
+  position: fixed;
+  bottom: 28px;
+  right: 20px;
+  background: #1a2035;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: .85rem;
+  color: var(--text-1);
+  z-index: 9990;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  pointer-events: none;
+}
+.sync-status.hidden { display: none; }
+#btn-drive-signin.btn-connected {
+  color: #4ade80;
+  border-color: #4ade80;
+  opacity: .85;
+}
+
 /* ===== Calendar Day Tooltip ===== */
 .cal-day-tooltip {
   position: fixed;

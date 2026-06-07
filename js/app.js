@@ -2447,6 +2447,7 @@ function startTagSession(mode, tagQs) {
 
 function renderHome() {
   flushSessionTime();
+  gdriveAutoDownload().catch(() => {}); // Drive 差分ダウンロード（サイレント）
   updateHeaderStats();
   // ホームに戻るたびにフィルターをリセット
   state.activeCategories = new Set();
@@ -3562,6 +3563,7 @@ function nextQuestion() {
 function showSessionResult() {
   flushSessionTime();
   saveSessionRecord(); // 成績履歴に記録
+  gdriveUpload(true).catch(() => {}); // Drive 自動保存（サイレント）
   const { total, correct } = state.sessionStats;
   document.getElementById('result-score').textContent = `${correct} / ${total}`;
   document.getElementById('result-pct').textContent =
@@ -4392,6 +4394,7 @@ function renderDrillTagSection(q, c) {
 /** 壁打ちセッション終了 → リザルト画面へ（終了ボタン・最終問題どちらでも共通） */
 function endDrillSession() {
   flushSessionTime();
+  gdriveUpload(true).catch(() => {}); // Drive 自動保存（サイレント）
   const { total, correct } = state.drillStats;
   document.getElementById('result-score').textContent = `${correct} / ${total}`;
   document.getElementById('result-pct').textContent =
@@ -5592,6 +5595,180 @@ function openExportQuestionsModal() {
   }
 
   document.getElementById('modal-export-questions').classList.remove('hidden');
+}
+
+// ========== Google Drive 自動同期 ==========
+const GDRIVE_CLIENT_ID  = '615794538907-9d0hkcfp1paj88k3bknrjgndqdt86v7v.apps.googleusercontent.com';
+const GDRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_FILE       = 'gas_study_backup.json';
+const GDRIVE_SYNCED_KEY = 'gas_drive_synced_at';
+
+let _gisTokenClient    = null;
+let _gdriveToken       = null;
+let _autoDownloadDone  = false; // 1ページロードにつき1回だけ
+
+/** GIS ライブラリロード完了時に呼ばれる（index.html の onload 属性から） */
+function _gisLoaded() {
+  try {
+    _gisTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE_CLIENT_ID,
+      scope:     GDRIVE_SCOPE,
+      callback:  () => {},
+    });
+    // サイレントでトークン取得を試みる（既許可ユーザー向け）
+    _gdriveRequestToken(true).then(token => {
+      _gdriveToken = token;
+      _updateDriveBtnUI();
+      // ホーム画面が表示中なら自動ダウンロードを試みる
+      if (!document.getElementById('screen-home')?.classList.contains('hidden')) {
+        gdriveAutoDownload().catch(() => {});
+      }
+    }).catch(() => {
+      // 未ログインまたは初回→サインインボタンを表示するだけ
+    });
+  } catch(e) { console.warn('[GDrive] GIS init error', e); }
+}
+
+/** アクセストークン取得。silent=true なら UI を出さずに試みる */
+function _gdriveRequestToken(silent = false) {
+  return new Promise((resolve, reject) => {
+    if (!_gisTokenClient) { reject('GIS未ロード'); return; }
+    _gisTokenClient.callback = res => {
+      if (res.error) reject(res.error);
+      else resolve(res.access_token);
+    };
+    _gisTokenClient.requestAccessToken({ prompt: silent ? '' : 'select_account' });
+    if (silent) setTimeout(() => reject('timeout'), 3500);
+  });
+}
+
+function _updateDriveBtnUI() {
+  const btn = document.getElementById('btn-drive-signin');
+  if (!btn) return;
+  if (_gdriveToken) {
+    btn.textContent = '☁️ Drive 接続済み';
+    btn.classList.add('btn-connected');
+  } else {
+    btn.textContent = '☁️ Driveに接続する';
+    btn.classList.remove('btn-connected');
+  }
+}
+
+/** 同期ステータスのトースト表示 */
+let _syncTimer = null;
+function showSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+/** 全データを Drive にアップロード（silent=true なら未サインインは無視） */
+async function gdriveUpload(silent = false) {
+  try {
+    if (!_gdriveToken) {
+      if (silent) return;
+      _gdriveToken = await _gdriveRequestToken(false);
+      _updateDriveBtnUI();
+    }
+    if (!silent) showSyncStatus('☁️ Drive に保存中…');
+
+    // データ収集
+    const lsData = {};
+    for (const key of BACKUP_LS_KEYS) {
+      const val = localStorage.getItem(key);
+      if (val) lsData[key] = JSON.parse(val);
+    }
+    const idbImages = {};
+    try {
+      const db = await _openIDB();
+      await new Promise(resolve => {
+        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).openCursor();
+        req.onsuccess = e => {
+          const cursor = e.target.result;
+          if (cursor) { idbImages[cursor.key] = cursor.value; cursor.continue(); }
+          else resolve();
+        };
+        req.onerror = resolve;
+      });
+    } catch {}
+
+    const now     = new Date().toISOString();
+    const payload = JSON.stringify({ version: 2, exportedAt: now, localStorage: lsData, indexedDB: { images: idbImages } });
+
+    // 既存ファイル検索
+    const listRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${_gdriveToken}` } }
+    );
+    if (listRes.status === 401) { _gdriveToken = null; _updateDriveBtnUI(); if (!silent) showSyncStatus('⚠️ Drive 再接続が必要です'); return; }
+    const listData   = await listRes.json();
+    const existingId = listData.files?.[0]?.id;
+
+    const meta = { name: GDRIVE_FILE, mimeType: 'application/json' };
+    if (!existingId) meta.parents = ['appDataFolder'];
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+    form.append('file',     new Blob([payload],              { type: 'application/json' }));
+
+    const res = await fetch(
+      existingId
+        ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+        : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      { method: existingId ? 'PATCH' : 'POST', headers: { Authorization: `Bearer ${_gdriveToken}` }, body: form }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    localStorage.setItem(GDRIVE_SYNCED_KEY, new Date(now).getTime().toString());
+    showSyncStatus('✅ Drive に保存しました');
+  } catch(e) {
+    console.error('[GDrive upload]', e);
+    if (!silent) showSyncStatus('⚠️ Drive 保存失敗: ' + e);
+  }
+}
+
+/** ホーム表示時に Drive から差分ダウンロード（Drive が新しければ適用してリロード） */
+async function gdriveAutoDownload() {
+  if (!_gdriveToken || _autoDownloadDone) return;
+  _autoDownloadDone = true;
+  try {
+    const listRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id,modifiedTime)`,
+      { headers: { Authorization: `Bearer ${_gdriveToken}` } }
+    );
+    if (!listRes.ok) return;
+    const listData = await listRes.json();
+    const file     = listData.files?.[0];
+    if (!file) return;
+
+    const driveTime = new Date(file.modifiedTime).getTime();
+    const localTime = parseInt(localStorage.getItem(GDRIVE_SYNCED_KEY) || '0');
+    if (driveTime <= localTime) return; // ローカルが最新
+
+    showSyncStatus('☁️ Drive から最新データを取得中…');
+
+    const fileRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      { headers: { Authorization: `Bearer ${_gdriveToken}` } }
+    );
+    const data = await fileRes.json();
+
+    const ls = data.localStorage || {};
+    for (const key of BACKUP_LS_KEYS) {
+      if (ls[key] !== undefined) localStorage.setItem(key, JSON.stringify(ls[key]));
+    }
+    const images = data.indexedDB?.images || {};
+    for (const [key, val] of Object.entries(images)) await idbSet(key, val);
+
+    localStorage.setItem(GDRIVE_SYNCED_KEY, driveTime.toString());
+    showSyncStatus('✅ 最新データを読み込みました');
+    setTimeout(() => location.reload(), 1200);
+  } catch(e) {
+    console.error('[GDrive download]', e);
+  }
 }
 
 // ========== 全データ バックアップ/リストア ==========
@@ -8442,6 +8619,18 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     e.target.value = '';
   });
   document.getElementById('btn-reset').addEventListener('click', resetProgress);
+
+  // ── Google Drive サインイン ──
+  document.getElementById('btn-drive-signin').addEventListener('click', async () => {
+    try {
+      const token = await _gdriveRequestToken(false);
+      _gdriveToken = token;
+      _updateDriveBtnUI();
+      showSyncStatus('☁️ Drive に接続しました');
+    } catch(e) {
+      showSyncStatus('⚠️ サインイン失敗: ' + e);
+    }
+  });
 
   // ── タグ追加ボタン ──
   document.getElementById('btn-add-tag').addEventListener('click', () => {
