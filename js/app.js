@@ -5687,7 +5687,7 @@ let _syncTimer = null;
 function showSyncStatus(msg) {
   const el = document.getElementById('sync-status');
   if (!el) return;
-  el.textContent = msg;
+  el.innerHTML = `<span class="sync-badge">${msg}</span>`;
   el.classList.add('sync-active');
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => el.classList.remove('sync-active'), 5000);

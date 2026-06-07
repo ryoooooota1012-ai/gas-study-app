@@ -1553,16 +1553,27 @@ mark.q-highlight-red:hover { color: #ef4444; }
 /* app-header 内の2行目として表示 → ボタン行に影響しない */
 .sync-status {
   display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3px 0 6px;
   text-align: right;
-  padding: 2px 16px 5px;
-  font-size: .78rem;
-  font-weight: 600;
-  color: rgba(255,255,255,.9);
   pointer-events: none;
-  animation: sync-fadein .2s ease;
 }
 .sync-status.sync-active {
   display: block;
+  animation: sync-fadein .2s ease;
+}
+.sync-badge {
+  display: inline-block;
+  background: rgba(99,102,241,.25);
+  border: 1px solid rgba(99,102,241,.55);
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #c7d2fe;
+  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(99,102,241,.3);
 }
 @keyframes sync-fadein {
   from { opacity: 0; }
