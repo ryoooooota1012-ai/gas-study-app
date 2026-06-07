@@ -1550,39 +1550,23 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .cal-cell.cal-lv4 { background:#86efac; border-color:#86efac; }
 
 /* ===== Google Drive 同期ステータス ===== */
-/* ヘッダー直下の右上に fixed 表示 → ヘッダーのレイアウトに一切影響しない */
+/* app-header 内の2行目として表示 → ボタン行に影響しない */
 .sync-status {
-  position: fixed;
-  top: 62px;
-  right: 16px;
-  z-index: 190;
-  font-size: .82rem;
+  display: none;
+  text-align: right;
+  padding: 2px 16px 5px;
+  font-size: .78rem;
   font-weight: 600;
-  color: #fff;
-  background: #1a2035ee;
-  border: 1px solid rgba(99,102,241,.5);
-  border-radius: 20px;
-  padding: 6px 18px;
-  white-space: nowrap;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: rgba(255,255,255,.9);
   pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,.5);
-  opacity: 0;
-  transition: opacity .2s;
-}
-.sync-status.sync-active {
-  opacity: 1;
   animation: sync-fadein .2s ease;
 }
-@keyframes sync-fadein {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+.sync-status.sync-active {
+  display: block;
 }
-/* スマホ：3段ヘッダーは高さ105px */
-@media (max-width: 520px) and (orientation: portrait) {
-  .sync-status { top: 110px; }
+@keyframes sync-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 #btn-drive-signin {
   display: flex;
