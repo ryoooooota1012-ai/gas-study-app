@@ -2880,6 +2880,17 @@ function selectChoiceAnswer(choiceId, answer) {
   document.getElementById('btn-check').disabled = !allAnswered;
   const examNext = document.getElementById('btn-exam-next');
   if (examNext) examNext.disabled = !allAnswered;
+
+  // タッチデバイスのみ：次の未回答選択肢カードを画面上部へスクロール
+  if ('ontouchstart' in window && !allAnswered) {
+    const nextItem = [...document.querySelectorAll('#choices-list .choice-item')]
+      .find(el => !state.answers[el.dataset.cid]);
+    if (nextItem) {
+      const headerH = document.querySelector('.app-header')?.offsetHeight ?? 0;
+      const top = nextItem.getBoundingClientRect().top + window.scrollY - headerH - 8;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
 }
 
 function renderCountSelector() {
