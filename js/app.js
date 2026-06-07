@@ -5614,27 +5614,40 @@ function _gisLoaded() {
     _gisTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GDRIVE_CLIENT_ID,
       scope:     GDRIVE_SCOPE,
-      callback:  () => {},
+      callback:  _onTokenResponse,
+      // error_callback がないと iOS Chrome でポップアップブロック時にクラッシュする
+      error_callback: err => console.warn('[GDrive] token error:', err?.type),
     });
-    // ページロード時の自動トークン取得は行わない
-    // （iOS Safari がユーザー操作なしのポップアップをブロックし「このページを開けません」になるため）
-    // 代わりに：過去にサインインしたフラグがあればボタンを「接続済み」表示にする
+
+    // 過去に接続済みの場合のみサイレントでトークン取得を試みる
+    // error_callback を設定したことで iOS でもクラッシュしなくなった
     if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
-      _updateDriveBtnUI(true);
+      _gisTokenClient.requestAccessToken({ prompt: '' });
     }
   } catch(e) { console.warn('[GDrive] GIS init error', e); }
 }
 
-/** アクセストークン取得。silent=true なら UI を出さずに試みる */
-function _gdriveRequestToken(silent = false) {
+/** トークン取得成功時の共通処理 */
+function _onTokenResponse(res) {
+  if (res.error) { console.warn('[GDrive] token response error:', res.error); return; }
+  _gdriveToken = res.access_token;
+  _updateDriveBtnUI();
+  // ホーム画面が表示中なら自動ダウンロードを試みる
+  if (!document.getElementById('screen-home')?.classList.contains('hidden')) {
+    gdriveAutoDownload().catch(() => {});
+  }
+}
+
+/** アクセストークン取得（サインインボタン用：ユーザー操作起点） */
+function _gdriveRequestToken() {
   return new Promise((resolve, reject) => {
     if (!_gisTokenClient) { reject('GIS未ロード'); return; }
     _gisTokenClient.callback = res => {
-      if (res.error) reject(res.error);
-      else resolve(res.access_token);
+      if (res.error) { reject(res.error); return; }
+      _gdriveToken = res.access_token;
+      resolve(res.access_token);
     };
-    _gisTokenClient.requestAccessToken({ prompt: silent ? '' : 'select_account' });
-    if (silent) setTimeout(() => reject('timeout'), 3500);
+    _gisTokenClient.requestAccessToken({ prompt: 'select_account' });
   });
 }
 
@@ -8623,12 +8636,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // ── Google Drive サインイン ──
   document.getElementById('btn-drive-signin').addEventListener('click', async () => {
     try {
-      const token = await _gdriveRequestToken(false); // ユーザー操作起点なのでポップアップOK
-      _gdriveToken = token;
-      localStorage.setItem(GDRIVE_CONNECTED_KEY, '1'); // 次回ロード時に「再接続する」表示
+      const token = await _gdriveRequestToken(); // ユーザー操作起点なのでポップアップOK
+      localStorage.setItem(GDRIVE_CONNECTED_KEY, '1');
       _updateDriveBtnUI();
       showSyncStatus('☁️ Drive に接続しました');
-      // 接続直後にホームにいれば自動ダウンロードを試みる
       _autoDownloadDone = false;
       gdriveAutoDownload().catch(() => {});
     } catch(e) {
