@@ -3582,7 +3582,7 @@ function showSessionResult() {
     btnRC.classList.toggle('hidden', wrongC === 0);
   }
 
-  renderSessionHistory();
+  try { renderSessionHistory(); } catch(e) { console.error('[result] renderSessionHistory error', e); }
   showScreen('result');
   initResultFocus();
 }
@@ -5803,8 +5803,16 @@ async function _reloadAppState() {
     await loadCalcProblems();
     await loadStoredQuestions();
     updateHeaderStats();
-    renderHome();
-    showSyncStatus('✅ データを反映しました');
+    // 出題中・壁打ち中はホームへの強制遷移を行わない（セッションを中断しない）
+    const inSession = ['screen-study', 'screen-drill'].some(
+      id => !document.getElementById(id)?.classList.contains('hidden')
+    );
+    if (inSession) {
+      showSyncStatus('✅ バックグラウンドでデータを更新しました');
+    } else {
+      renderHome();
+      showSyncStatus('✅ データを反映しました');
+    }
   } catch(e) {
     console.error('[GDrive] reloadAppState error', e);
   }
