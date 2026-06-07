@@ -5594,25 +5594,115 @@ function openExportQuestionsModal() {
   document.getElementById('modal-export-questions').classList.remove('hidden');
 }
 
-function exportProgress() {
-  const blob = new Blob([JSON.stringify(state.progress, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `gas_progress_${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+// ========== 全データ バックアップ/リストア ==========
+const BACKUP_LS_KEYS = [
+  'gas_study_progress_v1',
+  'gas_bookmarks_v1',
+  'gas_choice_bookmarks_v1',
+  'gas_study_log_v1',
+  'gas_session_records_v1',
+  'gas_settings_v1',
+  'gas_notes_v1',
+  'gas_highlights_v1',
+  'gas_drill_presets_v1',
+  'gas_calc_problems_v1',
+  'gas_questions_v1',
+  'gas_pending_verify_v1',
+];
+
+async function exportProgress() {
+  const btn = document.getElementById('btn-export');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 準備中…'; }
+
+  try {
+    // LocalStorage 収集
+    const lsData = {};
+    for (const key of BACKUP_LS_KEYS) {
+      const val = localStorage.getItem(key);
+      if (val) lsData[key] = JSON.parse(val);
+    }
+
+    // IndexedDB 画像を全収集
+    const idbImages = {};
+    try {
+      const db = await _openIDB();
+      await new Promise(resolve => {
+        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).openCursor();
+        req.onsuccess = e => {
+          const cursor = e.target.result;
+          if (cursor) { idbImages[cursor.key] = cursor.value; cursor.continue(); }
+          else resolve();
+        };
+        req.onerror = resolve;
+      });
+    } catch {}
+
+    const payload = {
+      version:     2,
+      exportedAt:  new Date().toISOString(),
+      appVersion:  document.querySelector('script[src*="app.js"]')?.src?.match(/v=(\w+)/)?.[1] || '',
+      localStorage: lsData,
+      indexedDB:   { images: idbImages },
+    };
+
+    const json = JSON.stringify(payload);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `gas_study_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 全データをエクスポート'; }
+  }
 }
 
-function importProgress(file) {
+async function importProgress(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
-      state.progress = JSON.parse(e.target.result);
-      saveProgress();
-      alert('進捗データをインポートしました。');
-      updateHomeStats();
-    } catch { alert('ファイルの形式が正しくありません。'); }
+      const data = JSON.parse(e.target.result);
+
+      // 旧形式（version 1 以前: progressオブジェクト直接）
+      if (!data.version || data.version < 2) {
+        const progress = data.progress ?? data;
+        if (typeof progress !== 'object') throw new Error('形式不正');
+        state.progress = progress;
+        saveProgress();
+        alert('進捗データをインポートしました（旧形式）。');
+        updateHomeStats();
+        return;
+      }
+
+      // 新形式 version 2
+      if (!confirm(
+        '現在のすべての学習データをバックアップファイルで上書きしますか？\n\n' +
+        '・学習進捗　・カレンダー履歴\n' +
+        '・ブックマーク　・ノート・マーカー\n' +
+        '・計算問題　・カスタム問題\n\n' +
+        'この操作は取り消せません。'
+      )) return;
+
+      // LocalStorage を復元
+      const ls = data.localStorage || {};
+      for (const key of BACKUP_LS_KEYS) {
+        if (ls[key] !== undefined) {
+          localStorage.setItem(key, JSON.stringify(ls[key]));
+        }
+      }
+
+      // IndexedDB 画像を復元
+      const images = data.indexedDB?.images || {};
+      for (const [key, val] of Object.entries(images)) {
+        await idbSet(key, val);
+      }
+
+      alert('インポート完了！アプリを再読み込みします。');
+      location.reload();
+    } catch(err) {
+      alert('ファイルの形式が正しくありません: ' + err.message);
+    }
   };
   reader.readAsText(file, 'UTF-8');
 }
