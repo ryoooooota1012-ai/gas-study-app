@@ -1959,10 +1959,6 @@ body.tier-border-diamond .card {
   overflow: hidden;
   box-shadow: 0 24px 64px rgba(0,0,0,.5);
 }
-/* 壁打ち設定モーダル：常にビューポート高さいっぱいに広げてフッターを確保 */
-#modal-drill-setup .modal-box {
-  height: calc(100dvh - 32px);
-}
 /* ドリル設定ステップ：flex columnで内部スクロールを有効化 */
 #drill-setup-step1,
 #drill-setup-step2 {
@@ -3383,3 +3379,15 @@ kbd {
   }
 }
 
+/* ===== タッチ端末（スマホ＋iPad）：壁打ちモーダル共通 ===== */
+@media (pointer: coarse) {
+  .modal-overlay--top {
+    top: 105px !important;
+    align-items: flex-start !important;
+    padding: 6px 10px !important;
+  }
+  #modal-drill-setup .modal-box {
+    height: calc(100dvh - 105px - 12px) !important;
+    max-height: none !important;
+  }
+}
