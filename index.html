@@ -401,6 +401,10 @@
   </div>
   <hr style="margin:10px 0;border:none;border-top:1px solid var(--border);">
   <button id="btn-drive-signin" class="btn btn-ghost btn-sm" style="width:100%;">☁️ Driveに接続する</button>
+  <div style="display:flex;gap:6px;margin-top:6px;">
+    <button id="btn-drive-upload-manual" class="btn btn-outline btn-sm" style="flex:1;">⬆️ アップロード</button>
+    <button id="btn-drive-download-manual" class="btn btn-outline btn-sm" style="flex:1;">⬇️ ダウンロード</button>
+  </div>
   <input type="file" id="input-questions-file" accept=".json" class="hidden">
   <input type="file" id="input-progress-file" accept=".json" class="hidden">
 </div>
@@ -1370,7 +1374,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260607f"></script>
+<script src="js/app.js?v=20260607g"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

@@ -8706,6 +8706,25 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     }
   });
 
+  // ── Drive 手動アップロード ──
+  document.getElementById('btn-drive-upload-manual').addEventListener('click', async () => {
+    if (!_gdriveToken) {
+      showSyncStatus('⚠️ 先に「Driveに接続する」を押してください');
+      return;
+    }
+    await gdriveUpload(false);
+  });
+
+  // ── Drive 手動ダウンロード ──
+  document.getElementById('btn-drive-download-manual').addEventListener('click', async () => {
+    if (!_gdriveToken) {
+      showSyncStatus('⚠️ 先に「Driveに接続する」を押してください');
+      return;
+    }
+    _autoDownloadDone = false;
+    await gdriveAutoDownload();
+  });
+
   // ── タグ追加ボタン ──
   document.getElementById('btn-add-tag').addEventListener('click', () => {
     const input = document.getElementById('edit-tag-input');
