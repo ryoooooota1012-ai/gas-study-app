@@ -3338,6 +3338,21 @@ kbd {
   .hd-today-main span:first-child { font-size: .95rem; }
   .hd-next-tier-msg { order: 3; flex-basis: 100%; text-align: center; font-size: .6rem; margin-top: 1px; }
 
+  /* ── 出題画面：選択肢テキストを全幅、ボタンを下段に ── */
+  .choice-item-top {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .choice-item-text {
+    font-size: .95rem;
+  }
+  .choice-item-btns {
+    flex-basis: 100%;       /* 強制改行して下段へ */
+    justify-content: flex-end;
+    padding-top: 0;
+    padding-left: 32px;     /* a. ラベル分のインデント */
+  }
+
   /* ── モーダル：オーバーレイ自体をヘッダー下から開始 ── */
   .modal-overlay--top {
     top: 105px !important; /* inset:0 の top:0 を強制上書き */
