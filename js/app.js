@@ -5675,7 +5675,7 @@ function showSyncStatus(msg) {
   el.textContent = msg;
   el.classList.remove('hidden');
   clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+  _syncTimer = setTimeout(() => el.classList.add('hidden'), 5000);
 }
 
 /** 全データを Drive にアップロード（silent=true なら未サインインは無視） */
@@ -5686,7 +5686,7 @@ async function gdriveUpload(silent = false) {
       _gdriveToken = await _gdriveRequestToken(false);
       _updateDriveBtnUI();
     }
-    if (!silent) showSyncStatus('☁️ Drive に保存中…');
+    showSyncStatus('☁️ Drive に保存中…');
 
     // データ収集
     const lsData = {};
@@ -5716,7 +5716,7 @@ async function gdriveUpload(silent = false) {
       `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id)`,
       { headers: { Authorization: `Bearer ${_gdriveToken}` } }
     );
-    if (listRes.status === 401) { _gdriveToken = null; _updateDriveBtnUI(); if (!silent) showSyncStatus('⚠️ Drive 再接続が必要です'); return; }
+    if (listRes.status === 401) { _gdriveToken = null; _updateDriveBtnUI(); showSyncStatus('⚠️ Drive 再接続が必要です'); return; }
     const listData   = await listRes.json();
     const existingId = listData.files?.[0]?.id;
 
@@ -5739,7 +5739,7 @@ async function gdriveUpload(silent = false) {
     showSyncStatus('✅ Drive に保存しました');
   } catch(e) {
     console.error('[GDrive upload]', e);
-    if (!silent) showSyncStatus('⚠️ Drive 保存失敗: ' + e);
+    showSyncStatus('⚠️ Drive 保存失敗');
   }
 }
 
