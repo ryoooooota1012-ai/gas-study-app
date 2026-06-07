@@ -5619,10 +5619,11 @@ function _gisLoaded() {
       error_callback: err => console.warn('[GDrive] token error:', err?.type),
     });
 
-    // サイレントトークン取得はiOS Chromeでページクラッシュの原因になるため行わない
-    // ユーザーが「Drive 再接続する」を押したときのみトークンを取得する
+    // 以前に接続済みの場合はサイレントでトークン取得を試みる
+    // error_callback がエラーを捕捉し、location.reload() を廃止済みのためループしない
     if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
       _updateDriveBtnUI(true);
+      _gisTokenClient.requestAccessToken({ prompt: '' });
     }
   } catch(e) { console.warn('[GDrive] GIS init error', e); }
 }
