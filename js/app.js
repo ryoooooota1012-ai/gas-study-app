@@ -5601,7 +5601,8 @@ function openExportQuestionsModal() {
 const GDRIVE_CLIENT_ID  = '615794538907-9d0hkcfp1paj88k3bknrjgndqdt86v7v.apps.googleusercontent.com';
 const GDRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata';
 const GDRIVE_FILE       = 'gas_study_backup.json';
-const GDRIVE_SYNCED_KEY = 'gas_drive_synced_at';
+const GDRIVE_SYNCED_KEY   = 'gas_drive_synced_at';
+const GDRIVE_CONNECTED_KEY = 'gas_drive_connected'; // ユーザーが一度でも接続したフラグ
 
 let _gisTokenClient    = null;
 let _gdriveToken       = null;
@@ -5615,17 +5616,12 @@ function _gisLoaded() {
       scope:     GDRIVE_SCOPE,
       callback:  () => {},
     });
-    // サイレントでトークン取得を試みる（既許可ユーザー向け）
-    _gdriveRequestToken(true).then(token => {
-      _gdriveToken = token;
-      _updateDriveBtnUI();
-      // ホーム画面が表示中なら自動ダウンロードを試みる
-      if (!document.getElementById('screen-home')?.classList.contains('hidden')) {
-        gdriveAutoDownload().catch(() => {});
-      }
-    }).catch(() => {
-      // 未ログインまたは初回→サインインボタンを表示するだけ
-    });
+    // ページロード時の自動トークン取得は行わない
+    // （iOS Safari がユーザー操作なしのポップアップをブロックし「このページを開けません」になるため）
+    // 代わりに：過去にサインインしたフラグがあればボタンを「接続済み」表示にする
+    if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
+      _updateDriveBtnUI(true);
+    }
   } catch(e) { console.warn('[GDrive] GIS init error', e); }
 }
 
@@ -5642,11 +5638,15 @@ function _gdriveRequestToken(silent = false) {
   });
 }
 
-function _updateDriveBtnUI() {
+// connected=true → トークンはないがフラグあり（過去接続済み）の見た目
+function _updateDriveBtnUI(connected = false) {
   const btn = document.getElementById('btn-drive-signin');
   if (!btn) return;
   if (_gdriveToken) {
-    btn.textContent = '☁️ Drive 接続済み';
+    btn.textContent = '☁️ Drive 同期中';
+    btn.classList.add('btn-connected');
+  } else if (connected || localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
+    btn.textContent = '☁️ Drive 再接続する';
     btn.classList.add('btn-connected');
   } else {
     btn.textContent = '☁️ Driveに接続する';
@@ -8623,10 +8623,14 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // ── Google Drive サインイン ──
   document.getElementById('btn-drive-signin').addEventListener('click', async () => {
     try {
-      const token = await _gdriveRequestToken(false);
+      const token = await _gdriveRequestToken(false); // ユーザー操作起点なのでポップアップOK
       _gdriveToken = token;
+      localStorage.setItem(GDRIVE_CONNECTED_KEY, '1'); // 次回ロード時に「再接続する」表示
       _updateDriveBtnUI();
       showSyncStatus('☁️ Drive に接続しました');
+      // 接続直後にホームにいれば自動ダウンロードを試みる
+      _autoDownloadDone = false;
+      gdriveAutoDownload().catch(() => {});
     } catch(e) {
       showSyncStatus('⚠️ サインイン失敗: ' + e);
     }
