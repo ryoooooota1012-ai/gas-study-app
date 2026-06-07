@@ -1,0 +1,378 @@
+{
+  "title": "令和6年度 甲種 ガス技術 供給 問10～問18",
+  "meta": {
+    "title": "令和6年度 甲種 ガス技術 供給 問10～問18",
+    "created": "2026-05-29"
+  },
+  "questions": [
+    {
+      "id": "r6-gijutsu-kyuukyuu-q010",
+      "category": "ガス技術：供給",
+      "subcategory": "導管の設計（流量計算）",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問10",
+      "questionText": "口径10cm、延長200mの低圧導管において、起点圧力と末端圧力との差が0.4kPaのときのガス流量は120m3/hであった。口径20cm、延長400mの低圧導管において、起点圧力と末端圧力との差が0.1kPaのときのガス流量（m3/h）として、最も近い値はどれか。なお、いずれも同一のガスを流すものとし、高低差は考慮しないものとする。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q010-1",
+          "text": "(1) 120",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q010-2",
+          "text": "(2) 240",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>低圧の流量計算式 Q=K√((1000HD^5)/(SLg)) を用いて計算すると、B導管のQはA導管のQの2倍（240m3/h）となる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q010-3",
+          "text": "(3) 260",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q010-4",
+          "text": "(4) 340",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q010-5",
+          "text": "(5) 480",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        }
+      ],
+      "correctAnswer": "(2) 240"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q011",
+      "category": "ガス技術：供給",
+      "subcategory": "整圧器",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問11",
+      "questionText": "整圧器に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q011-i",
+          "text": "イ 直動式整圧器は、二次圧力を信号兼駆動圧力として利用するため、オフセットは大きくなる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q011-ro",
+          "text": "ロ パイロット式アンローディング型整圧器は、メインバルブ全閉時に駆動圧力が最も高くなるため、この駆動圧力以上の一次圧力が確保されないとメインバルブが閉止不能となる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q011-ha",
+          "text": "ハ 流量特性とは、流量と二次圧力の関係をいう。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>流量特性とは、流量とメインバルブ開度（ストローク）の関係をいう。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q011-ni",
+          "text": "ニ 整圧器の能力は、使用条件にもよるが、一般に最低一次圧力時の最大能力の60～80％程度の負荷となるように選定する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q011-ho",
+          "text": "ホ 直動式整圧器の主な二次圧力異常上昇原因の例としては、メインバルブへのダスト類のかみ込みによる締め切り不良、メインバルブシートの不具合がある。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q012",
+      "category": "ガス技術：供給",
+      "subcategory": "ガスメーター（計量法）",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問12",
+      "questionText": "次のガスメーターのうち、計量法の規定において検定対象外とされているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q012-i",
+          "text": "イ 使用圧力が10kPa以下のガスの計量に用いる口径50mmの膜式ガスメーター",
+          "isCorrect": false,
+          "explanation": "<正解>検定対象"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q012-ro",
+          "text": "ロ 使用圧力が中圧のガスの計量に用いる口径50mmの回転子式ガスメーター",
+          "isCorrect": true,
+          "explanation": "<正解>検定対象外 <解説>圧力が10kPaを超えるガスの計量に用いるガスメーターのため。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q012-ha",
+          "text": "ハ 口径200mmの実測湿式ガスメーター",
+          "isCorrect": true,
+          "explanation": "<正解>検定対象外 <解説>実測湿式ガスメーターのため。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q012-ni",
+          "text": "ニ 使用圧力が10kPa以下のガスの計量に用いる口径300mmの回転子式ガスメーター",
+          "isCorrect": true,
+          "explanation": "<正解>検定対象外 <解説>口径が250mmを超えるガスメーターのため。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q012-ho",
+          "text": "ホ 使用圧力が中圧のガスの計量に用いる口径100mmのタービン式ガスメーター",
+          "isCorrect": true,
+          "explanation": "<正解>検定対象外 <解説>圧力が10kPaを超えるガスの計量に用いるガスメーターのため。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q013",
+      "category": "ガス技術：供給",
+      "subcategory": "導管の設計（管厚計算）",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問13",
+      "questionText": "外径300mmの鋼管が内圧3MPaを受ける場合、ガス事業法の管厚計算式を用いたときの管厚（mm）として、最も近い値はどれか。なお、この鋼管の外径と内径の比は1.5以下とし、鋼管の許容引張応力は62N/mm2、継手効率は1.0、腐れしろは1.0mmとする。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q013-1",
+          "text": "(1) 9.2",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q013-2",
+          "text": "(2) 8.1",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>t = PDo / (2fη + 0.8P) + C の式に数値を当てはめて計算すると、t = 8.1 となる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q013-3",
+          "text": "(3) 4.6",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q013-4",
+          "text": "(4) 3.4",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q013-5",
+          "text": "(5) 2.2",
+          "isCorrect": false,
+          "explanation": "<正解>誤り"
+        }
+      ],
+      "correctAnswer": "(2) 8.1"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q014",
+      "category": "ガス技術：供給",
+      "subcategory": "腐食と防食",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問14",
+      "questionText": "腐食と防食に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q014-i",
+          "text": "イ 通気性の異なる土壌にまたがって埋設されている導管では、通気性の悪い部分をアノードとするミクロセルが形成され腐食が生じることがある。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>通気性の悪い部分をアノードとする「マクロセル」が形成され腐食が生じることがある。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q014-ro",
+          "text": "ロ 土壌比抵抗が高いと腐食電流が流れやすくなる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>土壌比抵抗が「低い」と腐食電流が流れやすくなる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q014-ha",
+          "text": "ハ 地表面電位勾配とは、土壌、コンクリート等の電解質に設置した照合電極と導管の電位差であり、迷走電流の流入の調査に活用できる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>地表面電位勾配とは、地表面の2点間の電位差であり、電位勾配と地中の電流の方向が分かるので、迷走電流の流出入の調査に活用できる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q014-ni",
+          "text": "ニ 流電陽極法とは、導管よりも自然電位がマイナス側の金属を接続することで、導管から防食電流を流出させ腐食を防止するものである。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>流電陽極法とは、導管よりも自然電位がマイナス側の金属を接続することで、導管「へ」防食電流を「流入」させ腐食を防止するものである。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q014-ho",
+          "text": "ホ 鋼管と鋳鉄管が電気的に接続されている場合、鋳鉄管がアノードとなり腐食する傾向がある。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>鋼管と鋳鉄管が電気的に接続されている場合、「鋼管」がアノードとなり腐食する傾向がある。"
+        }
+      ],
+      "correctAnswer": "(5) 5つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q015",
+      "category": "ガス技術：供給",
+      "subcategory": "導管の工事",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問15",
+      "questionText": "導管の工事に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q015-i",
+          "text": "イ 外径80mm以上の低圧本支管の道路への埋設にあたっては、管の表面に3mの間隔で占用物件の名称、管理者、埋設年、ガスの圧力をテープ等で明示する。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>管の表面に「おおむね2m以下」の間隔でテープ等で明示する。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q015-ro",
+          "text": "ロ 鉄筋コンクリート建物等の外壁貫通部は、壁貫通管又は壁貫通リング等を用いて堅固に固定し、貫通部の補修にはモルタル等を充てんする。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q015-ha",
+          "text": "ハ 気密試験の試験圧力は、必ず最高使用圧力の1.1倍以上でなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>気密試験の試験圧力は、最高使用圧力の1.1倍以上でなければならない。ただし、条件によっては最高使用圧力以上や通ずるガスの圧力とする場合もある。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q015-ni",
+          "text": "ニ 電気防食を施した鋼管の切断にあたっては、電気防食施設の電源を切っておき、管の切断後に鋼管の両側を短絡させる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>電気防食を施した鋼管の切断にあたっては、電源を切っておき、管の「切断前」に鋼管の両側を短絡させる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q015-ho",
+          "text": "ホ 放射線透過試験にあたっては、エックス線管の焦点又は放射線源から5m以内のエリアを立入禁止区域として明示し、放射線業務従事者以外の第三者の立入を禁止する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q016",
+      "category": "ガス技術：供給",
+      "subcategory": "溶接欠陥",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問16",
+      "questionText": "溶接欠陥の種類と発生原因の例に関する次の記述のうち、語句の組合せとして誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q016-i",
+          "text": "イ 割れ：溶接部の急冷、開先不良",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q016-ro",
+          "text": "ロ パイプ：溶接棒の吸湿、過大電流",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q016-ha",
+          "text": "ハ ブローホール：溶接棒の吸湿、雨風",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q016-ni",
+          "text": "ニ 溶込み不良：開先不良、過大電流",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>開先不良、「過小電流」により発生する。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q016-ho",
+          "text": "ホ 融合不良：過小電流、スラグ清掃不良",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q017",
+      "category": "ガス技術：供給",
+      "subcategory": "導管の維持管理",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問17",
+      "questionText": "導管の維持管理に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q017-i",
+          "text": "イ 半導体式ガス検知器は、低濃度での感度が非常に高く、高濃度でも感度が維持されるため、ガス濃度測定にも用いられる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>高濃度では「感度が鈍くなる」ため、ガス濃度測定には「適用できない」。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q017-ro",
+          "text": "ロ 亀裂・折損漏えい予防を目的とした本支管の更生修理工法には、反転シール系、樹脂ライニング系がある。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q017-ha",
+          "text": "ハ 中圧鋼管で腐食による漏えいが発生したため、緊急修理用バンドを用いて応急処置を行った。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q017-ni",
+          "text": "ニ 漏えい磁束ピグは、主に高圧導管の塗覆装の損傷を検査するために用いられる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>主に高圧導管の「腐食減肉」や他工事で発生した「管体損傷」を検査するために用いられる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q017-ho",
+          "text": "ホ 需要家等からのガス漏えい等の通報に対する出動は、その内容に応じて一般出動、緊急出動及び特別出動に区分する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    },
+    {
+      "id": "r6-gijutsu-kyuukyuu-q018",
+      "category": "ガス技術：供給",
+      "subcategory": "地震対策",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問18",
+      "questionText": "地震対策に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-kyuukyuu-q018-i",
+          "text": "イ 高圧導管の耐震性評価において、レベル1地震動に対する直管の接合部や異形管の許容ひずみは1.0％である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q018-ro",
+          "text": "ロ 中・低圧導管の地盤変位吸収能力を実験により求める場合、配管系に変形が生じるときの地盤変位量を地盤変位吸収能力とする。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>配管系に「漏えい」が生じるときの地盤変位量を地盤変位吸収能力とする。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q018-ha",
+          "text": "ハ 特殊地形地区における中圧導管では、非裏波溶接鋼管の耐震性向上対策として、外面シール工法が適用できる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>非裏波溶接鋼管の耐震性向上対策として、「反転シール工法」が適用できる。"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q018-ni",
+          "text": "ニ 供給停止判断のため、SI値又は最大速度値の計測が可能な地震計を統合ブロックに1台以上設置する必要がある。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-kyuukyuu-q018-ho",
+          "text": "ホ 第1次緊急停止判断は、二次災害防止を最優先として、巡回点検等により経時的に得られる被害情報と緊急時対応能力等に応じて実施する。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>第1次緊急停止判断は、二次災害防止を最優先として「地震発生直後に行う」。"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    }
+  ]
+}

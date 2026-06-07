@@ -1,0 +1,13 @@
+# ローカル実行スクリプト
+serve.ps1
+
+# テスト用ファイル
+test-*.html
+
+# OS系
+.DS_Store
+Thumbs.db
+
+# エディタ系
+.vscode/
+*.swp

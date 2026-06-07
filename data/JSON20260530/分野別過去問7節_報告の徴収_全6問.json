@@ -1,0 +1,267 @@
+{
+  "title": "分野別過去問7節 報告の徴収 全6問",
+  "meta": {
+    "title": "分野別過去問7節 報告の徴収 全6問",
+    "created": "2026-05-29"
+  },
+  "questions": [
+    {
+      "id": "bunyabetsu-hourei-7-q001",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問1",
+      "questionText": "法令で規定されているガス事故の報告について、誤っているものはいくつあるか。ただし、ロからホのガス事故は、台風、高潮、洪水、津波、地震その他の自然災害又は火災による広範囲の地域にわたるガス工作物の損壊事故、製造支障事故又は供給支障事故であって、経済産業大臣が指定するものではない。（令和７年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q001-i",
+          "text": "イ 毎年のガス事故の報告書は、当該年の翌年3月末日までに提出しなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガス関係報告規則 3 条 当該年の翌年 2 月末日まで"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q001-ro",
+          "text": "ロ ガス事故速報は、事故が発生した時から48時間以内可能な限り速やかに報告しなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガス関係報告規則 4 条 事故が発生した時から 2 4 時間以内"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q001-ha",
+          "text": "ハ 供給支障事故であって、供給支障戸数が20のものは、ガス事故速報及びガス事故詳報の両方を報告しなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガス関係報告規則 4 条三号、七号 ガス事故速報及び、ガス事故詳報のいずれも報告する必要はない。"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q001-ni",
+          "text": "ニ 製造支障事故であって、製造支障時間が5時間のものは、ガス事故速報及びガス事故詳報の両方を報告しなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガス関係報告規則 4 条四号、八号 ガス事故速報及び、ガス事故詳報のいずれも報告する必要はない。"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q001-ho",
+          "text": "ホ 消費機器から漏えいしたガスに引火することににより、発生した物損事故（消費機器が損傷した事故であって、人が死亡せず、又は負傷しないものに限る。）は、ガス事故速報及びガス事故詳報の両方を報告しなければならない。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガス関係報告規則 4 条十八号 ガス事故詳報のみを報告しなければならない。（速報は不要）"
+        }
+      ],
+      "correctAnswer": "(5) 5つ",
+      "section": "",
+      "tags": []
+    },
+    {
+      "id": "bunyabetsu-hourei-7-q002",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問2",
+      "questionText": "次のガス事故のうち、ガス事故速報及びガス事故詳報を報告することが法令で規定されているものはいくつあるか。ただし、台風、高潮、洪水、津波、地震その他の自然災害又は火災による広範囲の地域にわたるガス工作物の損壊事故、製造支障事故又は供給支障事故であって、経済産業大臣が指定するものではない。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q002-i",
+          "text": "イ ガス工作物（ガス栓を除く。）を操作することにより人が酸素欠乏症となった事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい（報告要） <解説>一号、五号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q002-ro",
+          "text": "ロ ガスの供給に支障を及ぼした事故であって、供給支障戸数が20のもの",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている（報告不要） <解説>三号、七号 事故速報及び事故詳報、不要 報告対象は、供給支障戸数100以上"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q002-ha",
+          "text": "ハ ガスの製造に支障を及ぼした事故であって、製造支障時間が10時間のもの",
+          "isCorrect": true,
+          "explanation": "<正解>正しい（報告要） <解説>八号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q002-ni",
+          "text": "ニ ガス工作物（ガス栓を除く。）からのガスの漏えいによる火災事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい（報告要） <解説>十二号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q002-ho",
+          "text": "ホ 消費機器から漏えいしたガスに引火することにより、発生した消費機器が損傷した物損事故であって、人が死亡せず、又は負傷しないもの",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている（報告不要） <解説>十八号事故 事故速報は不要、事故詳報は必要"
+        }
+      ],
+      "correctAnswer": "(3) 3つ",
+      "section": "",
+      "tags": []
+    },
+    {
+      "id": "bunyabetsu-hourei-7-q003",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問3",
+      "questionText": "次のガス事故のうち、ガス事故速報及びガス事故詳報を報告することが法令で規定されているものはいくつあるか。ただし、台風、高潮、洪水、津波、地震その他の自然災害又は火災による広範囲の地域にわたるガス工作物の損壊事故、製造支障事故又は供給支障事故であって、経済産業大臣が指定するものではない。（令和５年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q003-i",
+          "text": "イ ガスの供給に支障を及ぼした事故であって、供給支障戸数が500以上のもの",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>三号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q003-ro",
+          "text": "ロ 工事中のガス工作物（ガス栓を除く。）の損壊により人が負傷した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>六号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q003-ha",
+          "text": "ハ 製造支障時間が5時間以上の製造支障事故",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>規定なし 四号、八号 報告が必要なのは、製造支障時間が１０時間以上の製造支障事故"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q003-ni",
+          "text": "ニ ガス栓の損壊によりガス栓から漏えいしたガスに引火することにより、発生した負傷事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十六号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q003-ho",
+          "text": "ホ 消費機器から漏えいしたガスに引火することにより、発生した負傷事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十九号"
+        }
+      ],
+      "correctAnswer": "(4) 4つ",
+      "section": "",
+      "tags": []
+    },
+    {
+      "id": "bunyabetsu-hourei-7-q004",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問4",
+      "questionText": "次のガス事故のうち、ガス事故速報及びガス事故詳報を報告することが法令で規定されているものはいくつあるか。ただし、台風、高潮、洪水、津波、地震その他の自然災害又は火災による広範囲の地域にわたるガス工作物の損壊事故、製造支障事故又は供給支障事故であって、経済産業大臣が指定するものではない。（令和４年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q004-i",
+          "text": "イ ガス工作物（ガス栓を除く。）を操作することにより人が負傷した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>五号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q004-ro",
+          "text": "ロ 供給支障戸数が100の供給支障事故（保安閉栓を除く。）",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>七号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q004-ha",
+          "text": "ハ 製造支障時間が10時間の製造支障事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>八号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q004-ni",
+          "text": "ニ 消費機器の使用に伴い人が死亡した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十七号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q004-ho",
+          "text": "ホ ガス栓の欠陥によりガス栓から漏えいしたガスに引火することで発生した物損事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十六号"
+        }
+      ],
+      "correctAnswer": "(5) 5つ",
+      "section": "",
+      "tags": []
+    },
+    {
+      "id": "bunyabetsu-hourei-7-q005",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問5",
+      "questionText": "次のガス事故のうち、ガス事故速報を報告することが法令で規定されているものはいくつあるか。ただし、台風、高潮、洪水、津波、地震その他の自然災害又は火災による広範囲の地域にわたるガス工作物の損壊事故、製造支障事故又は供給支障事故であって、経済産業大臣が指定するものでを除く。（令和３年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q005-i",
+          "text": "イ ガス工作物（ガス栓を除く。）の操作により人が死亡した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>一号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q005-ro",
+          "text": "ロ ガスの供給に支障を及ぼした事故であって、供給支障戸数が500以上のもの",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>三号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q005-ha",
+          "text": "ハ 工事中のガス工作物（ガス栓を除く。）の損壊により人が負傷した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>六号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q005-ni",
+          "text": "ニ ガス工作物（ガス栓を除く。）の損壊により、一般公衆に対し、交通の困難を招来した事故",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>十四号 事故詳報は必要"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q005-ho",
+          "text": "ホ ガス栓の欠陥によりガス栓から漏えいしたガスに引火することにより、発生した物損事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十六号"
+        }
+      ],
+      "correctAnswer": "(4) 4つ",
+      "section": "",
+      "tags": []
+    },
+    {
+      "id": "bunyabetsu-hourei-7-q006",
+      "category": "法令",
+      "subcategory": "7節 報告の徴収",
+      "year": "分野別：7節 報告の徴収",
+      "source": "分野別過去問 7節 報告の徴収 問6",
+      "questionText": "次のガス事故のうち、ガス事故速報を報告することが法令で規定されているものはいくつあるか。（令和２年度 甲種）",
+      "choices": [
+        {
+          "id": "bunyabetsu-hourei-7-q006-i",
+          "text": "イ ガス工作物（ガス栓を除く。）の損壊により人が死亡した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>一号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q006-ro",
+          "text": "ロ 工事中のガス工作物（ガス栓を除く。）の損壊により人が負傷した事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>六号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q006-ha",
+          "text": "ハ 供給支障事故であって、供給支障戸数が500以上のもの",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>三号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q006-ni",
+          "text": "ニ 最高使用圧力が中圧の主要なガス工作物（ガス栓を除く。）の損壊事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>九号"
+        },
+        {
+          "id": "bunyabetsu-hourei-7-q006-ho",
+          "text": "ホ ガス栓の損壊によりガス栓から漏えいしたガスに引火することにより、発生した負傷事故",
+          "isCorrect": true,
+          "explanation": "<正解>正しい <解説>十六号"
+        }
+      ],
+      "correctAnswer": "(5) 5つ",
+      "section": "",
+      "tags": []
+    }
+  ]
+}

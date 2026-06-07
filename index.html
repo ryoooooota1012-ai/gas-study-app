@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ガス主任技術者 学習アプリ</title>
+  <link rel="stylesheet" href="css/style.css?v=20260606b">
+  <style>
+    /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
+    .jcal-day{flex-direction:row;}
+    .jcal-day.tier-none{border-radius:50%;height:30px;}
+    .jcal-day.tier-copper{height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible;}
+    .jcal-day.tier-silver{height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible;}
+    .jcal-day.tier-gold{height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible;}
+    .jcal-day.tier-platinum{height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible;}
+    .jcal-day.tier-diamond{height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible;}
+  </style>
+</head>
+<body>
+<!-- ダイヤモンドカレンダーメダル共有 SVG defs -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+<defs>
+  <radialGradient id="dmc-body" cx="42%" cy="35%" r="70%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="25%"  stop-color="#eef8ff"/>
+    <stop offset="55%"  stop-color="#c8e8ff"/>
+    <stop offset="80%"  stop-color="#a0c8f0"/>
+    <stop offset="100%" stop-color="#80a8d8"/>
+  </radialGradient>
+  <radialGradient id="dmc-star" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"  stop-color="#ffffff"/>
+    <stop offset="40%" stop-color="#e8f4ff"/>
+    <stop offset="100%" stop-color="#b0d0f0" stop-opacity="0.7"/>
+  </radialGradient>
+  <radialGradient id="dmc-gem" cx="40%" cy="35%" r="65%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="30%"  stop-color="#ddf0ff"/>
+    <stop offset="70%"  stop-color="#90c0e8"/>
+    <stop offset="100%" stop-color="#5090c0"/>
+  </radialGradient>
+  <linearGradient id="dmc-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.9"/>
+    <stop offset="50%"  stop-color="#c0d8f0" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="#e8f4ff" stop-opacity="0.85"/>
+  </linearGradient>
+  <!-- ファセット16色 -->
+  <linearGradient id="dmc-f0"  x1="0%"   y1="0%"   x2="100%" y2="100%"><stop offset="0%" stop-color="#fff" stop-opacity=".97"/><stop offset="100%" stop-color="#a0d0ff" stop-opacity=".72"/></linearGradient>
+  <linearGradient id="dmc-f1"  x1="100%" y1="0%"   x2="0%"   y2="100%"><stop offset="0%" stop-color="#d8f0ff" stop-opacity=".9"/><stop offset="100%" stop-color="#9090e8" stop-opacity=".65"/></linearGradient>
+  <linearGradient id="dmc-f2"  x1="0%"   y1="100%" x2="100%" y2="0%"  ><stop offset="0%" stop-color="#e0c8ff" stop-opacity=".82"/><stop offset="100%" stop-color="#fff" stop-opacity=".92"/></linearGradient>
+  <linearGradient id="dmc-f3"  x1="50%"  y1="0%"   x2="50%"  y2="100%"><stop offset="0%" stop-color="#fff" stop-opacity=".98"/><stop offset="100%" stop-color="#c0b8ff" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="dmc-f4"  x1="0%"   y1="50%"  x2="100%" y2="50%" ><stop offset="0%" stop-color="#c8ecff" stop-opacity=".88"/><stop offset="100%" stop-color="#fff" stop-opacity=".88"/></linearGradient>
+  <linearGradient id="dmc-f5"  x1="100%" y1="100%" x2="0%"   y2="0%"  ><stop offset="0%" stop-color="#fff" stop-opacity=".95"/><stop offset="100%" stop-color="#b0c8f8" stop-opacity=".72"/></linearGradient>
+  <linearGradient id="dmc-f6"  x1="0%"   y1="0%"   x2="100%" y2="100%"><stop offset="0%" stop-color="#b8e8ff" stop-opacity=".85"/><stop offset="100%" stop-color="#e0d8ff" stop-opacity=".75"/></linearGradient>
+  <linearGradient id="dmc-f7"  x1="30%"  y1="0%"   x2="70%"  y2="100%"><stop offset="0%" stop-color="#fff" stop-opacity=".97"/><stop offset="100%" stop-color="#80c8ff" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="dmc-f8"  x1="0%"   y1="0%"   x2="100%" y2="100%"><stop offset="0%" stop-color="#c8d8ff" stop-opacity=".88"/><stop offset="100%" stop-color="#fff" stop-opacity=".9"/></linearGradient>
+  <linearGradient id="dmc-f9"  x1="100%" y1="0%"   x2="0%"   y2="100%"><stop offset="0%" stop-color="#fff" stop-opacity=".96"/><stop offset="100%" stop-color="#a8c0ff" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="dmc-f10" x1="0%"   y1="100%" x2="100%" y2="0%"  ><stop offset="0%" stop-color="#d8c0ff" stop-opacity=".8"/><stop offset="100%" stop-color="#fff" stop-opacity=".93"/></linearGradient>
+  <linearGradient id="dmc-f11" x1="50%"  y1="0%"   x2="50%"  y2="100%"><stop offset="0%" stop-color="#c0e8ff" stop-opacity=".9"/><stop offset="100%" stop-color="#e8d8ff" stop-opacity=".72"/></linearGradient>
+  <linearGradient id="dmc-f12" x1="0%"   y1="50%"  x2="100%" y2="50%" ><stop offset="0%" stop-color="#fff" stop-opacity=".95"/><stop offset="100%" stop-color="#90b8f0" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="dmc-f13" x1="100%" y1="100%" x2="0%"   y2="0%"  ><stop offset="0%" stop-color="#b0d8ff" stop-opacity=".86"/><stop offset="100%" stop-color="#fff" stop-opacity=".92"/></linearGradient>
+  <linearGradient id="dmc-f14" x1="0%"   y1="0%"   x2="100%" y2="100%"><stop offset="0%" stop-color="#fff" stop-opacity=".98"/><stop offset="100%" stop-color="#c8b0f8" stop-opacity=".68"/></linearGradient>
+  <linearGradient id="dmc-f15" x1="30%"  y1="0%"   x2="70%"  y2="100%"><stop offset="0%" stop-color="#d0ecff" stop-opacity=".87"/><stop offset="100%" stop-color="#fff" stop-opacity=".9"/></linearGradient>
+  <!-- フィルター：メダル全体のグロウ（派手拡張版） -->
+  <filter id="dmc-glow" x="-120%" y="-120%" width="340%" height="340%">
+    <feDropShadow dx="0" dy="0" stdDeviation="2"   flood-color="rgba(0,0,0,0.5)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="8"   flood-color="rgba(200,240,255,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="25"  flood-color="rgba(80,160,255,0.8)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="50"  flood-color="rgba(140,80,255,0.5)"/>
+  </filter>
+  <filter id="dmc-star-glow">
+    <feDropShadow dx="0" dy="0" stdDeviation="1"   flood-color="rgba(255,255,255,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="3"   flood-color="rgba(160,210,255,0.9)"/>
+  </filter>
+  <!-- ダイヤ数字グラデーション：白主体＋淡い水色・薄紫のほんのりアクセント -->
+  <linearGradient id="dmc-num-grad" x1="33%" y1="3%" x2="67%" y2="97%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="35%"  stop-color="#e0f4ff"/>
+    <stop offset="65%"  stop-color="#ece8ff"/>
+    <stop offset="100%" stop-color="#ffffff"/>
+  </linearGradient>
+  <!-- ダイヤ数字グロウフィルター：派手グレア拡張版（領域・stdDeviation 大幅増） -->
+  <filter id="dmc-num-glow" x="-500%" y="-500%" width="1100%" height="1100%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,1)"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="1"   flood-color="rgba(0,0,0,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="6"   flood-color="rgba(230,245,255,1)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="22"  flood-color="rgba(160,215,255,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="55"  flood-color="rgba(120,160,255,0.8)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="90"  flood-color="rgba(200,140,255,0.55)"/>
+  </filter>
+  <!-- ===================== プラチナメダル用 defs ===================== -->
+  <!-- メダル本体：白主体・ニュートラルシルバー -->
+  <radialGradient id="ptm-body" cx="38%" cy="30%" r="75%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="18%"  stop-color="#f8f9fa"/>
+    <stop offset="52%"  stop-color="#e4e8ec"/>
+    <stop offset="80%"  stop-color="#c4ccd4"/>
+    <stop offset="100%" stop-color="#a4adb6"/>
+  </radialGradient>
+  <!-- 外縁リム：白→ニュートラルシルバー -->
+  <radialGradient id="ptm-rim-grad" cx="50%" cy="10%" r="90%">
+    <stop offset="0%"   stop-color="#f6f8fa"/>
+    <stop offset="50%"  stop-color="#d0d8e0"/>
+    <stop offset="100%" stop-color="#9aa4ae"/>
+  </radialGradient>
+  <!-- 星：白→ライトシルバー -->
+  <radialGradient id="ptm-star" cx="50%" cy="35%" r="65%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="35%"  stop-color="#f4f6f8"/>
+    <stop offset="72%"  stop-color="#d8dde4"/>
+    <stop offset="100%" stop-color="#aab4bc"/>
+  </radialGradient>
+  <!-- 月桂樹の葉：白銀グラデ -->
+  <linearGradient id="ptm-leaf" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#eef1f4"/>
+    <stop offset="50%"  stop-color="#c8d0d8"/>
+    <stop offset="100%" stop-color="#98a4ae"/>
+  </linearGradient>
+  <!-- 数字グラデーション：白主体・ほんのり銀 -->
+  <linearGradient id="ptm-num-grad" x1="33%" y1="3%" x2="67%" y2="97%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="40%"  stop-color="#f0f4f8"/>
+    <stop offset="70%"  stop-color="#e0e6ec"/>
+    <stop offset="100%" stop-color="#ffffff"/>
+  </linearGradient>
+  <!-- メダル全体グロウ：白銀グレア -->
+  <filter id="ptm-glow" x="-80%" y="-80%" width="260%" height="260%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,0.45)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="7"   flood-color="rgba(240,244,248,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="22"  flood-color="rgba(200,215,230,0.80)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="42"  flood-color="rgba(160,180,200,0.50)"/>
+  </filter>
+  <!-- 星グロウ -->
+  <filter id="ptm-star-glow">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="rgba(255,255,255,0.98)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="rgba(230,235,240,0.90)"/>
+  </filter>
+  <!-- 数字グロウ：暗輪郭＋白銀グレア -->
+  <filter id="ptm-num-glow" x="-300%" y="-300%" width="700%" height="700%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,1)"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="1"   flood-color="rgba(0,0,0,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="5"   flood-color="rgba(255,255,255,1)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="16"  flood-color="rgba(220,228,236,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="36"  flood-color="rgba(180,195,210,0.72)"/>
+  </filter>
+  <!-- ===================== 金メダル用 defs ===================== -->
+  <!-- メダル本体：リッチゴールド放射グラデーション -->
+  <radialGradient id="gld-body" cx="40%" cy="30%" r="75%">
+    <stop offset="0%"   stop-color="#fffde0"/>
+    <stop offset="20%"  stop-color="#ffd700"/>
+    <stop offset="55%"  stop-color="#c8a000"/>
+    <stop offset="82%"  stop-color="#9a7600"/>
+    <stop offset="100%" stop-color="#7a5c00"/>
+  </radialGradient>
+  <!-- 外縁リム：ゴールド -->
+  <radialGradient id="gld-rim" cx="50%" cy="10%" r="90%">
+    <stop offset="0%"   stop-color="#ffe566"/>
+    <stop offset="50%"  stop-color="#c0980a"/>
+    <stop offset="100%" stop-color="#886200"/>
+  </radialGradient>
+  <!-- フェニックス翼・胴：明暗ゴールド -->
+  <radialGradient id="gld-phx" cx="50%" cy="30%" r="70%">
+    <stop offset="0%"   stop-color="#fffde0"/>
+    <stop offset="40%"  stop-color="#ffd700"/>
+    <stop offset="100%" stop-color="#9a7200"/>
+  </radialGradient>
+  <!-- 炎：オレンジ→黄→白 -->
+  <radialGradient id="gld-flame" cx="50%" cy="0%" r="100%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="30%"  stop-color="#ffdd00"/>
+    <stop offset="68%"  stop-color="#ff8800"/>
+    <stop offset="100%" stop-color="#cc4400"/>
+  </radialGradient>
+  <!-- 月桂樹の葉：ゴールド -->
+  <linearGradient id="gld-leaf" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ffe566"/>
+    <stop offset="50%"  stop-color="#c49000"/>
+    <stop offset="100%" stop-color="#8a6400"/>
+  </linearGradient>
+  <!-- 数字グラデーション：ゴールド光沢 -->
+  <linearGradient id="gld-num-grad" x1="33%" y1="3%" x2="67%" y2="97%">
+    <stop offset="0%"   stop-color="#fffde0"/>
+    <stop offset="35%"  stop-color="#ffd700"/>
+    <stop offset="65%"  stop-color="#c89000"/>
+    <stop offset="100%" stop-color="#fffde0"/>
+  </linearGradient>
+  <!-- メダル全体グロウ：ゴールドグレア -->
+  <filter id="gld-glow" x="-80%" y="-80%" width="260%" height="260%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,0.4)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="7"   flood-color="rgba(255,220,50,0.92)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="22"  flood-color="rgba(210,160,0,0.78)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="42"  flood-color="rgba(160,120,0,0.50)"/>
+  </filter>
+  <!-- フェニックスグロウ -->
+  <filter id="gld-phx-glow">
+    <feDropShadow dx="0" dy="0" stdDeviation="1"   flood-color="rgba(255,255,180,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="rgba(255,210,0,0.75)"/>
+  </filter>
+  <!-- 数字グロウ：暗輪郭＋ゴールドグレア -->
+  <filter id="gld-num-glow" x="-300%" y="-300%" width="700%" height="700%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,1)"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="1"   flood-color="rgba(0,0,0,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="5"   flood-color="rgba(255,240,80,1)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="16"  flood-color="rgba(220,170,0,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="36"  flood-color="rgba(170,120,0,0.72)"/>
+  </filter>
+  <!-- ===================== 銅メダル用 defs ===================== -->
+  <!-- メダル本体：ブロンズ放射グラデーション -->
+  <radialGradient id="bze-body" cx="40%" cy="30%" r="75%">
+    <stop offset="0%"   stop-color="#ffe0b0"/>
+    <stop offset="20%"  stop-color="#c87840"/>
+    <stop offset="55%"  stop-color="#9e5625"/>
+    <stop offset="82%"  stop-color="#783c10"/>
+    <stop offset="100%" stop-color="#582a08"/>
+  </radialGradient>
+  <!-- 外縁リム：ブロンズ -->
+  <radialGradient id="bze-rim" cx="50%" cy="10%" r="90%">
+    <stop offset="0%"   stop-color="#d48840"/>
+    <stop offset="50%"  stop-color="#9a5e18"/>
+    <stop offset="100%" stop-color="#764608"/>
+  </radialGradient>
+  <!-- トーチ本体：明暗ブロンズ -->
+  <radialGradient id="bze-torch" cx="50%" cy="20%" r="70%">
+    <stop offset="0%"   stop-color="#ffe0a0"/>
+    <stop offset="50%"  stop-color="#c07830"/>
+    <stop offset="100%" stop-color="#784010"/>
+  </radialGradient>
+  <!-- 炎：白→黄→オレンジ→赤 -->
+  <radialGradient id="bze-flame" cx="50%" cy="0%" r="100%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="25%"  stop-color="#ffee44"/>
+    <stop offset="60%"  stop-color="#ff9900"/>
+    <stop offset="100%" stop-color="#cc4400"/>
+  </radialGradient>
+  <!-- 月桂樹の葉：ブロンズ -->
+  <linearGradient id="bze-leaf" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#d89050"/>
+    <stop offset="50%"  stop-color="#a06020"/>
+    <stop offset="100%" stop-color="#784010"/>
+  </linearGradient>
+  <!-- 数字グラデーション：温かみのあるブロンズ光沢 -->
+  <linearGradient id="bze-num-grad" x1="33%" y1="3%" x2="67%" y2="97%">
+    <stop offset="0%"   stop-color="#fff0d8"/>
+    <stop offset="35%"  stop-color="#ffd090"/>
+    <stop offset="65%"  stop-color="#e09050"/>
+    <stop offset="100%" stop-color="#fff0d8"/>
+  </linearGradient>
+  <!-- メダル全体グロウ：ブロンズグレア -->
+  <filter id="bze-glow" x="-80%" y="-80%" width="260%" height="260%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,0.45)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="7"   flood-color="rgba(200,110,30,0.90)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="22"  flood-color="rgba(160,80,15,0.75)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="42"  flood-color="rgba(120,55,10,0.48)"/>
+  </filter>
+  <!-- トーチ＋炎グロウ -->
+  <filter id="bze-torch-glow">
+    <feDropShadow dx="0" dy="0" stdDeviation="1"   flood-color="rgba(255,240,150,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="3"   flood-color="rgba(255,140,0,0.70)"/>
+  </filter>
+  <!-- 数字グロウ：暗輪郭＋ブロンズグレア -->
+  <filter id="bze-num-glow" x="-300%" y="-300%" width="700%" height="700%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,1)"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="1"   flood-color="rgba(0,0,0,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="5"   flood-color="rgba(255,220,120,1)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="16"  flood-color="rgba(240,160,60,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="36"  flood-color="rgba(200,110,30,0.72)"/>
+  </filter>
+  <!-- ===================== 銀メダル用 defs ===================== -->
+  <radialGradient id="slv-body" cx="40%" cy="30%" r="75%">
+    <stop offset="0%"   stop-color="#e8ecf0"/>
+    <stop offset="18%"  stop-color="#d0d8e0"/>
+    <stop offset="52%"  stop-color="#a4b0bc"/>
+    <stop offset="80%"  stop-color="#7a8898"/>
+    <stop offset="100%" stop-color="#606e7c"/>
+  </radialGradient>
+  <radialGradient id="slv-rim" cx="50%" cy="10%" r="90%">
+    <stop offset="0%"   stop-color="#d4dae0"/>
+    <stop offset="50%"  stop-color="#9aaab8"/>
+    <stop offset="100%" stop-color="#6e7e8e"/>
+  </radialGradient>
+  <radialGradient id="slv-torch" cx="50%" cy="20%" r="70%">
+    <stop offset="0%"   stop-color="#dce4ec"/>
+    <stop offset="50%"  stop-color="#9aaab8"/>
+    <stop offset="100%" stop-color="#6e7e8e"/>
+  </radialGradient>
+  <!-- 炎は銅と共通（オレンジ系） -->
+  <radialGradient id="slv-flame" cx="50%" cy="0%" r="100%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="25%"  stop-color="#ffee44"/>
+    <stop offset="60%"  stop-color="#ff9900"/>
+    <stop offset="100%" stop-color="#cc4400"/>
+  </radialGradient>
+  <linearGradient id="slv-leaf" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#c8d4de"/>
+    <stop offset="50%"  stop-color="#8ea0b0"/>
+    <stop offset="100%" stop-color="#6a7a8a"/>
+  </linearGradient>
+  <linearGradient id="slv-num-grad" x1="33%" y1="3%" x2="67%" y2="97%">
+    <stop offset="0%"   stop-color="#e8edf2"/>
+    <stop offset="35%"  stop-color="#c8d4e0"/>
+    <stop offset="65%"  stop-color="#a8b8c8"/>
+    <stop offset="100%" stop-color="#e8edf2"/>
+  </linearGradient>
+  <filter id="slv-glow" x="-80%" y="-80%" width="260%" height="260%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,0.45)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="7"   flood-color="rgba(170,185,205,0.80)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="22"  flood-color="rgba(120,145,172,0.65)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="42"  flood-color="rgba(85,112,150,0.38)"/>
+  </filter>
+  <filter id="slv-torch-glow">
+    <feDropShadow dx="0" dy="0" stdDeviation="1"   flood-color="rgba(255,240,150,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="3"   flood-color="rgba(255,140,0,0.70)"/>
+  </filter>
+  <filter id="slv-num-glow" x="-300%" y="-300%" width="700%" height="700%">
+    <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="rgba(0,0,0,1)"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="1"   flood-color="rgba(0,0,0,0.9)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="5"   flood-color="rgba(240,248,255,1)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="16"  flood-color="rgba(170,200,235,0.95)"/>
+    <feDropShadow dx="0" dy="0" stdDeviation="36"  flood-color="rgba(120,155,200,0.72)"/>
+  </filter>
+</defs>
+</svg>
+<script src="data/questions.js?v=20260526b"></script>
+
+<header class="app-header">
+  <div class="app-header-inner">
+    <div>
+      <div style="font-size:1.1rem;font-weight:700;"><span id="hd-logo-icon" class="hd-logo-icon">🔥</span> ガス主任技術者 学習アプリ</div>
+    </div>
+    <div id="hd-today-stats" class="hd-today-stats">
+      <div class="hd-today-main">
+        <span id="hd-today-choices" class="hd-num">0</span><span class="hd-today-unit">選択肢</span>
+        <span class="hd-today-sep"> ／ </span>
+        <span id="hd-today-qs" class="hd-num">0</span><span class="hd-today-unit">問</span>
+      </div>
+      <div class="hd-today-sub">今日の学習</div>
+      <div id="hd-next-tier-msg" class="hd-next-tier-msg"></div>
+    </div>
+    <div class="hd-icon-btns">
+      <button id="btn-hd-home"     class="hd-icon-btn">🏠<span>ホーム</span></button>
+      <button id="btn-hd-calendar" class="hd-icon-btn">📅<span>カレンダー</span></button>
+      <button id="btn-hd-weakness" class="hd-icon-btn">📊<span>弱点分析</span></button>
+      <button id="btn-hd-stats"    class="hd-icon-btn">📈<span>進捗</span></button>
+      <button id="btn-hd-settings" class="hd-icon-btn">⚙️<span>設定</span></button>
+      <button id="btn-hd-data"     class="hd-icon-btn">🗂<span>データ</span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ヘッダードロップダウンポップアップ -->
+<div id="hd-popup-backdrop" class="hd-popup-backdrop hidden"></div>
+
+<div id="hd-popup-calendar" class="hd-popup hidden">
+  <div style="display:flex;align-items:center;margin-bottom:10px;">
+    <span class="card-title" style="margin:0;">📅 学習カレンダー</span>
+    <span id="streak-badge" class="streak-badge hidden" style="margin-left:auto;"></span>
+  </div>
+  <div id="study-calendar" class="study-calendar"></div>
+</div>
+
+<!-- カレンダー日付ホバーツールチップ -->
+<div id="cal-day-tooltip" class="cal-day-tooltip hidden" aria-hidden="true">
+  <div class="ctip-num"></div>
+</div>
+
+<div id="hd-popup-weakness" class="hd-popup hidden">
+  <p class="card-title" style="margin:0 0 6px;">📊 弱点分析</p>
+  <p style="font-size:.78rem;color:var(--text-3);margin:0 0 10px;">カテゴリ別の正答率（弱い順）</p>
+  <div id="weakness-report"></div>
+</div>
+
+<div id="hd-popup-settings" class="hd-popup hidden">
+  <p class="card-title" style="margin:0 0 12px;">⚙️ 表示設定</p>
+  <div class="settings-row">
+    <span class="settings-label">文字サイズ</span>
+    <div class="settings-btns" id="settings-font-size">
+      <button class="settings-btn" data-value="13">小</button>
+      <button class="settings-btn active" data-value="15">中</button>
+      <button class="settings-btn" data-value="17">大</button>
+    </div>
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">文字の太さ</span>
+    <div class="settings-btns" id="settings-font-weight">
+      <button class="settings-btn active" data-value="400">普通</button>
+      <button class="settings-btn" data-value="700">太め</button>
+    </div>
+  </div>
+</div>
+
+<div id="hd-popup-data" class="hd-popup hidden">
+  <p class="card-title" style="margin:0 0 12px;">🗂 データ管理</p>
+  <div class="data-btns">
+    <button id="btn-load-json" class="btn btn-outline btn-sm">📂 JSONファイルを追加</button>
+    <button id="btn-paste-json" class="btn btn-outline btn-sm">📝 JSONを貼り付けて追加</button>
+    <button id="btn-question-list" class="btn btn-ghost btn-sm">📋 保存済み問題を管理</button>
+    <button id="btn-export" class="btn btn-ghost btn-sm">💾 進捗をエクスポート</button>
+    <button id="btn-import" class="btn btn-ghost btn-sm">📥 進捗をインポート</button>
+    <button id="btn-export-questions" class="btn btn-outline btn-sm">📤 問題を年度別書き出し</button>
+    <button id="btn-json-editor" class="btn btn-outline btn-sm">🛠 JSONで編集</button>
+    <button id="btn-reset" class="btn btn-danger btn-sm">🗑 進捗リセット</button>
+  </div>
+  <input type="file" id="input-questions-file" accept=".json" class="hidden">
+  <input type="file" id="input-progress-file" accept=".json" class="hidden">
+</div>
+
+<!-- ==================== HOME ==================== -->
+<div id="screen-home" class="screen">
+
+  <!-- トップフィルターカード（JS で描画） -->
+  <div id="top-filter-card" class="card" style="padding:12px;"></div>
+
+  <div class="card">
+    <div class="card-title">学習スタート</div>
+    <button id="btn-resume-session" class="btn btn-primary btn-full hidden" style="margin-bottom:12px;">▶ 中断から再開</button>
+    <div class="start-btns" style="margin-top:4px;">
+      <button id="btn-start-exam" class="start-btn-card exam-mode">
+        <div class="btn-label">📝 模試モード</div>
+        <div class="btn-desc">時間計測・解説なし</div>
+      </button>
+      <div style="position:relative;flex:1;">
+        <button id="btn-start-bookmark" class="start-btn-card bookmark-mode" style="width:100%;">
+          <div class="btn-label">⭐ ブックマーク</div>
+          <div class="btn-desc" id="bookmark-count-desc">登録した問題を出題</div>
+        </button>
+        <div id="bookmark-start-popup" class="top-filter-start-popup hidden" style="top:auto;bottom:calc(100% + 6px);"></div>
+      </div>
+    </div>
+    <div class="drill-section-label">🥊 壁打ちモード — 1選択肢ずつ即時判定</div>
+    <div class="start-btns">
+      <button id="btn-start-drill-all" class="start-btn-card drill-all">
+        <div class="btn-label">🥊 壁打ち開始</div>
+        <div class="btn-desc">カテゴリ・年度を選んで出題</div>
+      </button>
+      <button id="btn-start-drill-weak" class="start-btn-card drill-weak">
+        <div class="btn-label">🔥 苦手集中</div>
+        <div class="btn-desc">3連続正解未達の選択肢のみ</div>
+      </button>
+    </div>
+    <div class="drill-section-label">🔍 キーワード検索 壁打ち</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+      <input type="text" id="drill-search-input" class="edit-input" placeholder="キーワードを入力..." style="flex:1;width:auto;padding:6px 10px;font-size:.88rem;">
+      <button id="btn-start-drill-search" class="btn btn-primary btn-sm" style="flex-shrink:0;white-space:nowrap;">出題開始</button>
+    </div>
+    <div class="drill-section-label">🏷 タグから出題</div>
+    <div id="tag-study-area" class="tag-study-area"></div>
+    <div class="drill-section-label">🔢 計算問題練習</div>
+    <div class="start-btns">
+      <button id="btn-start-calc-practice" class="start-btn-card calc-practice">
+        <div class="btn-label">🔢 計算問題練習</div>
+        <div class="btn-desc">図解問題をめくって学習</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="old-cat-filter-card">
+    <div class="filter-row-header">
+      <div class="card-title">カテゴリフィルター</div>
+      <div class="filter-ctrl-btns">
+        <button id="btn-cat-all" class="btn-filter-ctrl">全選択</button>
+        <button id="btn-cat-none" class="btn-filter-ctrl">全解除</button>
+      </div>
+    </div>
+    <div id="filter-categories" class="chip-group">
+      <span style="color:#9ca3af;font-size:.85rem;">読み込み中...</span>
+    </div>
+
+    <div id="filter-sub-panel" class="filter-sub-panel hidden">
+      <div class="filter-sub-divider"></div>
+      <div class="filter-row-header">
+        <div class="card-title">年度別フィルター</div>
+        <div class="filter-ctrl-btns">
+          <button id="btn-year-all" class="btn-filter-ctrl">全選択</button>
+          <button id="btn-year-none" class="btn-filter-ctrl">全解除</button>
+        </div>
+      </div>
+      <div id="filter-years" class="chip-group" style="margin-bottom:16px;"></div>
+      <div class="filter-row-header">
+        <div class="card-title">分野別フィルター</div>
+        <div class="filter-ctrl-btns">
+          <button id="btn-sec-all" class="btn-filter-ctrl">全選択</button>
+          <button id="btn-sec-none" class="btn-filter-ctrl">全解除</button>
+        </div>
+      </div>
+      <div id="filter-sections" class="chip-group"></div>
+
+      <!-- ハッシュタグフィルター -->
+      <div id="filter-tag-panel" class="hidden">
+        <div class="filter-sub-divider"></div>
+        <div class="filter-row-header filter-tag-toggle" id="filter-tag-toggle-row" style="cursor:pointer;">
+          <div class="card-title" style="display:flex;align-items:center;gap:6px;">
+            <span id="filter-tag-toggle-icon" style="font-size:.8rem;">▶</span>🏷️ ハッシュタグで絞り込む
+          </div>
+          <div class="filter-ctrl-btns" id="filter-tag-ctrl-btns" style="display:none;">
+            <button id="btn-tag-all" class="btn-filter-ctrl">全選択</button>
+            <button id="btn-tag-none" class="btn-filter-ctrl">全解除</button>
+          </div>
+        </div>
+        <div id="filter-tag-body" class="hidden">
+          <div id="filter-tags" class="chip-group" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:4px;margin-bottom:4px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== PENDING VERIFY ==================== -->
+<div class="card hidden" id="pending-verify-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="card-title" style="margin-bottom:0;">🔍 検証待ち</div>
+    <button id="btn-pending-clear-all" class="btn btn-danger btn-sm">全削除</button>
+  </div>
+  <div id="pending-verify-list"></div>
+</div>
+
+<!-- ==================== STUDY ==================== -->
+<div id="screen-study" class="screen hidden">
+
+  <div class="study-header">
+    <span id="study-progress">0 / 0</span>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-interrupt-session" class="btn btn-ghost btn-sm">⏸ 中断</button>
+      <button id="btn-end-session" class="btn btn-ghost btn-sm">終了</button>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div id="study-progress-bar" class="progress-bar-fill" style="width:0%"></div>
+  </div>
+
+  <!-- 模試タイマー -->
+  <div id="exam-timer-wrap" class="exam-timer-wrap hidden">
+    <div class="exam-timer-info">
+      <span class="exam-timer-label">📝 模試モード</span>
+      <span id="exam-timer-text" class="exam-timer-text">00:00</span>
+    </div>
+    <div class="exam-timer-track"><div id="exam-timer-fill" class="exam-timer-fill"></div></div>
+    <div id="exam-subject-progress" class="exam-subject-progress hidden"></div>
+  </div>
+
+  <div class="card">
+    <div class="question-header-row">
+      <div id="question-source" class="choice-source"></div>
+      <div id="question-history-dots" class="question-history-dots"></div>
+      <div class="question-header-btns">
+        <button id="btn-marker-toggle" class="btn-marker-toggle" title="マーカーを表示">🖊</button>
+        <button id="btn-bookmark" class="btn-bookmark" title="ブックマーク">☆</button>
+      </div>
+    </div>
+    <div id="question-tags" class="question-tags hidden"></div>
+    <div id="study-calc-mode-row" class="study-calc-mode-row hidden">
+      <label class="study-calc-mode-label">
+        <input type="checkbox" id="study-calc-mode-check">
+        <span>🔢 計算問題として登録</span>
+      </label>
+      <label class="study-calc-mode-label">
+        <input type="checkbox" id="study-single-select-check">
+        <span>☑ 選択肢1つを選ぶ問題として登録</span>
+      </label>
+    </div>
+    <div id="question-blocks"></div>
+    <div id="question-text" class="question-text hidden"></div>
+    <div id="question-image-area" class="question-image-area hidden"></div>
+    <div id="choices-list"></div>
+    <div id="explanation-image-area" class="explanation-image-area hidden"></div>
+
+    <!-- メモ -->
+    <div id="memo-section" class="memo-section hidden">
+      <div class="memo-toggle-row" id="memo-toggle">
+        <span id="memo-toggle-icon" class="memo-toggle-icon">▶</span>
+        <span class="memo-label">📝 メモ</span>
+        <span id="memo-has-badge" class="memo-has-badge hidden">●</span>
+      </div>
+      <div id="memo-body" class="hidden">
+        <textarea id="memo-input" class="memo-textarea" placeholder="この問題のメモを残す（自動保存）"></textarea>
+      </div>
+    </div>
+
+    <!-- 前後ナビゲーションボタン -->
+    <div id="study-nav-row" class="study-nav-row" style="margin-top:14px;">
+      <button id="btn-study-prev" class="btn btn-ghost btn-sm study-nav-btn" disabled>← 前の問題</button>
+      <button id="btn-study-next" class="btn btn-ghost btn-sm study-nav-btn" disabled>次の問題 →</button>
+    </div>
+
+    <div id="check-area" style="margin-top:8px;">
+      <button id="btn-check" class="btn btn-primary btn-full" disabled>答え合わせ</button>
+    </div>
+    <!-- 模試モード：カウント型回答エリア -->
+    <div id="exam-count-area" class="hidden" style="margin-top:16px;"></div>
+    <!-- 模試モード用ナビ -->
+    <div id="exam-next-area" class="hidden" style="margin-top:16px;">
+      <button id="btn-exam-next" class="btn btn-primary btn-full" disabled>次へ →</button>
+      <button id="btn-exam-skip" class="btn btn-ghost btn-full" style="margin-top:6px;">スキップ（未回答のまま進む）</button>
+    </div>
+
+    <div id="next-area" class="hidden" style="margin-top:12px;">
+      <div id="session-acc" class="session-acc"></div>
+      <button id="btn-next" class="btn btn-primary btn-full">次の問題へ →</button>
+      <button id="btn-edit-study-q" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">✏️ この問題を修正</button>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button id="btn-report-study-q" class="btn btn-ghost btn-sm" style="flex:1;">📋 問題を報告</button>
+        <button id="btn-verify-ai" class="btn btn-ghost btn-sm" style="flex:1;">🤖 AIで正誤を検証</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- キーボードショートカットガイド -->
+  <div class="kb-guide">
+    <span class="kb-item"><kbd>1</kbd>〜<kbd>9</kbd> 選択肢 ○/✕</span>
+    <span class="kb-sep">|</span>
+    <span class="kb-item"><kbd>Enter</kbd> 答え合わせ / 次へ</span>
+    <span class="kb-sep">|</span>
+    <span class="kb-item"><kbd>←</kbd><kbd>→</kbd> 前後の問題</span>
+    <span class="kb-sep">|</span>
+    <span class="kb-item"><kbd>+</kbd> ブックマーク</span>
+    <span class="kb-sep">|</span>
+    <span class="kb-item"><kbd>−</kbd> マーカー</span>
+  </div>
+
+</div>
+
+<!-- ==================== DRILL ==================== -->
+<div id="screen-drill" class="screen hidden">
+
+  <div class="study-header">
+    <span id="drill-progress">0 / 0</span>
+    <button id="btn-end-drill" class="btn btn-ghost btn-sm">終了</button>
+  </div>
+  <div class="progress-bar-wrap">
+    <div id="drill-progress-bar" class="progress-bar-fill" style="width:0%"></div>
+  </div>
+
+  <div class="card">
+    <div class="question-header-row">
+      <div id="drill-source" class="choice-source"></div>
+      <div class="question-header-btns">
+        <button id="btn-drill-exclude" class="btn-drill-exclude" title="壁打ちから除外">🚫</button>
+        <button id="btn-drill-bookmark" class="btn-bookmark" title="ブックマーク">☆</button>
+      </div>
+    </div>
+    <div id="drill-question-text" class="question-text hidden"></div>
+    <div id="drill-calc-mode-row" class="study-calc-mode-row">
+      <label class="study-calc-mode-label">
+        <input type="checkbox" id="drill-calc-mode-check">
+        <span>🔢 計算問題として登録</span>
+      </label>
+      <label class="study-calc-mode-label">
+        <input type="checkbox" id="drill-single-select-check">
+        <span>☑ 選択肢1つを選ぶ問題として登録</span>
+      </label>
+    </div>
+
+    <div class="drill-choice-wrap">
+      <span id="drill-choice-label-badge" class="drill-choice-badge"></span>
+      <p id="drill-choice-text" class="drill-choice-text"></p>
+    </div>
+
+    <div id="drill-history-dots" class="drill-history-row"></div>
+
+    <div id="drill-answer-area">
+      <div class="drill-answer-btns">
+        <button id="btn-drill-maru" class="drill-btn drill-maru">○　正しい</button>
+        <button id="btn-drill-batsu" class="drill-btn drill-batsu">✕　誤り</button>
+      </div>
+      <button id="btn-drill-skip" class="btn btn-ghost btn-sm hidden" style="margin-top:8px;width:100%;">この選択肢をスキップ →</button>
+    </div>
+
+    <div id="drill-feedback-area" class="hidden">
+      <div id="drill-result-label" class="drill-result-label"></div>
+      <div id="drill-answer-reveal" class="drill-answer-reveal"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:4px;margin-bottom:2px;">
+        <button id="btn-drill-marker-toggle" class="btn-marker-toggle" title="マーカーを表示">🖊</button>
+      </div>
+      <div id="drill-explanation" class="choice-explanation hidden"></div>
+      <div id="drill-session-acc" class="session-acc" style="margin-top:10px;"></div>
+      <!-- タグセクション -->
+      <div id="drill-tags-section" style="margin-top:10px;">
+        <div id="drill-tag-chips" class="question-tags"></div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="text" id="drill-tag-input" class="edit-input" placeholder="タグを追加（#不要）" style="flex:1;font-size:.82rem;padding:5px 8px;">
+          <button id="btn-drill-add-tag" class="btn btn-outline btn-sm">追加</button>
+        </div>
+        <div id="drill-tag-suggestions" class="edit-tag-suggestions" style="margin-top:6px;"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button id="btn-edit-drill-choice" class="btn btn-ghost btn-sm" style="flex:1;">✏️ 選択肢を編集</button>
+        <button id="btn-report-drill-q" class="btn btn-ghost btn-sm" style="flex:1;">📋 問題を報告</button>
+        <button id="btn-verify-ai-drill" class="btn btn-ghost btn-sm" style="flex:1;">🤖 AI検証</button>
+      </div>
+      <button id="btn-drill-next" class="btn btn-primary btn-full" style="margin-top:8px;">次の選択肢へ →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== RESULT ==================== -->
+<div id="screen-result" class="screen hidden">
+  <div class="card">
+    <div class="result-big">
+      <div style="font-size:1rem;color:#6b7280;margin-bottom:8px;">セッション結果</div>
+      <div class="result-score" id="result-score">-</div>
+      <div class="result-pct" id="result-pct">-</div>
+    </div>
+    <div id="exam-result-section" class="hidden">
+      <div id="exam-result-summary" class="exam-result-summary"></div>
+      <div id="exam-result-list" class="exam-result-list"></div>
+    </div>
+    <div class="result-btns">
+      <button id="btn-retry-wrong-q" class="btn btn-outline hidden">❌ 間違った問題をもう一度</button>
+      <button id="btn-retry-wrong-c" class="btn btn-outline hidden">🥊 間違えた選択肢だけもう一度</button>
+      <button id="btn-again" class="btn btn-primary">もう一度</button>
+      <button id="btn-to-home-from-result" class="btn btn-ghost">ホームへ戻る</button>
+    </div>
+    <div id="session-history-section" class="hidden">
+      <div class="sh-section-title">出題一覧</div>
+      <div id="session-history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Choice Detail Modal ==================== -->
+<div id="modal-choice-detail" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title" id="cdm-title">選択肢詳細</span>
+      <button class="modal-close" id="cdm-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;gap:12px;max-height:72vh;overflow-y:auto;">
+      <div id="cdm-meta" class="cdm-meta"></div>
+      <div id="cdm-question" class="cdm-question"></div>
+      <div id="cdm-choice" class="cdm-choice"></div>
+      <div id="cdm-result" class="cdm-result-line"></div>
+      <div id="cdm-explanation" class="cdm-explanation"></div>
+      <div id="cdm-tags" class="cdm-tags-area"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="cdm-btn-bookmark" class="btn btn-ghost btn-sm">☆ ブックマーク</button>
+      <button id="cdm-btn-tag" class="btn btn-ghost btn-sm">🏷 タグ編集</button>
+      <button id="cdm-close2" class="btn btn-ghost">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== STATS ==================== -->
+<div id="screen-stats" class="screen hidden">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+    <button id="btn-to-home-from-stats" class="btn btn-ghost btn-sm">← 戻る</button>
+    <h2 style="font-size:1rem;font-weight:700;">学習進捗</h2>
+  </div>
+  <!-- タブバー -->
+  <div class="stats-tab-bar">
+    <button class="stats-tab active" data-tab="progress">📊 問題別進捗</button>
+    <button class="stats-tab" data-tab="history">📅 成績履歴</button>
+  </div>
+  <!-- 問題別進捗ビュー -->
+  <div id="stats-progress-view">
+    <div class="qlist-sort-bar">
+      <span class="qlist-sort-label">並び替え</span>
+      <button class="btn-sort-stats active" data-sort="year-desc">年度↓新しい順</button>
+      <button class="btn-sort-stats" data-sort="year-asc">年度↑古い順</button>
+      <button class="btn-sort-stats" data-sort="section">分野順</button>
+    </div>
+    <div id="stats-container"></div>
+  </div>
+  <!-- 成績履歴ビュー -->
+  <div id="stats-history-view" class="hidden">
+    <div id="stats-hist-filter" class="stats-hist-filter"></div>
+    <div id="stats-hist-records"></div>
+    <div id="stats-hist-summary" class="stats-hist-summary"></div>
+  </div>
+</div>
+
+<!-- ==================== QUESTIONS ==================== -->
+<div id="screen-questions" class="screen hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="btn-to-home-from-questions" class="btn btn-ghost btn-sm">← 戻る</button>
+      <h2 style="font-size:1rem;font-weight:700;">保存済み問題</h2>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button id="btn-create-q" class="btn btn-outline btn-sm">✏️ 新規作成</button>
+      <button id="btn-select-mode" class="btn btn-ghost btn-sm">☑ 選択</button>
+      <button id="btn-delete-all" class="btn btn-danger btn-sm">全削除</button>
+    </div>
+  </div>
+  <div id="home-stats" style="font-size:.82rem;color:var(--text-3);margin-bottom:10px;"></div>
+  <!-- 選択削除バー（選択モード時に表示） -->
+  <div id="qlist-select-bar" class="qlist-select-bar hidden">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" id="qlist-select-all" style="width:16px;height:16px;">
+      <span style="font-size:.85rem;">全て選択</span>
+    </label>
+    <span id="qlist-select-count" style="font-size:.82rem;color:var(--text-3);">0問選択中</span>
+    <button id="btn-bulk-edit" class="btn btn-outline btn-sm" disabled>✏️ 一括編集</button>
+    <button id="btn-delete-selected" class="btn btn-danger btn-sm" disabled>🗑 削除</button>
+    <button id="btn-cancel-select" class="btn btn-ghost btn-sm">キャンセル</button>
+  </div>
+  <div style="margin-bottom:8px;">
+    <input type="text" id="qlist-search" class="edit-input" placeholder="🔍 キーワードで絞り込み..." style="width:100%;padding:6px 10px;font-size:.88rem;">
+  </div>
+  <div id="qlist-filter-bar" class="qlist-filter-bar"></div>
+  <div id="qlist-sort-bar" class="qlist-sort-bar">
+    <span class="qlist-sort-label">並び替え</span>
+    <button class="btn-sort active" data-sort="year-desc">年度↓新しい順</button>
+    <button class="btn-sort" data-sort="year-asc">年度↑古い順</button>
+    <button class="btn-sort" data-sort="section">分野順</button>
+  </div>
+  <div id="questions-container"></div>
+</div>
+
+<!-- ==================== DRILL SETUP MODAL ==================== -->
+<div id="modal-drill-setup" class="modal-overlay modal-overlay--top hidden">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-header">
+      <span class="modal-title">🥊 壁打ち設定</span>
+      <button class="modal-close" onclick="document.getElementById('modal-drill-setup').classList.add('hidden')">✕</button>
+    </div>
+    <!-- Step 1: フィルター選択 -->
+    <div id="drill-setup-step1">
+      <div class="modal-body" style="padding:14px 18px;gap:14px;max-height:70vh;overflow-y:auto;">
+        <!-- アセット（フィルタープリセット） -->
+        <div id="drill-preset-area">
+          <div class="drill-setup-label-row" style="margin-bottom:6px;">
+            <span class="drill-setup-section-label">アセット</span>
+          </div>
+          <div id="drill-preset-btns" class="drill-preset-btns"></div>
+          <div class="drill-preset-save-row">
+            <div class="drill-preset-radios">
+              <label class="drill-preset-radio-label"><input type="radio" name="drill-preset-slot" value="0" checked><span>1</span></label>
+              <label class="drill-preset-radio-label"><input type="radio" name="drill-preset-slot" value="1"><span>2</span></label>
+              <label class="drill-preset-radio-label"><input type="radio" name="drill-preset-slot" value="2"><span>3</span></label>
+            </div>
+            <button id="btn-drill-preset-action" class="drill-preset-action-btn">登録</button>
+          </div>
+        </div>
+        <div>
+          <div class="drill-setup-label-row">
+            <span class="drill-setup-section-label">カテゴリ</span>
+            <button id="drill-cats-select-all" class="drill-setup-select-all-btn">全選択</button>
+          </div>
+          <div id="drill-setup-cats" class="drill-setup-chips"></div>
+        </div>
+        <div>
+          <div class="drill-setup-label-row">
+            <span class="drill-setup-section-label">年度</span>
+            <button id="drill-years-select-all" class="drill-setup-select-all-btn">全選択</button>
+          </div>
+          <div id="drill-setup-years" class="drill-setup-chips"></div>
+        </div>
+        <div>
+          <div class="drill-setup-label-row">
+            <span class="drill-setup-section-label">分野</span>
+            <button id="drill-sections-select-all" class="drill-setup-select-all-btn">全選択</button>
+          </div>
+          <div id="drill-setup-sections" class="drill-setup-chips"></div>
+        </div>
+      </div>
+      <div style="padding:10px 18px 0;border-top:1px solid var(--border);">
+        <label class="study-calc-mode-label">
+          <input type="checkbox" id="drill-setup-exclude-strong">
+          <span>3連続正解済みを除外</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('modal-drill-setup').classList.add('hidden')">キャンセル</button>
+        <button id="btn-drill-to-count" class="btn btn-primary">出題数を選択 →</button>
+      </div>
+    </div>
+    <!-- Step 2: 出題数選択 -->
+    <div id="drill-setup-step2" class="hidden">
+      <div class="modal-body" style="padding:20px 18px;">
+        <div class="drill-setup-section-label" style="margin-bottom:12px;">出題数を選択</div>
+        <div class="q-limit-btns" id="drill-setup-limit-btns" style="gap:8px;flex-wrap:wrap;">
+          <button class="q-limit-btn active" data-limit="">∞</button>
+          <button class="q-limit-btn" data-limit="5">5問</button>
+          <button class="q-limit-btn" data-limit="10">10問</button>
+          <button class="q-limit-btn" data-limit="15">15問</button>
+          <button class="q-limit-btn" data-limit="20">20問</button>
+        </div>
+        <div id="drill-setup-count-info" style="font-size:.82rem;color:var(--text-3);margin-top:12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-drill-back-filter" class="btn btn-ghost">← フィルターに戻る</button>
+        <button id="btn-drill-start-now" class="btn btn-primary">スタート →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== BULK EDIT MODAL ==================== -->
+<div id="modal-bulk-edit" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">✏️ 一括編集</span>
+      <button class="modal-close" onclick="document.getElementById('modal-bulk-edit').classList.add('hidden')">✕</button>
+    </div>
+    <p id="bulk-edit-desc" style="margin:0 0 14px;font-size:.85rem;color:var(--text-3);"></p>
+    <p style="font-size:.78rem;color:var(--text-3);margin:0 0 12px;">チェックを入れた項目だけを更新します。空欄にする場合は「空欄にする」をオンにしてください。</p>
+
+    <!-- 年度 -->
+    <div class="bulk-edit-row">
+      <label class="bulk-edit-toggle">
+        <input type="checkbox" id="bulk-chk-year"> <span>年度</span>
+      </label>
+      <div class="bulk-edit-inputs" id="bulk-inputs-year">
+        <label class="bulk-clear-label"><input type="checkbox" id="bulk-clear-year"> 空欄にする</label>
+        <input type="text" id="bulk-year" class="edit-input bulk-field" list="bulk-year-list" placeholder="例：令和7年度">
+        <datalist id="bulk-year-list"></datalist>
+      </div>
+    </div>
+
+    <!-- カテゴリ -->
+    <div class="bulk-edit-row">
+      <label class="bulk-edit-toggle">
+        <input type="checkbox" id="bulk-chk-category"> <span>カテゴリ</span>
+      </label>
+      <div class="bulk-edit-inputs" id="bulk-inputs-category">
+        <select id="bulk-category" class="edit-input bulk-field">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 分野 (section) -->
+    <div class="bulk-edit-row">
+      <label class="bulk-edit-toggle">
+        <input type="checkbox" id="bulk-chk-section"> <span>分野 (SECTION)</span>
+      </label>
+      <div class="bulk-edit-inputs" id="bulk-inputs-section">
+        <label class="bulk-clear-label"><input type="checkbox" id="bulk-clear-section"> 空欄にする</label>
+        <input type="text" id="bulk-section" class="edit-input bulk-field" list="bulk-section-list" placeholder="例：1節 目的と定義">
+        <datalist id="bulk-section-list"></datalist>
+      </div>
+    </div>
+
+    <!-- サブカテゴリ -->
+    <div class="bulk-edit-row">
+      <label class="bulk-edit-toggle">
+        <input type="checkbox" id="bulk-chk-subcategory"> <span>サブカテゴリ</span>
+      </label>
+      <div class="bulk-edit-inputs" id="bulk-inputs-subcategory">
+        <label class="bulk-clear-label"><input type="checkbox" id="bulk-clear-subcategory"> 空欄にする</label>
+        <input type="text" id="bulk-subcategory" class="edit-input bulk-field" placeholder="サブカテゴリ">
+      </div>
+    </div>
+
+    <div id="bulk-edit-error" class="hidden" style="color:#f87171;font-size:.83rem;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button id="btn-bulk-edit-apply" class="btn btn-primary" style="flex:1;">適用する</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-bulk-edit').classList.add('hidden')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EXPORT QUESTIONS MODAL ==================== -->
+<div id="modal-export-questions" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">📤 問題を年度別書き出し</span>
+      <button id="modal-export-q-close" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px 20px;">
+      <p style="font-size:.82rem;color:var(--text-2);margin-bottom:12px;">
+        登録済みの問題セットをJSONファイルに書き出します。<br>
+        ダウンロードしたファイルは「JSONファイルを追加」で再度読み込めます。
+      </p>
+      <div id="export-q-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-export-q-all" class="btn btn-primary">全セットまとめてDL</button>
+      <button id="btn-export-q-close2" class="btn btn-ghost">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== START CONFIRM MODAL ==================== -->
+<div id="modal-start-confirm" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ 中断データがあります</span>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+      <p style="font-size:.92rem;line-height:1.8;color:var(--text-1);">
+        中断したセッションがあります。<br>
+        新規出題を開始すると中断データは削除されます。<br>
+        続けますか？
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-start-confirm-no" class="btn btn-ghost">いいえ</button>
+      <button id="btn-start-confirm-yes" class="btn btn-danger">はい（新規開始）</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JSON EDITOR MODAL ==================== -->
+<div id="modal-json-editor" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:680px;width:96%;">
+    <div class="modal-header">
+      <span class="modal-title">🛠 JSONで編集</span>
+      <button id="json-editor-close" class="modal-close">✕</button>
+    </div>
+
+    <!-- セット選択 -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:.8rem;color:var(--text-3);display:block;margin-bottom:6px;">編集するセット</label>
+      <select id="json-edit-set-select" class="edit-input" style="width:100%;padding:8px 10px;font-size:.9rem;">
+      </select>
+    </div>
+
+    <!-- バリデーション状態 -->
+    <div id="json-editor-status" class="json-editor-status hidden"></div>
+
+    <!-- テキストエリア -->
+    <textarea id="json-editor-area" class="json-editor-area" spellcheck="false"></textarea>
+
+    <!-- 文字数 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:14px;">
+      <span id="json-editor-charcount" style="font-size:.75rem;color:var(--text-3);"></span>
+      <span style="font-size:.72rem;color:var(--text-3);">変更後「適用する」を押すと反映されます</span>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="json-editor-cancel" class="btn btn-ghost">キャンセル</button>
+      <button id="json-editor-apply" class="btn btn-primary" disabled>適用する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CREATE QUESTION MODAL ==================== -->
+<div id="modal-create-q" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:600px;width:96%;">
+    <div class="modal-header">
+      <span class="modal-title">✏️ 新規問題を作成</span>
+      <button id="create-q-close" class="modal-close">✕</button>
+    </div>
+
+    <div class="edit-meta-grid" style="margin-bottom:12px;">
+      <div class="edit-meta-item">
+        <label class="edit-label">カテゴリ *</label>
+        <select id="create-category" class="edit-input">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+      <div class="edit-meta-item">
+        <label class="edit-label">年度</label>
+        <input type="text" id="create-year" class="edit-input" list="create-year-list" placeholder="令和7年度">
+        <datalist id="create-year-list"></datalist>
+      </div>
+      <div class="edit-meta-item">
+        <label class="edit-label">出典（問番号）</label>
+        <input type="text" id="create-source" class="edit-input" placeholder="令和7年度 甲種 問1">
+      </div>
+      <div class="edit-meta-item">
+        <label class="edit-label">分野（任意）</label>
+        <input type="text" id="create-section" class="edit-input" placeholder="熱力学・気体工学">
+      </div>
+    </div>
+
+    <label class="edit-label">問題文（任意）</label>
+    <textarea id="create-question-text" class="edit-textarea" rows="3" placeholder="次のイからホまでの記述のうち、正しいものはどれか。" style="margin-bottom:12px;"></textarea>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <label class="edit-label" style="margin:0;">選択肢 *（各行で ○ / × を選択）</label>
+      <button id="create-add-choice" class="btn btn-ghost btn-sm">＋ 追加</button>
+    </div>
+    <div id="create-choices-list"></div>
+
+    <div id="create-q-error" class="json-editor-err hidden" style="margin-top:10px;border-radius:6px;padding:6px 10px;font-size:.82rem;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+      <button id="create-q-cancel" class="btn btn-ghost">キャンセル</button>
+      <button id="create-q-save" class="btn btn-primary">作成する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JSON PASTE MODAL ==================== -->
+<div id="modal-paste-json" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">📝 JSONを貼り付けて追加</span>
+      <button id="modal-paste-close" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="paste-json-area" class="json-textarea" placeholder='ここにJSONを貼り付けてください。
+
+例:
+{
+  "title": "令和5年度 甲種 法令",
+  "questions": [ ... ]
+}'></textarea>
+      <div id="paste-json-error" class="paste-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-paste-cancel" class="btn btn-ghost">キャンセル</button>
+      <button id="btn-paste-submit" class="btn btn-primary">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW QUESTION MODAL ==================== -->
+<div id="modal-view-q" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:700px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-view-title">📖 問題を表示</span>
+      <button id="modal-view-close" class="modal-close">✕</button>
+    </div>
+    <div id="modal-view-nav-bar" class="modal-nav-bar hidden">
+      <button id="modal-view-prev" class="btn btn-ghost btn-sm">← 前の問題</button>
+      <span id="modal-view-nav-pos" class="modal-nav-pos">1 / 1</span>
+      <button id="modal-view-next" class="btn btn-ghost btn-sm">次の問題 →</button>
+    </div>
+    <div class="modal-body" id="modal-view-body" style="padding:16px 20px;max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button id="modal-view-edit" class="btn btn-outline">✏️ 編集</button>
+      <button id="modal-view-close2" class="btn btn-ghost">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EDIT QUESTION MODAL ==================== -->
+<div id="modal-edit-q" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:700px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-edit-title">✏️ 問題を編集</span>
+      <button id="modal-edit-close" class="modal-close">✕</button>
+    </div>
+    <div id="modal-edit-nav-bar" class="modal-nav-bar hidden">
+      <button id="modal-edit-prev" class="btn btn-ghost btn-sm">← 前の問題</button>
+      <span id="modal-edit-nav-pos" class="modal-nav-pos">1 / 1</span>
+      <button id="modal-edit-next" class="btn btn-ghost btn-sm">次の問題 →</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;gap:12px;">
+      <div class="edit-meta-grid">
+        <div class="edit-field">
+          <label class="edit-label">年度</label>
+          <input id="edit-year" class="edit-input" type="text" placeholder="例：令和5年度">
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">カテゴリ</label>
+          <input id="edit-category" class="edit-input" type="text" placeholder="例：法令">
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">サブカテゴリ</label>
+          <input id="edit-subcategory" class="edit-input" type="text">
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">分野（section）</label>
+          <input id="edit-section" class="edit-input" type="text" placeholder="例：1節 目的と定義">
+        </div>
+        <div class="edit-field edit-field-full">
+          <label class="edit-label">出典（source）</label>
+          <input id="edit-source" class="edit-input" type="text" placeholder="例：令和5年度 甲種 法令 問1">
+        </div>
+        <div class="edit-field edit-field-full" id="edit-blocks-section">
+          <label class="edit-label">問題文・図（ブロックを並べて構成）</label>
+          <div id="edit-blocks-container" class="edit-blocks-container"></div>
+          <div class="edit-blocks-add-row">
+            <button type="button" id="btn-add-text-block" class="btn btn-ghost btn-sm">＋ テキスト</button>
+            <button type="button" id="btn-add-image-block" class="btn btn-outline btn-sm">🖼 画像を選択</button>
+            <span class="edit-paste-hint">または Ctrl+V で貼り付け</span>
+          </div>
+          <input type="file" id="input-edit-image" accept="image/*" class="hidden">
+        </div>
+      </div>
+      <div id="edit-tags-section" class="edit-tags-section">
+        <label class="edit-label">🏷️ タグ</label>
+        <div id="edit-current-tags" class="edit-current-tags"></div>
+        <div class="edit-tag-input-row">
+          <input type="text" id="edit-tag-input" class="edit-input edit-tag-text-input" placeholder="タグを入力してEnter（#不要）">
+          <button type="button" id="btn-add-tag" class="btn btn-outline btn-sm">追加</button>
+        </div>
+        <div id="edit-tag-suggestions" class="edit-tag-suggestions"></div>
+      </div>
+      <div id="edit-calc-mode-row" class="edit-calc-mode-row">
+        <label class="edit-calc-mode-label">
+          <input type="checkbox" id="edit-calc-mode-check">
+          <span>🔢 計算問題モード（5択から1つを選ぶ形式）</span>
+        </label>
+        <label class="edit-calc-mode-label">
+          <input type="checkbox" id="edit-single-select-check">
+          <span>☑ 選択肢1つを選ぶ問題として登録</span>
+        </label>
+      </div>
+      <div class="edit-choices-header">── 選択肢 ──</div>
+      <div id="edit-choices-container"></div>
+      <div id="edit-exp-image-section" class="edit-field edit-field-full" style="margin-top:8px;">
+        <label class="edit-label">解説画像（全解説の下にボタンで表示）</label>
+        <div id="edit-exp-image-preview" class="edit-exp-image-preview"></div>
+        <div class="edit-blocks-add-row">
+          <button type="button" id="btn-exp-img-upload" class="btn btn-outline btn-sm">🖼 画像を選択</button>
+          <button type="button" id="btn-exp-img-clear" class="btn btn-ghost btn-sm hidden">✕ 削除</button>
+        </div>
+        <input type="file" id="input-exp-image" accept="image/*" class="hidden">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="modal-edit-cancel" class="btn btn-ghost">キャンセル</button>
+      <button id="modal-edit-save" class="btn btn-primary">💾 上書き保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EXAM MODAL ==================== -->
+<div id="modal-exam" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">📝 模試モード</span>
+      <button id="modal-exam-close" class="modal-close">✕</button>
+    </div>
+    <!-- ステップ1：時間設定 -->
+    <div id="exam-step-time">
+      <div class="modal-body" style="padding:16px 20px;gap:12px;">
+        <p style="font-size:.85rem;color:var(--text-2);margin:0 0 14px;">問題を解いている間、正誤・解説は表示されません。全問終了後に採点結果を確認できます。</p>
+        <div class="edit-field">
+          <label class="edit-label">制限時間</label>
+          <select id="exam-time-limit" class="edit-input">
+            <option value="0">なし（経過時間のみ計測）</option>
+            <option value="60">60分</option>
+            <option value="90">90分</option>
+            <option value="120" selected>120分（本番想定）</option>
+            <option value="150">150分</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-exam-cancel" class="btn btn-ghost">キャンセル</button>
+        <button id="btn-exam-to-year" class="btn btn-primary">年度を選択 →</button>
+      </div>
+    </div>
+    <!-- ステップ2：年度選択 -->
+    <div id="exam-step-year" class="hidden">
+      <div class="modal-body" style="padding:16px 20px;">
+        <p style="font-size:.82rem;color:var(--text-3);margin:0 0 12px;">出題する年度を選択してください（法令・技術・基礎の全問）</p>
+        <div id="exam-year-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-exam-back" class="btn btn-ghost">← 戻る</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EXAM SUBMIT MODAL ==================== -->
+<div id="modal-exam-submit" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header">
+      <span class="modal-title">📋 提出する回答を確認</span>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;max-height:65vh;overflow-y:auto;">
+      <p style="font-size:.83rem;color:var(--text-3);margin:0 0 14px;">各科目の提出問題を確認してください。選択式科目はチェックで提出する問題を選べます。</p>
+      <div id="exam-submit-body"></div>
+      <div id="exam-submit-warn-msg" class="exam-submit-warn-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-exam-submit-confirm" class="btn btn-primary" disabled>採点する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CALC PRACTICE LIST ==================== -->
+<div id="screen-calc-practice" class="screen hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="btn-calc-back-home" class="btn btn-ghost btn-sm">← 戻る</button>
+      <h2 style="font-size:1rem;font-weight:700;">🔢 計算問題練習</h2>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div id="calc-sort-btns" style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm calc-sort-btn active" data-sort="title">タイトル順</button>
+        <button class="btn btn-ghost btn-sm calc-sort-btn"        data-sort="registered">登録順</button>
+      </div>
+      <button id="btn-calc-add" class="btn btn-outline btn-sm">＋ 追加</button>
+    </div>
+  </div>
+  <div id="calc-practice-list" class="calc-practice-list"></div>
+  <div id="calc-practice-empty" class="calc-empty-msg hidden">問題が登録されていません<br><span style="font-size:.8rem;">右上の「＋ 追加」から登録してください</span></div>
+</div>
+
+<!-- ==================== CALC PRACTICE DETAIL ==================== -->
+<div id="screen-calc-detail" class="screen hidden">
+  <div class="study-header">
+    <span id="calc-detail-pos" style="font-size:.9rem;font-weight:600;color:var(--text-2);">1 / 1</span>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-calc-detail-back" class="btn btn-ghost btn-sm">← 一覧へ</button>
+      <button id="btn-calc-detail-edit" class="btn btn-outline btn-sm">✏️ 編集</button>
+      <button id="btn-calc-detail-delete" class="btn btn-danger btn-sm">🗑 削除</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="calc-detail-meta" style="font-size:.8rem;color:var(--text-3);margin-bottom:10px;"></div>
+
+    <div class="calc-detail-section-label">問題</div>
+    <div id="calc-detail-problem-img" class="calc-img-wrap"></div>
+
+    <div id="calc-detail-exp-wrap" class="hidden" style="margin-top:16px;">
+      <div class="calc-detail-section-label">解説</div>
+      <div id="calc-detail-exp-img" class="calc-img-wrap"></div>
+    </div>
+
+    <div class="calc-detail-nav-row">
+      <button id="btn-calc-prev" class="btn btn-ghost btn-sm">← 前</button>
+      <button id="btn-calc-toggle-exp" class="btn btn-primary" style="min-width:120px;">解説を見る</button>
+      <button id="btn-calc-next" class="btn btn-ghost btn-sm">次 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CALC ADD MODAL ==================== -->
+<div id="modal-calc-add" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px;width:96%;">
+    <div class="modal-header">
+      <span class="modal-title" id="calc-modal-title">🔢 計算問題を追加</span>
+      <button id="calc-add-close" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;gap:12px;max-height:72vh;overflow-y:auto;">
+      <div class="edit-meta-grid" style="margin-bottom:10px;">
+        <div class="edit-meta-item">
+          <label class="edit-label">タイトル（任意）</label>
+          <input type="text" id="calc-add-title" class="edit-input" list="calc-title-list" placeholder="例：流量計算①">
+          <datalist id="calc-title-list"></datalist>
+        </div>
+        <div class="edit-meta-item">
+          <label class="edit-label">カテゴリ（任意）</label>
+          <input type="text" id="calc-add-category" class="edit-input" list="calc-category-list" placeholder="例：ガス技術：製造">
+          <datalist id="calc-category-list"></datalist>
+        </div>
+        <div class="edit-meta-item">
+          <label class="edit-label">サブカテゴリ（任意）</label>
+          <input type="text" id="calc-add-subcategory" class="edit-input" list="calc-subcategory-list" placeholder="例：配管内流速">
+          <datalist id="calc-subcategory-list"></datalist>
+        </div>
+        <div class="edit-meta-item">
+          <label class="edit-label">年度（任意）</label>
+          <input type="text" id="calc-add-year" class="edit-input" list="calc-year-list" placeholder="例：令和5年度">
+          <datalist id="calc-year-list"></datalist>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label class="edit-label">問題画像 * <span style="font-size:.75rem;color:var(--text-3);font-weight:400;">— クリックしてCtrl+Vで貼り付け可</span></label>
+        <div id="calc-add-problem-preview" class="calc-img-preview-wrap" style="margin:6px 0;cursor:pointer;">
+          <span class="calc-img-empty">画像が選択されていません</span>
+        </div>
+        <button type="button" id="btn-calc-problem-img" class="btn btn-outline btn-sm">🖼 画像を選択</button>
+        <input type="file" id="input-calc-problem-img" accept="image/*" class="hidden">
+      </div>
+
+      <div>
+        <label class="edit-label">解説画像 * <span style="font-size:.75rem;color:var(--text-3);font-weight:400;">— クリックしてCtrl+Vで貼り付け可</span></label>
+        <div id="calc-add-exp-preview" class="calc-img-preview-wrap" style="margin:6px 0;cursor:pointer;">
+          <span class="calc-img-empty">画像が選択されていません</span>
+        </div>
+        <button type="button" id="btn-calc-exp-img" class="btn btn-outline btn-sm">🖼 画像を選択</button>
+        <input type="file" id="input-calc-exp-img" accept="image/*" class="hidden">
+      </div>
+    </div>
+    <div id="calc-add-error" class="hidden" style="color:#f87171;font-size:.83rem;padding:0 18px 6px;"></div>
+    <div class="modal-footer">
+      <button id="calc-add-cancel" class="btn btn-ghost">キャンセル</button>
+      <button id="calc-add-save" class="btn btn-primary">追加する</button>
+      <!-- テキストはJS側でモードに応じて変更 -->
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js?v=20260606l"></script>
+</body>
+</html>

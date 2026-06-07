@@ -1,0 +1,21 @@
+{
+  "title": "令和5年度 甲種 法令",
+  "questions": [
+    {
+      "id": "q001",
+      "category": "カテゴリ名",
+      "subcategory": "サブカテゴリ",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 問1",
+      "questionText": "次のイからホまでの記述のうち、○○に関して正しいものはどれか。",
+      "choices": [
+        {
+          "id": "q001-a",
+          "text": "選択肢の文章",
+          "isCorrect": true,
+          "explanation": "解説テキスト"
+        }
+      ]
+    }
+  ]
+}

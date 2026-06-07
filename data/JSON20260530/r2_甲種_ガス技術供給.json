@@ -1,0 +1,378 @@
+{
+  "title": "令和2年度 甲種 ガス技術：供給",
+  "meta": {
+    "title": "令和2年度 甲種 ガス技術：供給",
+    "created": "2026-05-29"
+  },
+  "questions": [
+    {
+      "id": "r2-gijutsu-kyoku-q010",
+      "category": "ガス技術：供給",
+      "subcategory": "流体計算",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問10",
+      "questionText": "A点からB点に低圧のガスを 50 m3/h 供給している導管 AB(延長 100 m)がある。A点の圧力 PA は 2.3 kPa、B点の圧力 PB は 2.2 kPa であった。今、下図のようにB点からさらに 100 m 延長して、C点にも 50 m3/h を供給する計画となった。A点での圧力を 2.3 kPa のままとし、同一口径で延長した場合のC点の圧力(kPa)として最も近い値はどれか。ただし、高低差は考慮しないものとする。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q010-1",
+          "text": "(1) 2.1",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q010-2",
+          "text": "(2) 2.0",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q010-3",
+          "text": "(3) 1.9",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q010-4",
+          "text": "(4) 1.8",
+          "isCorrect": true,
+          "explanation": "低圧導管の圧力降下式 ΔP = kQ^2L を用いる。初期状態（50m3/h, 100m）で圧損は 0.1kPa。変更後、AB間（100m3/h, 100m）の圧損 ΔP_AB = 0.1 * (100/50)^2 = 0.4kPa。BC間（50m3/h, 100m）の圧損 ΔP_BC = 0.1kPa。合計圧損 AC = 0.5kPa。よって P_C = 2.3 - 0.5 = 1.8kPa となる。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q010-5",
+          "text": "(5) 1.7",
+          "isCorrect": false,
+          "explanation": ""
+        }
+      ],
+      "correctAnswer": "(4) 1.8"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q011",
+      "category": "ガス技術：供給",
+      "subcategory": "整圧器",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問11",
+      "questionText": "整圧器に関する次の記述のうち、誤っているものはどれか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q011-i",
+          "text": "イ：フィッシャー式整圧器は、需要家のガス使用量が増加するとパイロットダイヤフラムが降下し、駆動圧力が上昇する。",
+          "isCorrect": true,
+          "explanation": "正しい。フィッシャー式ガバナの駆動原理に関する正確な記述である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q011-ro",
+          "text": "ロ：直動式整圧器は、一次圧力が変化するとメインバルブの平衡位置が変化するため二次圧力もシフトする。",
+          "isCorrect": true,
+          "explanation": "正しい。直動式特有の「シフト」現象を正確に説明している。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q011-ha",
+          "text": "ハ：パイロット式アンローディング型整圧器は、メインバルブが全閉時に駆動圧力が最も高くなるため、この駆動圧力以上の一次圧力が確保されないとメインバルブが閉止不能となる。",
+          "isCorrect": true,
+          "explanation": "正しい。アンローディング型の構造的特徴（一次圧を利用して閉じる）に関する記述である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q011-ni",
+          "text": "ニ：レイノルド式整圧器の二次圧異常上昇の原因として、低圧補助ガバナ(パイロット)の締め切り不良が考えられる。",
+          "isCorrect": true,
+          "explanation": "正しい。パイロットガバナの不具合はロックアップ異常（二次圧上昇）を招く代表的な要因である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q011-ho",
+          "text": "ホ：アキシャルフロー式(軸流式)整圧器は、二次圧力が設定圧力を下回ったとき、パイロットダイヤフラムを押し上げる力がパイロットスプリングの力に打ち勝ち、パイロット系を流れるガスの流量を増加させる。",
+          "isCorrect": false,
+          "explanation": "誤り。二次圧が下がると、ダイヤフラムを押し上げる力は弱まり、スプリングの力が「打ち勝って」弁を開く方向に動作する。記述の力の関係が逆転している。"
+        }
+      ],
+      "correctAnswer": "(5) ホ"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q012",
+      "category": "ガス技術：供給",
+      "subcategory": "ガスメーター",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問12",
+      "questionText": "ガスメーターの構造及び機能に関する次の記述のうち、誤っているものはどれか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q012-i",
+          "text": "イ：回転子式ガスメーターは、メーター前後に直管が必要であり、ガスの圧力が高い場合には圧力補正装置を取り付けて使用する。",
+          "isCorrect": false,
+          "explanation": "誤り。回転子式（ローツ式）は容積式計量であり、タービン式や渦式とは異なり、設置に際して「前後の直管部は原則として不要」である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q012-ro",
+          "text": "ロ：渦流式ガスメーターは、カルマン渦の発生周波数から積算流量を測定する。",
+          "isCorrect": true,
+          "explanation": "正しい。カルマン渦の性質を利用した推量式計量の原理である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q012-ha",
+          "text": "ハ：サーマルフロー式ガスメーターは、ダスト・ミストの影響を避けるための専用のフィルターが必要である。",
+          "isCorrect": true,
+          "explanation": "正しい。熱線式センサーの感度維持のために不純物除去は不可欠である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q012-ni",
+          "text": "ニ：タービン式ガスメーターは、流れの中に置いた羽根車の回転速度が流量に比例する原理を利用したメーターで、流量を容積計量する。",
+          "isCorrect": true,
+          "explanation": "正しい。羽根車の回転を利用する推量式（流速式）メーターの記述として正確である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q012-ho",
+          "text": "ホ：超音波式ガスメーターは、超音波を用いて流量を推測計量する。",
+          "isCorrect": true,
+          "explanation": "正しい。超音波の伝搬時間差等を利用して流速・流量を求める方式である。"
+        }
+      ],
+      "correctAnswer": "(1) イ"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q013",
+      "category": "ガス技術：供給",
+      "subcategory": "管厚計算",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問13",
+      "questionText": "外径 200 mm の鋼管が内圧 1 MPa を受ける場合、ガス事業法の管厚計算式を用いたときの管厚(mm)として最も近い値はどれか。なお、この鋼管の外径と内径の比は 1.5 以下とし、鋼管の許容引張応力は 62 N/mm2、継手効率は 1.00、腐れしろは 1 mm とする。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q013-1",
+          "text": "(1) 1.8",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q013-2",
+          "text": "(2) 2.0",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q013-3",
+          "text": "(3) 2.2",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q013-4",
+          "text": "(4) 2.4",
+          "isCorrect": false,
+          "explanation": ""
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q013-5",
+          "text": "(5) 2.6",
+          "isCorrect": true,
+          "explanation": "計算：t = PD / (2fη + 0.8P) + C。P=1, D=200, f=62, η=1.0, C=1 を代入。t = (1 * 200) / (2 * 62 * 1.0 + 0.8 * 1) + 1 = 200 / 124.8 + 1 ≈ 1.6 + 1 = 2.6 mm。"
+        }
+      ],
+      "correctAnswer": "(5) 2.6"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q014",
+      "category": "ガス技術：供給",
+      "subcategory": "防食",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問14",
+      "questionText": "腐食と防食に関する次の記述のうち、正しいものはどれか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q014-i",
+          "text": "イ：選択排流法とは、導管と電気鉄道のレールを接続する回路に直流電源装置を入れ、レールに強制的に排流する方法である。",
+          "isCorrect": false,
+          "explanation": "誤り。直流電源を用いるのは「強制排流法」であり、選択排流法は電位差があるときに逆流防止器を介して排流する方式である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q014-ro",
+          "text": "ロ：流電陽極法は、導管よりも自然電位が卑な金属を接続し、防食電流を導管へ流入させる手法である。",
+          "isCorrect": true,
+          "explanation": "正しい。Mg陽極などを用いた犠牲陽極法の原理である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q014-ha",
+          "text": "ハ：鋳鉄管と鋼管が電気的に接続されている場合、一般に鋳鉄管がアノードとなり腐食する。",
+          "isCorrect": false,
+          "explanation": "誤り。異種金属接触において、通常は「鋼管」の方がアノードとなり腐食が進行する。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q014-ni",
+          "text": "ニ：地表面電位勾配とは、地表面に設置した照合電極と導管との電位差のことである。",
+          "isCorrect": false,
+          "explanation": "誤り。記述の内容は「管対地電位（P/S）」の説明である。地表面電位勾配は地表面2点間の電位差を指す。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q014-ho",
+          "text": "ホ：建物に引き込まれたコンクリート接触部は、マクロセル腐食においてアノード部となる。",
+          "isCorrect": false,
+          "explanation": "誤り。マクロセル腐食において、一般にコンクリート接触部は「カソード部」となり、土壌埋設部がアノード（腐食側）となる。"
+        }
+      ],
+      "correctAnswer": "(2) ロ"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q015",
+      "category": "ガス技術：供給",
+      "subcategory": "導管工事",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問15",
+      "questionText": "導管の工事に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q015-i",
+          "text": "イ：他埋設物管理者へ施工通知を行い、立会の下で掘削作業を行った。",
+          "isCorrect": true,
+          "explanation": "正しい。他工事損傷防止のための適切な施工管理手順である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q015-ro",
+          "text": "ロ：バッグによるガス遮断において、バルブからの越しガスによる圧力上昇を防ぐために放散管を設置せずに作業した。",
+          "isCorrect": false,
+          "explanation": "誤り。異常昇圧によるバッグ脱落等を防ぐため、必ず「放散管」を設置しなければならない。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q015-ha",
+          "text": "ハ：地下水位の高い場所での掘削において、ウェルポイント工法を用いて地盤の安定を図った。",
+          "isCorrect": true,
+          "explanation": "正しい。地下水を汲み上げて掘削面を安定させる適切な工法である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q015-ni",
+          "text": "ニ：放射線透過試験（RT）の際、線源から 3 m 以内を立入禁止区域として明示し管理した。",
+          "isCorrect": false,
+          "explanation": "誤り。労働安全衛生規則等の基準に基づき、通常「5 m」以内を立入禁止とする必要がある。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q015-ho",
+          "text": "ホ：気密試験において、導管内のガスの残留がないことを確認するためガス濃度を測定した。",
+          "isCorrect": true,
+          "explanation": "正しい。火災・爆発防止のための気密試験前の標準的な保安確認である。"
+        }
+      ],
+      "correctAnswer": "(3) 3つ (イ、ハ、ホ)"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q016",
+      "category": "ガス技術：供給",
+      "subcategory": "溶接・検査",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問16",
+      "questionText": "溶接と非破壊検査に関する次の記述のうち、正しいものはどれか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q016-i",
+          "text": "イ：被覆アーク溶接は、溶接棒を電極とし、そのアーク熱で母材と溶接棒を融合させる溶接法である。",
+          "isCorrect": true,
+          "explanation": "正しい。被覆アーク溶接の基本的な原理である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q016-ro",
+          "text": "ロ：ティグ（TIG）溶接において、高品質な溶接を得るためには溶接速度を極力速くする。",
+          "isCorrect": false,
+          "explanation": "誤り。速度が「速すぎる」とシールド不足や欠陥を招く。適切な低速での入熱管理が重要である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q016-ha",
+          "text": "ハ：溶接欠陥の「溶込み不良」とは、溶接金属と母材が溶着していない状態をいう。",
+          "isCorrect": false,
+          "explanation": "誤り。これは「融合不良（LF）」の説明である。溶込み不良はジョイントの根元まで溶接が届いていない状態を指す。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q016-ni",
+          "text": "ニ：放射線透過試験（RT）において、円形ブローホールは第 4 種のきずに分類される。",
+          "isCorrect": false,
+          "explanation": "誤り。ブローホール等の点状欠陥は通常「第 1 種」に分類される。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q016-ho",
+          "text": "ホ：超音波探傷試験（UT）は、きずまでの距離や高さの測定は不可能である。",
+          "isCorrect": false,
+          "explanation": "誤り。UTは超音波の反射を利用し、きずの「位置や深さを正確に測定できる」特徴を持つ。"
+        }
+      ],
+      "correctAnswer": "(1) イ"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q017",
+      "category": "ガス技術：供給",
+      "subcategory": "維持管理",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問17",
+      "questionText": "導管の維持管理に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q017-i",
+          "text": "イ：半導体式ガス検知器は、混合ガス中の水素、一酸化炭素、窒素など、すべての可燃性ガスを検知可能である。",
+          "isCorrect": false,
+          "explanation": "誤り。半導体式の検知成分は主に「炭化水素」に限られ、H2やCO、N2等は原則として検出できない。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q017-ro",
+          "text": "ロ：導管の漏えい予防として、定期的な路面パトロールや他工事情報の収集を行った。",
+          "isCorrect": true,
+          "explanation": "正しい。他工事損傷や自然劣化を早期発見するための適切な維持管理業務である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q017-ha",
+          "text": "ハ：中・低圧導管の漏えい箇所に対して、更生修理工法（ライニング等）を適用して恒久修理とした。",
+          "isCorrect": true,
+          "explanation": "正しい。非掘削での有効な管更生修理手法の活用である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q017-ni",
+          "text": "ニ：漏えい発生時の緊急出動において、ガス濃度測定の結果に基づき適切な警戒区域を設定した。",
+          "isCorrect": true,
+          "explanation": "正しい。二次災害防止のための標準的な緊急対応手順である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q017-ho",
+          "text": "ホ：漏えい磁束ピグは、高圧導管の塗装の損傷を検査するために用いられる。",
+          "isCorrect": false,
+          "explanation": "誤り。MFLピグは塗装ではなく「管体の腐食減肉や損傷」を検査するためのものである。"
+        }
+      ],
+      "correctAnswer": "(3) 3つ (ロ、ハ、ニ)"
+    },
+    {
+      "id": "r2-gijutsu-kyoku-q018",
+      "category": "ガス技術：供給",
+      "subcategory": "地震対策",
+      "year": "令和2年度",
+      "source": "令和2年度 甲種 ガス技術 問18",
+      "questionText": "地震対策に関する次の記述のうち、誤っているものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r2-gijutsu-kyoku-q018-i",
+          "text": "イ：高圧導管の耐震性評価において、レベル 1 地震動に対する許容ひずみは 3.0 % である。",
+          "isCorrect": false,
+          "explanation": "誤り。レベル 1 地震動に対する許容ひずみは「1.0 %」であり、3.0 % は過大である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q018-ro",
+          "text": "ロ：中・低圧導管の耐震性能は、地盤変位吸収能力と設計地盤変位を比較して評価する。",
+          "isCorrect": true,
+          "explanation": "正しい。埋設導管の耐震設計における標準的な評価フローである。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q018-ha",
+          "text": "ハ：ガス防災支援システム（G-React）は、大規模地震時の迅速な状況把握と復旧支援を目的としている。",
+          "isCorrect": true,
+          "explanation": "正しい。官民連携等の情報共有基盤に関する記述である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q018-ni",
+          "text": "ニ：単位ブロックとは、供給停止した地域内のガスの復旧作業を効率的に実施するため、供給停止ブロックを更に分割して得られるブロックをいう。",
+          "isCorrect": false,
+          "explanation": "誤り。記述の内容は「復旧ブロック」の説明である。"
+        },
+        {
+          "id": "r2-gijutsu-kyoku-q018-ho",
+          "text": "ホ：移動式ガス発生設備には、空気吸入式、圧縮ガス式、液化ガス式がある。",
+          "isCorrect": true,
+          "explanation": "正しい。非常時の臨時供給手段の分類として正確である。"
+        }
+      ],
+      "correctAnswer": "(2) 2つ (イ、ニ)"
+    }
+  ]
+}

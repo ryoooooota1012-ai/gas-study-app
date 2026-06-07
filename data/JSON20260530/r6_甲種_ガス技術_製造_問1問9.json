@@ -1,0 +1,378 @@
+{
+  "title": "令和6年度 甲種 ガス技術 製造 問1～問9",
+  "meta": {
+    "title": "令和6年度 甲種 ガス技術 製造 問1～問9",
+    "created": "2026-05-29"
+  },
+  "questions": [
+    {
+      "id": "r6-gijutsu-seizou-q001",
+      "category": "ガス技術：製造",
+      "subcategory": "都市ガスの原料",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問1",
+      "questionText": "都市ガスの原料に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q001-i",
+          "text": "イ LNGの主成分はメタンであり、メタンの沸点は大気圧下で約－162℃である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q001-ro",
+          "text": "ロ 天然ガスを液化してLNGにすると、その体積は約1/600になる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q001-ha",
+          "text": "ハ 液化天然ガスの密度は、標準状態の水の密度の約1.5倍である。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>液化天然ガスの密度は、標準状態の水の密度の約0.45倍である。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q001-ni",
+          "text": "ニ LPGは液状では水より軽く、ガス状では空気より重い。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q001-ho",
+          "text": "ホ バイオガスの主成分は、メタンと二酸化炭素である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q002",
+      "category": "ガス技術：製造",
+      "subcategory": "ガスの製造",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問2",
+      "questionText": "ガスの製造に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q002-i",
+          "text": "イ 代替天然ガス（SNG）製造設備において、メタン化反応は吸熱反応であるため、反応温度を維持するために加熱が必要である。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>メタン化反応は発熱反応であり、反応温度が上昇しすぎないよう制御する必要がある。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q002-ro",
+          "text": "ロ メンブレン方式のLNGタンクは、薄い金属製のメンブレンで液圧を保持する構造である。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>メンブレンは液密性を保持するものであり、液圧自体は外部のコンクリート壁等で保持する構造である。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q002-ha",
+          "text": "ハ 貯槽内でLNGの密度差による成層化が生じると、ロールオーバー現象が発生し、大量のガスが急激に蒸発するおそれがある。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q002-ni",
+          "text": "ニ LNGタンクの保冷材には、ポリウレタンフォームやパーライトなどが用いられる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q002-ho",
+          "text": "ホ 地下式LNG貯槽は、万一の液漏れ時にも液が地表面に流出しないため、地上式に比べて保安距離を短縮できる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q003",
+      "category": "ガス技術：製造",
+      "subcategory": "気化設備・送出設備",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問3",
+      "questionText": "気化設備及び送出設備に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q003-i",
+          "text": "イ オープンラック式気化器（ORV）は、海水を熱源としてLNGを気化させるものであり、ベースロード用に適している。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q003-ro",
+          "text": "ロ サブマージドコンバスチョン式気化器（SMV）は、水中燃焼により温水を作りLNGを気化させるものであり、起動性が良い。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q003-ha",
+          "text": "ハ LNGポンプのメカニカルシール部は、極低温での使用に耐えられるよう、LNG自体で冷却・潤滑を行う構造となっている。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q003-ni",
+          "text": "ニ 気化器において、LNGの流量を急激に変化させると、出口ガス温度が不安定になる現象をガイザリングという。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>ガイザリングとは、配管内の液が加熱されて急激に蒸発し、液とガスが噴出する現象をいう。出口ガス温度の不安定化はハンチングなどと呼ばれる。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q003-ho",
+          "text": "ホ 往復動式のBOG圧縮機は、多段圧縮を行うことで高い吐出圧力を得ることができる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q004",
+      "category": "ガス技術：製造",
+      "subcategory": "計装・電気設備",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問4",
+      "questionText": "計装及び電気設備に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q004-i",
+          "text": "イ 差圧式流量計（オリフィス流量計）の測定流量は、オリフィス前後の差圧の平方根に比例する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q004-ro",
+          "text": "ロ 熱電対温度計は、2種類の異なる金属線を接続し、その両接点の温度差によって生じる熱起電力を利用して温度を測定する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q004-ha",
+          "text": "ハ PID制御において、D動作（微分動作）は偏差の変化速度に応じた操作量を与えるもので、オフセットを解消する機能がある。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>オフセットを解消する機能があるのはI動作（積分動作）である。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q004-ni",
+          "text": "ニ 本質安全防爆構造とは、正常時及び事故時に発生する電気火花等が、対象とするガスに点火しないことが点火試験等で確認された構造をいう。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q004-ho",
+          "text": "ホ 無停電電源装置（UPS）は、停電時に蓄電池から電力を供給し、制御システム等のダウンを防ぐために設置される。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q005",
+      "category": "ガス技術：製造",
+      "subcategory": "熱量調整・燃焼性管理・付臭",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問5",
+      "questionText": "熱量調整、燃焼性管理及び付臭に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q005-i",
+          "text": "イ 熱量調整用の増熱材としてLPGを用いる場合、LPGの気化ガスを都市ガスに混合する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q005-ro",
+          "text": "ロ ウォッベ指数（WI）は、ガスの熱量をガス密度の平方根で除した値であり、燃焼特性を示す指標の一つである。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q005-ha",
+          "text": "ハ 燃焼速度指数（MCP）は、ガスの成分構成から算出される燃焼の速さを示す指標である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q005-ni",
+          "text": "ニ 付臭剤は、ガスが漏えいした際に容易に感知できるよう、独特の臭気（生活臭でないもの）を持たせるために添加される。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q005-ho",
+          "text": "ホ TBM（ターシャリーブチルメルカプタン）は、化学的に非常に不安定であり、土壌透過性が高いという特徴がある。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>TBMは化学的に安定であり、土壌透過性も高い（土壌に吸着されにくい）付臭剤である。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q006",
+      "category": "ガス技術：製造",
+      "subcategory": "保安・防災",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問6",
+      "questionText": "保安及び防災に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q006-i",
+          "text": "イ すべてのガス工作物に対して、最高使用圧力や能力ごとに、事業場の境界までの離隔距離、あるいは学校等の保安物件までの離隔距離が定められている。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>離隔距離の起点は「敷地境界」ではなく「ガス工作物の外面」からである。"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q006-ro",
+          "text": "ロ 埋設されていない液化ガス用貯槽であって貯蔵能力が 1500t（特定事業所に設置される場合にあっては 1000t）以上のものには、適切な防液堤を設置しなければならない。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q006-ha",
+          "text": "ハ ベントスタックは、発生するふく射熱が周囲に障害を与えないよう適切な措置を講ずる必要がある。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q006-ni",
+          "text": "ニ ガスホルダーや液化ガス用貯槽に連絡される配管等には、圧力又は温度の変化による伸縮を吸収するため、自己可とう管や配管ループ等を設置する。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q006-ho",
+          "text": "ホ サイバーセキュリティの確保のため、法令で定める生産能力を有するＬＮＧ受入基地の制御システムは、経済安全保障法に基づく特定重要設備として取り扱われる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q007",
+      "category": "ガス技術：製造",
+      "subcategory": "設備建設",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問7",
+      "questionText": "設備建設に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q007-i",
+          "text": "イ LNGタンクの基礎として、地盤の支持力が不十分な場合には杭基礎が採用される。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q007-ro",
+          "text": "ロ 配管の非破壊検査として行われる放射線透過試験（RT）は、内部きずの検出に適している。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q007-ha",
+          "text": "ハ 鋼製ガスホルダーの建設において、耐圧試験は設計圧力の1.5倍以上の圧力で行われる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q007-ni",
+          "text": "ニ 配管の塗装は、防食を目的として行われるものであり、下塗り、中塗り、上塗りの順に施工される。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q007-ho",
+          "text": "ホ 工事計画の届出が必要な工事において、緊急を要する場合には、届出後すぐに工事を開始することができる。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>工事計画の届出後、原則として30日間の待機期間が必要であり、期間短縮の承認を得ない限りすぐに開始することはできない。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q008",
+      "category": "ガス技術：製造",
+      "subcategory": "設備の操業・保全",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問8",
+      "questionText": "設備の操業及び保全に関する次の記述のうち、誤っているものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q008-i",
+          "text": "イ 設備の日常点検は、機器の異常を早期に発見し、事故を未然に防止することを目的とする。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q008-ro",
+          "text": "ロ 予知保全とは、機器の劣化状況を計測・監視し、故障に至る前に補修等を行う手法である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q008-ha",
+          "text": "ハ 圧力容器等の開放点検は、経年劣化による内部の腐食やきずを確認するために重要である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q008-ni",
+          "text": "ニ 保全記録は、将来の保全計画策定や事故発生時の原因究明に役立つため、適切に保存されなければならない。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q008-ho",
+          "text": "ホ ポンプのキャビテーションを防ぐためには、吸込側の圧力を液の蒸気圧よりも低く保つ必要がある。",
+          "isCorrect": false,
+          "explanation": "<正解>誤っている <解説>キャビテーションを防ぐには、吸込側の圧力を液の蒸気圧よりも「高く」保つ必要がある。"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r6-gijutsu-seizou-q009",
+      "category": "ガス技術：製造",
+      "subcategory": "環境対策",
+      "year": "令和6年度",
+      "source": "令和6年度 甲種 ガス技術 問9",
+      "questionText": "環境対策に関する次の記述のうち、正しいものはいくつあるか。（令和６年度 甲種）",
+      "choices": [
+        {
+          "id": "r6-gijutsu-seizou-q009-i",
+          "text": "イ 排水処理設備において、生物処理法は微生物を利用して有機物を分解・除去する方法である。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q009-ro",
+          "text": "ロ 大気汚染防止法に基づき、ボイラー等の施設から排出される窒素酸化物（NOx）の濃度には排出基準が設けられている。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q009-ha",
+          "text": "ハ LNGの冷熱を利用して空気を液化・分離するプロセスは、省エネルギーに寄与する環境対策の一つである。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q009-ni",
+          "text": "ニ 騒音対策として、騒音の大きい機器の周囲に防音壁を設置したり、建物内に配置したりすることが行われる。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        },
+        {
+          "id": "r6-gijutsu-seizou-q009-ho",
+          "text": "ホ 産業廃棄物は、排出事業者が自らの責任において適正に処理しなければならない。",
+          "isCorrect": true,
+          "explanation": "<正解>正しい"
+        }
+      ],
+      "correctAnswer": "(5) 5つ"
+    }
+  ]
+}

@@ -1,0 +1,378 @@
+{
+  "title": "令和5年度 甲種 ガス技術 問19～問27",
+  "meta": {
+    "title": "令和5年度 甲種 ガス技術 問19～問27",
+    "created": "2026-05-29"
+  },
+  "questions": [
+    {
+      "id": "r5-gijutsu-q019",
+      "category": "ガス技術：消費",
+      "subcategory": "燃焼方式・伝熱",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問19",
+      "questionText": "ガスの燃焼方式及び伝熱に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q019-i",
+          "text": "イ：セミ・ブンゼン燃焼式の一次空気率は、全一次空気燃焼式とブンゼン燃焼式の中間である。",
+          "isCorrect": false,
+          "explanation": "誤り。セミ・ブンゼン燃焼式の一次空気率は、赤火燃焼式とブンゼン燃焼式の中間である。"
+        },
+        {
+          "id": "r5-gijutsu-q019-ro",
+          "text": "ロ：全一次空気燃焼式の機器では、ガスガバナーが必要である。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q019-ha",
+          "text": "ハ：一般に、熱を絶縁する目的で利用する断熱材料には、熱伝導率の非常に小さいものが選ばれる。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q019-ni",
+          "text": "ニ：ガス高速オーブンは、対流伝熱を強制的に行うことで、加熱時間を短縮することができる。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q019-ho",
+          "text": "ホ：絶対温度Ｔ(Ｋ)の黒体面の単位面積から単位時間に放射される熱量は、絶対温度Ｔの４乗に比例する。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r5-gijutsu-q020",
+      "category": "ガス技術：消費",
+      "subcategory": "ガスの燃焼",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問20",
+      "questionText": "ガスの燃焼に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q020-i",
+          "text": "イ：着火源から全部の炎口に、火が移っていかない火移り不良の原因の一つに、ガス圧力が高すぎることがある。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q020-ro",
+          "text": "ロ：ガス機器のインプットは、ノズル口径の２乗、ガス圧力(ゲージ圧力)の平方根、ガス発熱量のそれぞれに比例し、ガス比重に反比例する。",
+          "isCorrect": false,
+          "explanation": "誤り。ガス比重の平方根に反比例する。"
+        },
+        {
+          "id": "r5-gijutsu-q020-ha",
+          "text": "ハ：良好な燃焼状態を確保するため、一次空気率を適正に調整するには、ダンパーやガス圧力の調整を行う方法がある。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q020-ni",
+          "text": "ニ：リフティングは、燃焼速度に比べて混合気体の噴出速度がバランス点を超えて速くなったときに発生する。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q020-ho",
+          "text": "ホ：バーナーの火炎は、供給ガスに組成変動があっても、ウォッベ指数(ＷＩ)と燃焼速度指数(ＭＣＰ)による互換性図で示された互換域の範囲内にあれば、良好に燃焼する。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r5-gijutsu-q021",
+      "category": "ガス技術：消費",
+      "subcategory": "家庭用ガス温水機器",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問21",
+      "questionText": "家庭用ガス温水機器に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q021-i",
+          "text": "イ：瞬間湯沸器の給湯能力24号とは、水温から25℃上昇させたお湯を毎分24L供給する能力のことをいう。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q021-ro",
+          "text": "ロ：ハイブリッド給湯器は、電気ヒートポンプと潜熱回収型ガス給湯器で、必要なお湯の量に合わせて効率的に運転を行うシステムである。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q021-ha",
+          "text": "ハ：給湯暖房用熱源機には、暖房回路に漏水検知機能が搭載されている。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q021-ni",
+          "text": "ニ：浴室暖房乾燥機は、高温暖房端末機器であり、80℃程度の温水を利用している。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q021-ho",
+          "text": "ホ：現在販売されている２缶３水の給湯暖房用熱源機のふろの追いだきは、直接加熱方式で行われる。",
+          "isCorrect": false,
+          "explanation": "誤り。暖房循環水との熱交換で行われる。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r5-gijutsu-q022",
+      "category": "ガス技術：消費",
+      "subcategory": "家庭用ガス機器",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問22",
+      "questionText": "家庭用ガス機器に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q022-i",
+          "text": "イ：現在販売されているこんろのグリル部には、グリル火災低減のために消し忘れ消火機能に加えて、過熱防止機能又は炎あふれ防止機能のいずれか１つ以上の機能が搭載されている。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q022-ro",
+          "text": "ロ：ガスオーブンに電子レンジ機能が内蔵された自動加熱調理機能付きコンビネーションレンジは、加熱したときに食品から発生する赤外線をサーミスターで検知して自動的に調理できるようになっている。",
+          "isCorrect": false,
+          "explanation": "誤り。赤外線を検知して自動的に"
+        },
+        {
+          "id": "r5-gijutsu-q022-ha",
+          "text": "ハ：ファンヒーターやＦＦ暖房機には、温風を室内に対流させる対流ファンと燃焼に必要な空気を取り入れる燃焼ファンが搭載されている。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q022-ni",
+          "text": "ニ：グリドルは、直火で加熱したプレートの放射熱で調理する機器である。",
+          "isCorrect": false,
+          "explanation": "誤り。鉄板を下側から加熱し、"
+        },
+        {
+          "id": "r5-gijutsu-q022-ho",
+          "text": "ホ：回転ドラム式衣類乾燥機には、過熱防止装置、回転ドラムベルト切れ安全装置、ドアスイッチ等の安全装置に加え、冷却運転機能が搭載されている。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    },
+    {
+      "id": "r5-gijutsu-q023",
+      "category": "ガス技術：消費",
+      "subcategory": "業務用ガス機器、ガス冷暖房及びコージェネレーションシステム(CGS)",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問23",
+      "questionText": "コージェネレーションシステム(CGS)に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q023-i",
+          "text": "イ：ガスエンジン式の温水回収タイプは、ガスエンジンの廃熱から55℃前後の温水を回収し、給湯などの熱需要に対応できる。",
+          "isCorrect": false,
+          "explanation": "誤り。85℃前後の温水を回収し、"
+        },
+        {
+          "id": "r5-gijutsu-q023-ro",
+          "text": "ロ：熱主電従運転では電力の負荷に合わせて発電し、廃熱はできるだけ利用する。",
+          "isCorrect": false,
+          "explanation": "誤り。電主熱従運転では"
+        },
+        {
+          "id": "r5-gijutsu-q023-ha",
+          "text": "ハ：CGS が発電した電力と商用電力が連系することで、電源の二重化、安定化を図ることができ、一定の要件を満たせば消防用の非常用電源としても利用できる。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q023-ni",
+          "text": "ニ：CGS の運転方式であるピークカット運転は、設備の年間稼働率が高くなるため、経済性に優れている。",
+          "isCorrect": false,
+          "explanation": "誤り。ベースロード運転は、"
+        },
+        {
+          "id": "r5-gijutsu-q023-ho",
+          "text": "ホ：原料が天然ガスである都市ガスを燃料とするCGS は、SOx、NOx、ばいじんの発生がなく、環境の保全に寄与する。",
+          "isCorrect": false,
+          "explanation": "誤り。NOx、ばいじんの発生が少なく、"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r5-gijutsu-q024",
+      "category": "ガス技術：消費",
+      "subcategory": "換気及び一酸化炭素(CO)中毒",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問24",
+      "questionText": "換気に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q024-i",
+          "text": "イ：機械換気における第２種換気は、２つの送風機を用いることで換気量の確保が可能であり、給気量及び排気量の割合を変化させることにより、室内圧を正圧又は負圧に調整できる。",
+          "isCorrect": false,
+          "explanation": "誤り。第１種換気は、"
+        },
+        {
+          "id": "r5-gijutsu-q024-ro",
+          "text": "ロ：機械換気における局所換気方式は、空気の汚れの源が限定されている場合に効果がある。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q024-ha",
+          "text": "ハ：自然換気回数は、同一容積の部屋であれば自然換気量の大きい方が少なくなる。",
+          "isCorrect": false,
+          "explanation": "誤り。大きい方が多くなる。"
+        },
+        {
+          "id": "r5-gijutsu-q024-ni",
+          "text": "ニ：調理室の必要換気量は下記の式で表される。排気フードがない場合、定数は60を使用する。必要換気量(m3/h)＝定数×理論排ガス量(m3/kWh)×燃料消費量(kW)",
+          "isCorrect": false,
+          "explanation": "誤り。定数は40を使用する。"
+        },
+        {
+          "id": "r5-gijutsu-q024-ho",
+          "text": "ホ：ガス機器を使用する部屋には、必ず機械換気設備を設けなければならない。",
+          "isCorrect": false,
+          "explanation": "誤り。換気設備を設けなければならない。"
+        }
+      ],
+      "correctAnswer": "(1) 1つ"
+    },
+    {
+      "id": "r5-gijutsu-q025",
+      "category": "ガス技術：消費",
+      "subcategory": "ガス機器の給排気方式",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問25",
+      "questionText": "ガス機器の給排気方式に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q025-i",
+          "text": "イ：小さな室にガス消費量の大きなCF式機器を設置する場合、給気口に加えて、上部に換気口を設ける必要がある。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q025-ro",
+          "text": "ロ：FE式機器では、排気筒の横引き長さと高さの関係は特に規定がなく、また排気筒トップの位置も風圧帯内に設置できる。",
+          "isCorrect": false,
+          "explanation": "誤り。排気筒の横引き長さは、"
+        },
+        {
+          "id": "r5-gijutsu-q025-ha",
+          "text": "ハ：BF式機器の燃焼室は、設置される部屋の空気から遮断されているため、専用の給気口、換気口を設ける必要はない。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q025-ni",
+          "text": "ニ：共用給排気ダクトに取り付けるBF式機器は、低酸素濃度下での燃焼となるため、共用給排気ダクト用ガス機器として検査に合格したものでなければならない。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q025-ho",
+          "text": "ホ：FF式機器の本体は、屋内であれば、外壁に面する場所に加えて外壁から離れている場所にも設置できる。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    },
+    {
+      "id": "r5-gijutsu-q026",
+      "category": "ガス技術：消費",
+      "subcategory": "家庭用ガス機器の安全装置",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問26",
+      "questionText": "家庭用ガス機器の安全装置に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q026-i",
+          "text": "イ：現在販売されているすべてのガス機器には、立ち消え安全装置と消し忘れ防止装置が搭載されている。",
+          "isCorrect": false,
+          "explanation": "誤り。ほとんどのガス機器には、"
+        },
+        {
+          "id": "r5-gijutsu-q026-ro",
+          "text": "ロ：CF式機器及びFE式機器では、不完全燃焼防止装置の作動基準として、機器が設置されている部屋の雰囲気空気中の一酸化炭素濃度(体積CO%)が定められており、さらにFE式機器では、機器が設置されている以外の部屋についても同様に定められている。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q026-ha",
+          "text": "ハ：開放式小型湯沸器の不完全燃焼防止装置は、立ち消え安全装置の熱電対に加えて、別の熱電対を取り付けることで、一次空気不足や二次空気不足によりCOが発生する前にガスを遮断する。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q026-ni",
+          "text": "ニ：現在販売されているBF式ふろがまに搭載されている冠水検知装置には、電極式とバイメタル式がある。",
+          "isCorrect": false,
+          "explanation": "誤り。電極式とフロート式がある。"
+        },
+        {
+          "id": "r5-gijutsu-q026-ho",
+          "text": "ホ：温水機器が空だきした場合、機器が損傷する前に自動的にバーナーへのガスを遮断する装置を空だき防止装置という。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        }
+      ],
+      "correctAnswer": "(3) 3つ"
+    },
+    {
+      "id": "r5-gijutsu-q027",
+      "category": "ガス技術：消費",
+      "subcategory": "ガス栓、接続具及び警報器",
+      "year": "令和5年度",
+      "source": "令和5年度 甲種 ガス技術 問27",
+      "questionText": "ガス栓、接続具及び警報器に関する次の記述のうち、正しいものはいくつあるか。",
+      "choices": [
+        {
+          "id": "r5-gijutsu-q027-i",
+          "text": "イ：ヒューズガス栓には、作動流量の異なるいくつかの種類があり、使用機器のガス消費量等に応じて選択することが望ましい。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q027-ro",
+          "text": "ロ：テーブルこんろとガス栓の接続には、ガスソフトコードが使用される。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q027-ha",
+          "text": "ハ：屋外に設置する給湯器は、一般に機器接続ガス栓を用いて、ガス配管と接続される。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q027-ni",
+          "text": "ニ：ガス警報器には、誤報対策として、一過性のガスによる警報をカットする機能を搭載したものがある。",
+          "isCorrect": true,
+          "explanation": "正しい。"
+        },
+        {
+          "id": "r5-gijutsu-q027-ho",
+          "text": "ホ：ガス警報器は、検知する都市ガスが空気より軽い場合には天井から60cm以内に設置し、空気より重い場合には床面から60cm以内に設置する。",
+          "isCorrect": false,
+          "explanation": "誤り。天井から30cm以内に設置し、"
+        }
+      ],
+      "correctAnswer": "(4) 4つ"
+    }
+  ]
+}
