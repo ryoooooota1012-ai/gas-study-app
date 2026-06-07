@@ -3297,3 +3297,16 @@ kbd {
   border-radius: 3px;
 }
 
+/* ===== スマホ縦画面 モーダル調整 ===== */
+@media (max-width: 520px) and (orientation: portrait) {
+  /* --top クラスを中央寄せに上書き */
+  .modal-overlay--top {
+    align-items: center;
+    padding: 16px 12px;
+  }
+  /* モーダル自体の最大高さを画面に合わせてスクロール可能に */
+  .modal-box {
+    max-height: 82dvh; /* dvh = dynamic viewport height（ブラウザUIを除いた実際の高さ） */
+  }
+}
+
