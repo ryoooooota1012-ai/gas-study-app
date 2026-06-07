@@ -3340,10 +3340,10 @@ kbd {
 
   /* ── モーダル：オーバーレイ自体をヘッダー下から開始 ── */
   .modal-overlay--top {
-    top: 105px;          /* スマホ3段ヘッダーの高さ分だけ下げる */
-    align-items: flex-start;
-    padding: 6px 10px;
+    top: 105px !important; /* inset:0 の top:0 を強制上書き */
+    align-items: flex-start !important;
+    padding: 6px 10px !important;
   }
-  .modal-box { max-height: calc(100vh - 118px); }
+  .modal-box { max-height: 80vh !important; }
 }
 
