@@ -7060,6 +7060,22 @@ function saveEditModal() {
     // 現在表示中の選択肢だった場合、画面を再描画
     const curDi = state.drillQueue?.[state.drillIndex];
     if (curDi?.question.id === q.id) {
+      // 答え合わせ済みの場合、保存された正誤を最新の isCorrect で再計算
+      const savedAns = state.drillAnswers[state.drillIndex];
+      if (savedAns) {
+        const newActuallyCorrect = curDi.choice.isCorrect;
+        const newIsRight = (savedAns.userSaysCorrect === newActuallyCorrect);
+        // 正誤が変わったら drillStats も補正
+        if (newIsRight !== savedAns.isRight) {
+          if (newIsRight) state.drillStats.correct = Math.min(state.drillStats.total, state.drillStats.correct + 1);
+          else            state.drillStats.correct = Math.max(0, state.drillStats.correct - 1);
+        }
+        state.drillAnswers[state.drillIndex] = {
+          ...savedAns,
+          actuallyCorrect: newActuallyCorrect,
+          isRight: newIsRight,
+        };
+      }
       renderDrillChoice();
     }
   }
