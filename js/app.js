@@ -8248,9 +8248,19 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   });
   document.getElementById('btn-end-drill').addEventListener('click',   endDrillSession);
 
-  // 答え合わせ後にボタン以外をタップで次の問題へ（タッチデバイスのみ）
-  document.getElementById('screen-study').addEventListener('touchend', e => {
-    if (!state.checked) return;
+  // 答え合わせ後にボタン以外をタップで次の問題へ（スクロール時は無効）
+  let _studyTouchStartY = 0;
+  let _studyTouchScrolled = false;
+  const _studyScreen = document.getElementById('screen-study');
+  _studyScreen.addEventListener('touchstart', e => {
+    _studyTouchStartY   = e.touches[0].clientY;
+    _studyTouchScrolled = false;
+  }, { passive: true });
+  _studyScreen.addEventListener('touchmove', e => {
+    if (Math.abs(e.touches[0].clientY - _studyTouchStartY) > 8) _studyTouchScrolled = true;
+  }, { passive: true });
+  _studyScreen.addEventListener('touchend', e => {
+    if (!state.checked || _studyTouchScrolled) return;
     const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
     if (e.target.closest(INTERACTIVE)) return;
     e.preventDefault();
