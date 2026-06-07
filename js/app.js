@@ -8223,6 +8223,15 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   });
   document.getElementById('btn-end-drill').addEventListener('click',   endDrillSession);
 
+  // 答え合わせ後にボタン以外をタップで次の問題へ（タッチデバイスのみ）
+  document.getElementById('screen-study').addEventListener('touchend', e => {
+    if (!state.checked) return;
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
+    if (e.target.closest(INTERACTIVE)) return;
+    e.preventDefault();
+    nextQuestion();
+  }, { passive: false });
+
   // Study actions
   document.getElementById('btn-check').addEventListener('click', checkAnswers);
   document.getElementById('btn-next').addEventListener('click',  nextQuestion);
