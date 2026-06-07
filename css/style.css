@@ -3289,6 +3289,12 @@ body.tier-border-diamond .card {
   transition: opacity .2s;
 }
 .kb-guide:hover { opacity: 1; }
+/* タッチ端末ではPC用を隠してスマホ用を表示 */
+.kb-guide-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .kb-guide-pc    { display: none; }
+  .kb-guide-touch { display: flex; }
+}
 .kb-item { display: inline-flex; align-items: center; gap: 3px; font-size: .72rem; color: var(--text-3); white-space: nowrap; }
 .kb-sep { color: var(--border); font-size: .8rem; }
 kbd {
