@@ -5682,7 +5682,12 @@ function showSyncStatus(msg) {
 async function gdriveUpload(silent = false) {
   try {
     if (!_gdriveToken) {
-      if (silent) return;
+      if (silent) {
+        if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
+          showSyncStatus('⚠️ Drive 未接続のため保存されませんでした（設定から再接続してください）');
+        }
+        return;
+      }
       _gdriveToken = await _gdriveRequestToken(false);
       _updateDriveBtnUI();
     }
