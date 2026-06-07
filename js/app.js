@@ -5619,10 +5619,10 @@ function _gisLoaded() {
       error_callback: err => console.warn('[GDrive] token error:', err?.type),
     });
 
-    // 過去に接続済みの場合のみサイレントでトークン取得を試みる
-    // error_callback を設定したことで iOS でもクラッシュしなくなった
+    // サイレントトークン取得はiOS Chromeでページクラッシュの原因になるため行わない
+    // ユーザーが「Drive 再接続する」を押したときのみトークンを取得する
     if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
-      _gisTokenClient.requestAccessToken({ prompt: '' });
+      _updateDriveBtnUI(true);
     }
   } catch(e) { console.warn('[GDrive] GIS init error', e); }
 }
@@ -5778,9 +5778,29 @@ async function gdriveAutoDownload() {
 
     localStorage.setItem(GDRIVE_SYNCED_KEY, driveTime.toString());
     showSyncStatus('✅ 最新データを読み込みました');
-    setTimeout(() => location.reload(), 1200);
+    // location.reload() はiOSでクラッシュするため、アプリ状態をその場で再初期化
+    setTimeout(() => _reloadAppState(), 800);
   } catch(e) {
     console.error('[GDrive download]', e);
+  }
+}
+
+/** ページリロードなしでアプリ状態を再初期化（Drive同期後に使用） */
+async function _reloadAppState() {
+  try {
+    loadAppSettings();
+    loadProgress();
+    loadDrillPresets();
+    loadHighlights();
+    state.bookmarks       = loadBookmarks();
+    state.choiceBookmarks = loadChoiceBookmarks();
+    await loadCalcProblems();
+    await loadStoredQuestions();
+    updateHeaderStats();
+    renderHome();
+    showSyncStatus('✅ データを反映しました');
+  } catch(e) {
+    console.error('[GDrive] reloadAppState error', e);
   }
 }
 
@@ -5888,8 +5908,8 @@ async function importProgress(file) {
         await idbSet(key, val);
       }
 
-      alert('インポート完了！アプリを再読み込みします。');
-      location.reload();
+      alert('インポート完了！');
+      await _reloadAppState();
     } catch(err) {
       alert('ファイルの形式が正しくありません: ' + err.message);
     }
