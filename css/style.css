@@ -1956,7 +1956,20 @@ body.tier-border-diamond .card {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 24px 64px rgba(0,0,0,.5);
+}
+/* top配置モーダル：dvhで正確なビューポート高さを使用 */
+.modal-overlay--top .modal-box {
+  max-height: calc(100dvh - 32px);
+}
+/* ドリル設定ステップ：flex columnで内部スクロールを有効化 */
+#drill-setup-step1,
+#drill-setup-step2 {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-header {
