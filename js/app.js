@@ -8262,6 +8262,26 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   });
   document.getElementById('btn-end-drill').addEventListener('click',   endDrillSession);
 
+  // 壁打ち：答え合わせ後にボタン以外をタップで次の選択肢へ（スクロール時は無効）
+  let _drillTouchStartY = 0;
+  let _drillTouchScrolled = false;
+  const _drillScreen = document.getElementById('screen-drill');
+  _drillScreen.addEventListener('touchstart', e => {
+    _drillTouchStartY   = e.touches[0].clientY;
+    _drillTouchScrolled = false;
+  }, { passive: true });
+  _drillScreen.addEventListener('touchmove', e => {
+    if (Math.abs(e.touches[0].clientY - _drillTouchStartY) > 8) _drillTouchScrolled = true;
+  }, { passive: true });
+  _drillScreen.addEventListener('touchend', e => {
+    if (!state.drillAnswered || _drillTouchScrolled) return;
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
+    if (e.target.closest(INTERACTIVE)) return;
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.getElementById('btn-drill-next').click();
+  }, { passive: false });
+
   // 答え合わせ後にボタン以外をタップで次の問題へ（スクロール時は無効）
   let _studyTouchStartY = 0;
   let _studyTouchScrolled = false;
