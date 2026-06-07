@@ -3338,11 +3338,12 @@ kbd {
   .hd-today-main span:first-child { font-size: .95rem; }
   .hd-next-tier-msg { order: 3; flex-basis: 100%; text-align: center; font-size: .6rem; margin-top: 1px; }
 
-  /* ── モーダル：ヘッダー直下から開始・スクロール対応 ── */
+  /* ── モーダル：オーバーレイ自体をヘッダー下から開始 ── */
   .modal-overlay--top {
+    top: 105px;          /* スマホ3段ヘッダーの高さ分だけ下げる */
     align-items: flex-start;
-    padding: 106px 10px 10px; /* 106px = スマホ3段ヘッダーの高さ */
+    padding: 6px 10px;
   }
-  .modal-box { max-height: calc(100dvh - 116px); }
+  .modal-box { max-height: calc(100vh - 118px); }
 }
 
