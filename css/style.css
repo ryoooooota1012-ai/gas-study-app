@@ -1550,24 +1550,25 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .cal-cell.cal-lv4 { background:#86efac; border-color:#86efac; }
 
 /* ===== Google Drive 同期ステータス ===== */
-/* position:absolute でヘッダー右端に浮かせる → flex レイアウトに一切影響しない */
+/* ヘッダー直下の右上に fixed 表示 → ヘッダーのレイアウトに一切影響しない */
 .sync-status {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: .78rem;
+  position: fixed;
+  top: 62px;
+  right: 16px;
+  z-index: 190;
+  font-size: .82rem;
   font-weight: 600;
-  color: rgba(255,255,255,.95);
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.25);
+  color: #fff;
+  background: #1a2035ee;
+  border: 1px solid rgba(99,102,241,.5);
   border-radius: 20px;
-  padding: 3px 12px;
+  padding: 6px 18px;
   white-space: nowrap;
-  max-width: 220px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
   opacity: 0;
   transition: opacity .2s;
 }
@@ -1576,8 +1577,12 @@ mark.q-highlight-red:hover { color: #ef4444; }
   animation: sync-fadein .2s ease;
 }
 @keyframes sync-fadein {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* スマホ：3段ヘッダーは高さ105px */
+@media (max-width: 520px) and (orientation: portrait) {
+  .sync-status { top: 110px; }
 }
 #btn-drive-signin {
   display: flex;
