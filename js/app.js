@@ -5682,15 +5682,15 @@ function _updateDriveBtnUI(connected = false) {
   }
 }
 
-/** 同期ステータスのトースト表示 */
+/** 同期ステータス表示（ヘッダー右端の固定枠内で opacity トグル） */
 let _syncTimer = null;
 function showSyncStatus(msg) {
   const el = document.getElementById('sync-status');
   if (!el) return;
   el.textContent = msg;
-  el.classList.remove('hidden');
+  el.classList.add('sync-active');
   clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => el.classList.add('hidden'), 5000);
+  _syncTimer = setTimeout(() => el.classList.remove('sync-active'), 5000);
 }
 
 /** 全データを Drive にアップロード（silent=true なら未サインインは無視） */
