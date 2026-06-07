@@ -3297,16 +3297,49 @@ kbd {
   border-radius: 3px;
 }
 
-/* ===== スマホ縦画面 モーダル調整 ===== */
+/* ===== スマホ縦画面 全体調整 ===== */
 @media (max-width: 520px) and (orientation: portrait) {
-  /* --top クラスを中央寄せに上書き */
-  .modal-overlay--top {
+
+  /* ── ヘッダー 3段レイアウト ── */
+  .app-header { padding: 7px 10px 6px; }
+  .app-header-inner {
+    flex-direction: column;
     align-items: center;
-    padding: 16px 12px;
+    gap: 4px;
   }
-  /* モーダル自体の最大高さを画面に合わせてスクロール可能に */
-  .modal-box {
-    max-height: 82dvh; /* dvh = dynamic viewport height（ブラウザUIを除いた実際の高さ） */
+
+  /* ① タイトル行 */
+  .app-header-inner > div:first-child { order: 1; text-align: center; }
+  .app-header-inner > div:first-child > div { font-size: .85rem !important; white-space: nowrap; }
+  .hd-logo-icon { font-size: 1.2rem; }
+
+  /* ② ナビボタン行 */
+  .hd-icon-btns { order: 2; width: 100%; justify-content: space-between; gap: 0; }
+  .hd-icon-btn { flex: 1; min-width: 0; padding: 4px 1px; font-size: .82rem; border-radius: 6px; }
+  .hd-icon-btn span { font-size: .48rem; }
+
+  /* ③ 統計行：absolute → static 横並び */
+  .hd-today-stats {
+    position: static;
+    transform: none;
+    order: 3;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 0;
+    pointer-events: none;
   }
+  .hd-today-sub   { order: 1; font-size: .68rem; margin-top: 0; }
+  .hd-today-main  { order: 2; font-size: .85rem; line-height: 1.2; }
+  .hd-today-main span:first-child { font-size: .95rem; }
+  .hd-next-tier-msg { order: 3; flex-basis: 100%; text-align: center; font-size: .6rem; margin-top: 1px; }
+
+  /* ── モーダルを中央寄せ・スクロール対応 ── */
+  .modal-overlay--top { align-items: center; padding: 16px 12px; }
+  .modal-box { max-height: 82dvh; }
 }
 
