@@ -1550,10 +1550,12 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .cal-cell.cal-lv4 { background:#86efac; border-color:#86efac; }
 
 /* ===== Google Drive 同期ステータス ===== */
-/* hd-icon-btns の外に固定幅で確保しておき opacity で表示切替 → ボタンが動かない */
+/* position:absolute でヘッダー右端に浮かせる → flex レイアウトに一切影響しない */
 .sync-status {
-  flex: 0 0 auto;
-  width: 200px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: .78rem;
   font-weight: 600;
   color: rgba(255,255,255,.95);
@@ -1562,9 +1564,9 @@ mark.q-highlight-red:hover { color: #ef4444; }
   border-radius: 20px;
   padding: 3px 12px;
   white-space: nowrap;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: center;
   pointer-events: none;
   opacity: 0;
   transition: opacity .2s;
@@ -1576,10 +1578,6 @@ mark.q-highlight-red:hover { color: #ef4444; }
 @keyframes sync-fadein {
   from { opacity: 0; }
   to   { opacity: 1; }
-}
-/* スマホではヘッダーが縦並びになるため非表示 */
-@media (max-width: 520px) and (orientation: portrait) {
-  .sync-status { display: none !important; }
 }
 #btn-drive-signin {
   display: flex;
