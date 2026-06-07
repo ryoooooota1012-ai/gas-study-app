@@ -1570,6 +1570,11 @@ mark.q-highlight-red:hover { color: #ef4444; }
   pointer-events: none;
 }
 .sync-status.hidden { display: none; }
+#btn-drive-signin {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
 #btn-drive-signin.btn-connected {
   color: #4ade80;
   border-color: #4ade80;
