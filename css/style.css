@@ -700,9 +700,10 @@ pre {
 
 .choice-item-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 8px 14px;
   background: var(--bg-input);
 }
 .choice-label {
@@ -710,21 +711,19 @@ pre {
   font-weight: 700;
   color: var(--primary-light);
   min-width: 22px;
-  padding-top: 3px;
   flex-shrink: 0;
 }
 .choice-item-text {
-  flex: 1;
   font-size: .92rem;
   line-height: 1.75;
   color: var(--text-1);
+  padding: 8px 14px 12px;
 }
 .choice-item-btns {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
-  align-items: flex-start;
-  padding-top: 2px;
+  align-items: center;
 }
 .choice-judge-btn {
   width: 46px;
@@ -3351,18 +3350,8 @@ kbd {
   .hd-next-tier-msg { order: 3; flex-basis: 100%; text-align: center; font-size: .6rem; margin-top: 1px; }
 
   /* ── 出題画面：選択肢テキストを全幅、ボタンを下段に ── */
-  .choice-item-top {
-    flex-wrap: wrap;
-    gap: 6px 10px;
-  }
   .choice-item-text {
     font-size: .95rem;
-  }
-  .choice-item-btns {
-    flex-basis: 100%;       /* 強制改行して下段へ */
-    justify-content: flex-end;
-    padding-top: 0;
-    padding-left: 32px;     /* a. ラベル分のインデント */
   }
 
   /* ── モーダル：オーバーレイ自体をヘッダー下から開始 ── */

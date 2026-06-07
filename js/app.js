@@ -2614,8 +2614,8 @@ function createChoiceItemCalc(choice, label) {
   bmBtn.title = 'この選択肢をブックマーク';
   bmBtn.addEventListener('click', e => { e.stopPropagation(); toggleChoiceBookmark(choice.id); });
 
-  top.append(lbl, txt, bmBtn);
-  item.appendChild(top);
+  top.append(lbl, bmBtn);
+  item.append(top, txt);
   item.addEventListener('click', () => selectCalcAnswer(choice.id));
   return item;
 }
@@ -2851,13 +2851,13 @@ function createChoiceItem(choice, label) {
   bmBtn.addEventListener('click', e => { e.stopPropagation(); toggleChoiceBookmark(choice.id); });
 
   btns.append(maruBtn, batsuBtn, bmBtn);
-  top.append(lbl, txt, btns);
+  top.append(lbl, btns);
 
   // 選択肢ごとの直近3回ドット（テキスト行の上に表示）
   const choiceHistDots = makeHistoryDots(state.progress[choice.id]);
   choiceHistDots.classList.add('choice-hist-dots');
 
-  item.append(choiceHistDots, top);
+  item.append(choiceHistDots, top, txt);
   return item;
 }
 
@@ -8264,6 +8264,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
     if (e.target.closest(INTERACTIVE)) return;
     e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'instant' });
     nextQuestion();
   }, { passive: false });
 
