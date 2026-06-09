@@ -201,16 +201,16 @@ body {
   filter: drop-shadow(0 0 12px #fff) drop-shadow(0 0 22px rgba(160,215,255,1)) drop-shadow(0 0 36px rgba(120,185,255,.75));
 }
 .app-header.hd-tier-diamond {
-  background: linear-gradient(135deg,#080e20 0%,#0e2050 14%,#1848b0 26%,#38c8f8 34%,#b040f8 42%,#38c8f8 50%,#1848b0 64%,#0e2050 82%,#080e20 100%);
+  background: linear-gradient(135deg,#080e20 0%,#0e2050 12%,#1848b0 24%,#58bcf8 32%,#ddf4ff 39%,#b060f8 45%,#ddf4ff 51%,#58bcf8 58%,#1848b0 70%,#0e2050 84%,#080e20 100%);
   background-size: 250% 100%;
   border-bottom-color: #90eeff;
   box-shadow: 0 2px 36px rgba(56,200,248,.85),0 0 65px rgba(176,64,248,.55),0 0 90px rgba(56,200,248,.25),inset 0 1px 0 rgba(255,255,255,.65);
   animation: tier-diamond-mountain 4s linear infinite;
 }
 .hd-tier-diamond .hd-num {
-  background: linear-gradient(160deg,#ff7070 0%,#ffbb30 16%,#ffee44 32%,#55ee66 48%,#22ddee 64%,#8888ff 80%,#dd66ff 100%);
+  background: linear-gradient(160deg,#ffccdd 0%,#ffdd88 18%,#ffffcc 34%,#aaf0ff 50%,#aabbff 66%,#e0aaff 82%,#ffffff 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 3px rgba(0,0,0,.95)) drop-shadow(0 0 10px rgba(255,140,140,.9)) drop-shadow(0 0 22px rgba(80,210,255,1)) drop-shadow(0 0 40px rgba(185,80,255,.9));
+  filter: drop-shadow(0 0 3px rgba(0,0,0,.95)) drop-shadow(0 0 10px rgba(200,180,255,.9)) drop-shadow(0 0 22px rgba(80,210,255,1)) drop-shadow(0 0 40px rgba(185,80,255,.9));
 }
 .app-header.hd-tier-diamond .hd-logo-icon {
   filter: hue-rotate(195deg) saturate(2.5) brightness(3.2) drop-shadow(0 0 10px rgba(80,210,255,1)) drop-shadow(0 0 22px rgba(185,80,255,.9));
@@ -2367,9 +2367,9 @@ body.tier-border-diamond .card {
 /* ===== フィルター完全習得（全問3連続正解）＝ダイヤ輝きエフェクト ===== */
 .top-filter-item.mastered {
   background: linear-gradient(135deg,
-    #080e20 0%, #0e2050 10%, #1848b0 22%,
-    #38c8f8 32%, #b040f8 42%, #38c8f8 52%,
-    #1848b0 64%, #0e2050 80%, #080e20 100%
+    #080e20 0%, #0e2050 10%, #1848b0 21%,
+    #58bcf8 30%, #ddf4ff 37%, #b060f8 43%, #ddf4ff 49%,
+    #58bcf8 56%, #1848b0 68%, #0e2050 82%, #080e20 100%
   );
   background-size: 200% 200%;
   border-color: #90eeff;
@@ -2385,7 +2385,7 @@ body.tier-border-diamond .card {
   animation: fmi-bg 3s linear infinite, fmi-pulse-bright 1.5s ease-in-out alternate infinite;
 }
 .top-filter-item.mastered .top-filter-item-cnt {
-  background: linear-gradient(160deg, #ff9090 0%, #ffcc44 25%, #aaffaa 50%, #44ddff 75%, #cc88ff 100%);
+  background: linear-gradient(160deg, #ffccdd 0%, #ffdd88 25%, #aaf0ff 50%, #88ccff 75%, #e0aaff 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   opacity: 1;
   animation: fmi-hue 3s linear infinite;
