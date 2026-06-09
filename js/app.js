@@ -24,6 +24,7 @@ let drillSetupSections  = new Set();
 let drillSetupLimit          = null;
 let drillSetupMode           = 'all'; // 'all' | 'weak'
 let drillSetupExcludeStrong  = false; // 3連続正解済みを除外
+let drillSetupPrioritizeNew  = false; // 未出題の問題を優先
 let drillPresets             = [null, null, null]; // フィルタープリセット（アセット）
 let drillPresetActiveSlot    = null; // 現在適用中のスロット番号 (0-2 or null)
 let calcProblems             = []; // 計算問題練習データ
@@ -3859,8 +3860,11 @@ function applyDrillPreset(slot) {
     drillSetupYears.clear();
     drillSetupSections.clear();
     drillSetupExcludeStrong = false;
+    drillSetupPrioritizeNew = false;
     const exChk = document.getElementById('drill-setup-exclude-strong');
     if (exChk) exChk.checked = false;
+    const newChk = document.getElementById('drill-setup-prioritize-new');
+    if (newChk) newChk.checked = false;
     renderDrillSetupFilters();
     return;
   }
@@ -3872,8 +3876,11 @@ function applyDrillPreset(slot) {
   drillSetupSections.clear();
   (preset.sections || []).forEach(s => drillSetupSections.add(s));
   drillSetupExcludeStrong = preset.excludeStrong || false;
+  drillSetupPrioritizeNew = preset.prioritizeNew || false;
   const exChk = document.getElementById('drill-setup-exclude-strong');
   if (exChk) exChk.checked = drillSetupExcludeStrong;
+  const newChk = document.getElementById('drill-setup-prioritize-new');
+  if (newChk) newChk.checked = drillSetupPrioritizeNew;
   renderDrillSetupFilters();
 }
 
@@ -3883,6 +3890,7 @@ function registerDrillPreset(slot) {
     years:         [...drillSetupYears],
     sections:      [...drillSetupSections],
     excludeStrong: drillSetupExcludeStrong,
+    prioritizeNew: drillSetupPrioritizeNew,
   };
   drillPresetActiveSlot = slot;
   saveDrillPresetsStorage();
@@ -3896,8 +3904,11 @@ function releaseDrillPreset(slot) {
   drillSetupYears.clear();
   drillSetupSections.clear();
   drillSetupExcludeStrong = false;
+  drillSetupPrioritizeNew = false;
   const exChk = document.getElementById('drill-setup-exclude-strong');
   if (exChk) exChk.checked = false;
+  const newChk = document.getElementById('drill-setup-prioritize-new');
+  if (newChk) newChk.checked = false;
   saveDrillPresetsStorage();
   renderDrillSetupFilters();
 }
@@ -3910,9 +3921,12 @@ function openDrillSetupModal(mode = 'all', triggerEl = null) {
   drillSetupSections.clear();
   drillSetupLimit          = null;
   drillSetupExcludeStrong  = false;
+  drillSetupPrioritizeNew  = false;
   drillPresetActiveSlot    = null;
   const exChk = document.getElementById('drill-setup-exclude-strong');
   if (exChk) exChk.checked = false;
+  const newChk = document.getElementById('drill-setup-prioritize-new');
+  if (newChk) newChk.checked = false;
   // タイトルをモードに応じて変更
   document.querySelector('#modal-drill-setup .modal-title').textContent =
     mode === 'weak' ? '🔥 苦手集中 設定' : '🥊 壁打ち設定';
@@ -4063,6 +4077,13 @@ function buildDrillQueueCustom() {
   for (let i = queue.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [queue[i], queue[j]] = [queue[j], queue[i]];
+  }
+  // 未出題を優先: シャッフル後に未出題→既出済みの順へ並び替え（各グループ内はランダムを維持）
+  if (drillSetupPrioritizeNew) {
+    const isNew = ({choice}) => !(state.progress[choice.id]?.history?.length > 0);
+    const unasked  = queue.filter(item =>  isNew(item));
+    const answered = queue.filter(item => !isNew(item));
+    queue.splice(0, queue.length, ...unasked, ...answered);
   }
   return queue;
 }
@@ -8018,6 +8039,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('drill-setup-exclude-strong').addEventListener('change', e => {
     drillSetupExcludeStrong = e.target.checked;
   });
+  document.getElementById('drill-setup-prioritize-new').addEventListener('change', e => {
+    drillSetupPrioritizeNew = e.target.checked;
+  });
   document.getElementById('btn-drill-preset-action').addEventListener('click', () => {
     const slot = parseInt(document.querySelector('input[name="drill-preset-slot"]:checked')?.value ?? '0');
     if (drillPresetActiveSlot !== null && drillPresetActiveSlot === slot) {
@@ -8035,8 +8059,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
         drillSetupYears.clear();
         drillSetupSections.clear();
         drillSetupExcludeStrong = false;
+        drillSetupPrioritizeNew = false;
         const exChk = document.getElementById('drill-setup-exclude-strong');
         if (exChk) exChk.checked = false;
+        const newChk = document.getElementById('drill-setup-prioritize-new');
+        if (newChk) newChk.checked = false;
         renderDrillSetupFilters();
       } else {
         renderDrillPresetArea();

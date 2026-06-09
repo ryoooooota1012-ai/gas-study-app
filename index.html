@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260607p">
+  <link rel="stylesheet" href="css/style.css?v=20260607q">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -871,10 +871,14 @@
           <div id="drill-setup-sections" class="drill-setup-chips"></div>
         </div>
       </div>
-      <div style="padding:10px 18px 0;border-top:1px solid var(--border);">
+      <div style="padding:10px 18px 0;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px 20px;">
         <label class="study-calc-mode-label">
           <input type="checkbox" id="drill-setup-exclude-strong">
           <span>3連続正解済みを除外</span>
+        </label>
+        <label class="study-calc-mode-label">
+          <input type="checkbox" id="drill-setup-prioritize-new">
+          <span>未出題を優先する</span>
         </label>
       </div>
       <div class="modal-footer">
@@ -1382,7 +1386,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260607o"></script>
+<script src="js/app.js?v=20260607p"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
