@@ -7726,6 +7726,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     // Enterキー: 答え合わせ または 次の問題
     if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopImmediatePropagation(); // 画面遷移後に result ハンドラが同イベントを拾わないよう伝搬を止める
       const nextArea = document.getElementById('next-area');
       if (nextArea && !nextArea.classList.contains('hidden')) {
         nextQuestion();
@@ -8237,6 +8238,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       case 'Enter':
       case 'ArrowRight':
         e.preventDefault();
+        e.stopImmediatePropagation(); // 画面遷移後に result ハンドラが同イベントを拾わないよう伝搬を止める
         if (state.drillAnswered) nextDrill(); else skipDrill();
         break;
       case 'Backspace':
