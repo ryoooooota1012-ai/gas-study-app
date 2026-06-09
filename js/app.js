@@ -2969,11 +2969,11 @@ function checkAnswers() {
         exp.innerHTML = renderText(c.explanation || '');
         const aiBtn = document.createElement('button');
         aiBtn.className = 'btn-ai-explain';
-        aiBtn.textContent = '🤖 AI解説';
+        aiBtn.textContent = '📋 AI解説プロンプト';
         aiBtn.addEventListener('click', () => {
           openExplainOnClaude(q, c, true, 'maru');
           const orig = aiBtn.textContent;
-          aiBtn.textContent = '✅ コピー済み';
+          aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
           setTimeout(() => { aiBtn.textContent = orig; }, 3000);
         });
         resultRow.append(lbl, exp, aiBtn);
@@ -2992,11 +2992,11 @@ function checkAnswers() {
         exp.innerHTML = renderText(c.explanation || '');
         const aiBtn = document.createElement('button');
         aiBtn.className = 'btn-ai-explain';
-        aiBtn.textContent = '🤖 AI解説';
+        aiBtn.textContent = '📋 AI解説プロンプト';
         aiBtn.addEventListener('click', () => {
           openExplainOnClaude(q, c, false, 'maru');
           const orig = aiBtn.textContent;
-          aiBtn.textContent = '✅ コピー済み';
+          aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
           setTimeout(() => { aiBtn.textContent = orig; }, 3000);
         });
         resultRow.append(lbl, exp, aiBtn);
@@ -3110,7 +3110,7 @@ function checkAnswers() {
 
     const aiBtn = document.createElement('button');
     aiBtn.className = 'btn-ai-explain';
-    aiBtn.textContent = '🤖 AI解説';
+    aiBtn.textContent = '📋 AI解説プロンプト';
     aiBtn.addEventListener('click', () => {
       openExplainOnClaude(q, c, isRight, state.answers[c.id]);
       const orig = aiBtn.textContent;
@@ -6166,12 +6166,9 @@ function renderPendingVerify() {
 
     const verifyBtn = document.createElement('button');
     verifyBtn.className = 'btn btn-outline btn-sm';
-    verifyBtn.textContent = '🤖 AI検証';
+    verifyBtn.textContent = '📋 AI検証プロンプト';
     verifyBtn.addEventListener('click', () => {
       openVerifyOnClaude(q);
-      const orig = verifyBtn.textContent;
-      verifyBtn.textContent = '✅ コピー済み';
-      setTimeout(() => { verifyBtn.textContent = orig; }, 3000);
     });
 
     const delBtn = document.createElement('button');
@@ -6268,12 +6265,11 @@ function openVerifyOnClaude(q, focusChoice) {
     document.execCommand('copy');
     document.body.removeChild(ta);
   }).finally(() => {
-    window.open('https://claude.ai/new', 'claude_verify_tab');
     ['btn-verify-ai', 'btn-verify-ai-drill'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn && !btn.closest('.hidden')) {
         const orig = btn.textContent;
-        btn.textContent = '✅ コピー済み・claude.aiを開きました';
+        btn.textContent = '✅ 検証プロンプトをコピーしました';
         setTimeout(() => { btn.textContent = orig; }, 3000);
       }
     });
@@ -6318,8 +6314,6 @@ function openExplainOnClaude(q, c, isRight, userAnswer) {
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-  }).finally(() => {
-    window.open('https://claude.ai/new', 'claude_explain_tab');
   });
 }
 
