@@ -1954,10 +1954,9 @@ body.tier-border-diamond .card {
   align-items: flex-start;
   padding: 6px 10px;
 }
-/* 壁打ち設定モーダル：ヘッダー下の残り全高を使いフッターまで確保 */
+/* 壁打ち設定モーダル：コンテンツに合わせた高さ、フィルターが多い場合は最大高まで伸びてスクロール */
 #modal-drill-setup .modal-box {
-  height: calc(100dvh - 105px - 12px);
-  max-height: none;
+  max-height: calc(100dvh - 105px - 12px);
 }
 .modal-overlay.hidden { display: none; }
 
