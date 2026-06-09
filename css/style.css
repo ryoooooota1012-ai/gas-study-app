@@ -126,25 +126,57 @@ body {
 }
 
 /* ヘッダー背景 tier（多段グラデーションで金属光反射を演出） */
+/*
+ * 山なり速度アニメーション：キーフレームの時間間隔を非線形に分布させることで
+ * 中央(50%)で最高速・両端で最低速になる"山型"速度プロファイルを実現
+ * slow(0-15%) → medium(15-35%) → FAST(35-65%) → medium(65-85%) → slow(85-100%)
+ */
+@keyframes tier-shimmer-mountain {
+  0%   { background-position: 0%   50%; }
+  15%  { background-position: 3%   50%; }
+  35%  { background-position: 22%  50%; }
+  50%  { background-position: 100% 50%; }
+  65%  { background-position: 178% 50%; }
+  85%  { background-position: 197% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes tier-diamond-mountain {
+  0%   { background-position: 0%   50%; filter: hue-rotate(0deg); }
+  15%  { background-position: 3%   50%; }
+  35%  { background-position: 22%  50%; }
+  50%  { background-position: 100% 50%; filter: hue-rotate(180deg); }
+  65%  { background-position: 178% 50%; }
+  85%  { background-position: 197% 50%; }
+  100% { background-position: 200% 50%; filter: hue-rotate(360deg); }
+}
+
 .app-header.hd-tier-copper {
   background: linear-gradient(135deg, #200d03 0%, #5c2808 18%, #8a4018 32%, #4e1e06 50%, #7a3412 68%, #5c2808 82%, #280e04 100%);
+  background-size: 250% 100%;
   border-bottom-color: #a0622a;
   box-shadow: 0 2px 18px rgba(130,60,30,.7), inset 0 1px 0 rgba(220,140,70,.3);
+  animation: tier-shimmer-mountain 10s linear infinite;
 }
 .app-header.hd-tier-silver {
   background: linear-gradient(135deg, #1e2c3a 0%, #425e70 18%, #6a8898 32%, #3e5868 50%, #587888 68%, #3a5465 82%, #1e2c3a 100%);
+  background-size: 250% 100%;
   border-bottom-color: #b0c8da;
   box-shadow: 0 2px 20px rgba(150,190,215,.45), inset 0 1px 0 rgba(255,255,255,.45);
+  animation: tier-shimmer-mountain 8s linear infinite;
 }
 .app-header.hd-tier-gold {
   background: linear-gradient(135deg, #0d0c01 0%, #3e3a04 18%, #706410 32%, #3e3800 50%, #625408 68%, #383402 82%, #0d0c01 100%);
+  background-size: 250% 100%;
   border-bottom-color: #a89614;
   box-shadow: 0 2px 22px rgba(165,148,18,.6), inset 0 1px 0 rgba(250,225,60,.35);
+  animation: tier-shimmer-mountain 7s linear infinite;
 }
 .app-header.hd-tier-platinum {
   background: linear-gradient(135deg, #1e3050 0%, #4878a8 18%, #8ab8e0 32%, #5888b8 50%, #78a8d8 68%, #4878a8 82%, #1e3050 100%);
+  background-size: 250% 100%;
   border-bottom-color: #c0ddf5;
   box-shadow: 0 2px 32px rgba(130,190,255,.75), 0 0 55px rgba(130,190,255,.35), inset 0 1px 0 rgba(210,240,255,.65);
+  animation: tier-shimmer-mountain 6s linear infinite;
 }
 
 /* ヘッダー実績 tier カラー（数字部分のみ） */
@@ -170,8 +202,10 @@ body {
 }
 .app-header.hd-tier-diamond {
   background: linear-gradient(135deg,#080e20 0%,#0e2050 14%,#1848b0 26%,#38c8f8 34%,#b040f8 42%,#38c8f8 50%,#1848b0 64%,#0e2050 82%,#080e20 100%);
+  background-size: 250% 100%;
   border-bottom-color: #90eeff;
   box-shadow: 0 2px 36px rgba(56,200,248,.85),0 0 65px rgba(176,64,248,.55),0 0 90px rgba(56,200,248,.25),inset 0 1px 0 rgba(255,255,255,.65);
+  animation: tier-diamond-mountain 4s linear infinite;
 }
 .hd-tier-diamond .hd-num {
   background: linear-gradient(160deg,#ff7070 0%,#ffbb30 16%,#ffee44 32%,#55ee66 48%,#22ddee 64%,#8888ff 80%,#dd66ff 100%);
@@ -2328,6 +2362,49 @@ body.tier-border-diamond .card {
 .top-filter-item-cnt {
   font-size: .75rem;
   opacity: .65;
+}
+
+/* ===== フィルター完全習得（全問3連続正解）＝ダイヤ輝きエフェクト ===== */
+.top-filter-item.mastered {
+  background: linear-gradient(135deg,
+    #080e20 0%, #0e2050 10%, #1848b0 22%,
+    #38c8f8 32%, #b040f8 42%, #38c8f8 52%,
+    #1848b0 64%, #0e2050 80%, #080e20 100%
+  );
+  background-size: 200% 200%;
+  border-color: #90eeff;
+  color: #e8f8ff;
+  text-shadow: 0 0 6px rgba(56,200,248,.7);
+  animation: fmi-bg 4s linear infinite, fmi-pulse 2s ease-in-out alternate infinite;
+}
+.top-filter-item.mastered:hover {
+  color: #fff;
+}
+.top-filter-item.mastered.active {
+  border-color: #c0f0ff;
+  animation: fmi-bg 3s linear infinite, fmi-pulse-bright 1.5s ease-in-out alternate infinite;
+}
+.top-filter-item.mastered .top-filter-item-cnt {
+  background: linear-gradient(160deg, #ff9090 0%, #ffcc44 25%, #aaffaa 50%, #44ddff 75%, #cc88ff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  opacity: 1;
+  animation: fmi-hue 3s linear infinite;
+}
+@keyframes fmi-bg {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes fmi-pulse {
+  from { box-shadow: 0 0 6px rgba(56,200,248,.45), 0 0 14px rgba(176,64,248,.25); }
+  to   { box-shadow: 0 0 12px rgba(56,200,248,.85), 0 0 26px rgba(176,64,248,.55), 0 0 40px rgba(56,200,248,.2); }
+}
+@keyframes fmi-pulse-bright {
+  from { box-shadow: 0 0 10px rgba(56,200,248,.7), 0 0 22px rgba(176,64,248,.45); }
+  to   { box-shadow: 0 0 18px rgba(56,200,248,1),  0 0 38px rgba(176,64,248,.75), 0 0 55px rgba(56,200,248,.3); }
+}
+@keyframes fmi-hue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
 }
 
 /* ===== Question List Select Mode ===== */

@@ -1882,6 +1882,21 @@ function getTopCatLayout() {
   return result;
 }
 
+/** 指定問題群の全選択肢が3連続正解済みなら true */
+function isFilterMastered(questions) {
+  if (!questions || questions.length === 0) return false;
+  let hasAny = false;
+  for (const q of questions) {
+    for (const c of (q.choices || [])) {
+      if (!c.id) continue;
+      hasAny = true;
+      const hist = state.progress[c.id]?.history;
+      if (!Array.isArray(hist) || hist.length < 3 || !hist.slice(-3).every(v => v === true)) return false;
+    }
+  }
+  return hasAny;
+}
+
 function renderTopFilterCard() {
   const card = document.getElementById('top-filter-card');
   if (!card) return;
@@ -2051,10 +2066,12 @@ function renderTopFilterCard() {
       items.innerHTML = '<span style="color:var(--text-3);font-size:.82rem;padding:6px 0;display:block;">年度データがありません</span>';
     } else {
       years.forEach(year => {
-        const qcnt = srcQs.filter(q => q.year === year).length;
+        const yearQs = srcQs.filter(q => q.year === year);
+        const qcnt = yearQs.length;
+        const mastered = isFilterMastered(yearQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '');
-        btn.innerHTML = `<span>${year}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (mastered ? ' mastered' : '');
+        btn.innerHTML = `<span>${year}${mastered ? ' 💎' : ''}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeYears.has(year)) state.activeYears.delete(year);
           else state.activeYears.add(year);
@@ -2076,10 +2093,12 @@ function renderTopFilterCard() {
       items.innerHTML = '<span style="color:var(--text-3);font-size:.82rem;padding:6px 0;display:block;">分野データがありません</span>';
     } else {
       secs.forEach(sec => {
-        const qcnt = srcQs.filter(q => q.section === sec).length;
+        const secQs = srcQs.filter(q => q.section === sec);
+        const qcnt = secQs.length;
+        const mastered = isFilterMastered(secQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '');
-        btn.innerHTML = `<span>${sec}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (mastered ? ' mastered' : '');
+        btn.innerHTML = `<span>${sec}${mastered ? ' 💎' : ''}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeSections.has(sec)) state.activeSections.delete(sec);
           else state.activeSections.add(sec);
