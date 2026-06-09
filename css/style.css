@@ -1950,7 +1950,14 @@ body.tier-border-diamond .card {
   padding: 16px;
 }
 .modal-overlay--top {
+  top: 105px; /* sticky header の下から開始（全デバイス共通） */
   align-items: flex-start;
+  padding: 6px 10px;
+}
+/* 壁打ち設定モーダル：ヘッダー下の残り全高を使いフッターまで確保 */
+#modal-drill-setup .modal-box {
+  height: calc(100dvh - 105px - 12px);
+  max-height: none;
 }
 .modal-overlay.hidden { display: none; }
 
@@ -3372,29 +3379,7 @@ kbd {
     font-size: .95rem;
   }
 
-  /* ── モーダル：オーバーレイ自体をヘッダー下から開始 ── */
-  .modal-overlay--top {
-    top: 105px !important; /* inset:0 の top:0 を強制上書き */
-    align-items: flex-start !important;
-    padding: 6px 10px !important;
-  }
+  /* ── モーダル：スマホでは一般モーダルの最大高を制限 ── */
   .modal-box { max-height: 80vh !important; }
-  /* 壁打ち設定モーダルはスマホでも footer まで確保 */
-  #modal-drill-setup .modal-box {
-    height: calc(100dvh - 105px - 12px) !important;
-    max-height: none !important;
-  }
-}
-
-/* ===== タッチ端末（スマホ＋iPad）：壁打ちモーダル共通 ===== */
-@media (pointer: coarse) {
-  .modal-overlay--top {
-    top: 105px !important;
-    align-items: flex-start !important;
-    padding: 6px 10px !important;
-  }
-  #modal-drill-setup .modal-box {
-    height: calc(100dvh - 105px - 12px) !important;
-    max-height: none !important;
-  }
+  /* 壁打ち設定モーダルはグローバルルールで対応済み → 上書き不要 */
 }

@@ -3919,15 +3919,8 @@ function openDrillSetupModal(mode = 'all', triggerEl = null) {
   document.getElementById('drill-setup-step1').classList.remove('hidden');
   document.getElementById('drill-setup-step2').classList.add('hidden');
   renderDrillSetupFilters();
-  // トリガーボタンの上辺にモーダルを揃える
-  const overlay = document.getElementById('modal-drill-setup');
-  if (triggerEl) {
-    const rect = triggerEl.getBoundingClientRect();
-    overlay.style.paddingTop = Math.max(8, rect.top) + 'px';
-  } else {
-    overlay.style.paddingTop = '';
-  }
-  overlay.classList.remove('hidden');
+  // CSS側で top:105px + height:calc(100dvh-105px-12px) で全デバイス共通レイアウト
+  document.getElementById('modal-drill-setup').classList.remove('hidden');
 }
 
 function renderDrillSetupFilters() {
