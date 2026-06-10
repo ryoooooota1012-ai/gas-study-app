@@ -214,9 +214,9 @@ body {
   animation: tier-diamond-mountain 4s linear infinite, diamond-hue-drift 8s ease-in-out infinite;
 }
 .hd-tier-diamond .hd-num {
-  background: linear-gradient(160deg, #c8e8ff 0%, #e8f6ff 25%, #ffffff 50%, #b8d8ff 75%, #ddeeff 100%);
+  background: linear-gradient(160deg,#ffccdd 0%,#ffdd88 18%,#ffffcc 34%,#aaf0ff 50%,#aabbff 66%,#e0aaff 82%,#ffffff 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 3px rgba(0,0,0,.9)) drop-shadow(0 0 8px rgba(120,190,255,.75)) drop-shadow(0 0 18px rgba(80,160,255,.5));
+  filter: drop-shadow(0 0 3px rgba(0,0,0,.95)) drop-shadow(0 0 10px rgba(200,180,255,.9)) drop-shadow(0 0 22px rgba(80,210,255,1)) drop-shadow(0 0 40px rgba(185,80,255,.9));
 }
 .app-header.hd-tier-diamond .hd-logo-icon {
   filter: hue-rotate(195deg) saturate(1.5) brightness(2.2) drop-shadow(0 0 8px rgba(80,180,255,.7));
