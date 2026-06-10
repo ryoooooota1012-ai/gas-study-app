@@ -37,6 +37,7 @@ let calcSortMode             = 'title';  // 'title' | 'registered-asc' | 'regist
 let resultFocusIndex         = -1; // リザルト画面キーボードフォーカス位置
 let pendingStartMode        = null;
 let _checkNoRecord          = false;  // true のとき checkAnswers() が記録処理をスキップ
+let _checkNoProgressRecord  = false;  // true のとき recordAnswer() のみスキップ（編集後の再チェック用）
 let tagStudySelectedTags    = new Set(); // タグ出題エリアで選択中のタグ
 let statsTabMode            = 'progress'; // 'progress' | 'history'
 let histFilterCats          = new Set();  // 成績履歴フィルター（カテゴリ）
@@ -792,6 +793,7 @@ function onMemoInput(qId, text) {
 }
 
 function recordAnswer(choiceId, isCorrect) {
+  if (_checkNoProgressRecord) return; // 編集後再チェック時は state.progress を更新しない
   const p = state.progress[choiceId] || { attempts: 0, correct: 0, history: [] };
   p.attempts++;
   if (isCorrect) p.correct++;
@@ -6960,9 +6962,10 @@ function _refreshStudyAfterEdit(updatedQ) {
   renderQuestion();
 
   if (wasChecked) {
-    // 回答を復元して再度答え合わせ → 更新済み問題で history に再記録
+    // 回答を復元して再度答え合わせ → 表示・セッション統計を更新するが state.progress は変えない
     state.answers = savedAnswers;
-    checkAnswers();
+    _checkNoProgressRecord = true;
+    try { checkAnswers(); } finally { _checkNoProgressRecord = false; }
   }
 }
 
@@ -8339,10 +8342,16 @@ document.addEventListener('DOMContentLoaded', async () => { try {
 
   // Study actions
   document.getElementById('btn-check').addEventListener('click', checkAnswers);
-  document.getElementById('btn-next').addEventListener('click',  nextQuestion);
+  document.getElementById('btn-next').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    nextQuestion();
+  });
   document.getElementById('btn-end-session').addEventListener('click', showSessionResult);
   document.getElementById('btn-study-prev').addEventListener('click', prevStudyQuestion);
-  document.getElementById('btn-study-next').addEventListener('click', nextQuestion);
+  document.getElementById('btn-study-next').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    nextQuestion();
+  });
 
   // Study screen — この問題を修正 / 問題を報告 / AIで検証
   document.getElementById('btn-edit-study-q').addEventListener('click', () => {
