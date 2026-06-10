@@ -862,6 +862,26 @@ function deleteQuestionsBySet(setName) {
 }
 
 // ========== Filters ==========
+
+/**
+ * 和暦年度文字列を西暦数値に変換（年度ソート用）
+ * 令和7年度→2025, 令和元年度→2019, 平成30年度→2018, 分野別:…→0
+ */
+function yearToNumber(yearStr) {
+  if (!yearStr) return 0;
+  if (yearStr.startsWith('分野別')) return 0;
+  const m = yearStr.match(/(令和|平成|昭和|大正|明治)(元|\d+)年/);
+  if (!m) return 0;
+  const ERA = { '令和': 2018, '平成': 1988, '昭和': 1925, '大正': 1911, '明治': 1867 };
+  const n = m[2] === '元' ? 1 : parseInt(m[2]);
+  return (ERA[m[1]] || 0) + n;
+}
+
+/** 年度配列を新しい順（降順）にソートして返す */
+function sortYearsDesc(years) {
+  return [...years].sort((a, b) => yearToNumber(b) - yearToNumber(a));
+}
+
 function buildFilters() {
   const categories = [...new Set(state.questions.map(q => q.category))]
     .sort((a, b) => a.localeCompare(b, 'ja'));
@@ -2057,12 +2077,7 @@ function renderTopFilterCard() {
     : state.questions.filter(q => q.category === topFilterOpenCat);
 
   if (topFilterSubMode === 'year') {
-    const years = [...new Set(srcQs.filter(q => q.year).map(q => q.year))]
-      .sort((a, b) => {
-        const na = parseInt((a.match(/(\d+)/) || [0, 0])[1]);
-        const nb = parseInt((b.match(/(\d+)/) || [0, 0])[1]);
-        return nb - na; // 新しい順
-      });
+    const years = sortYearsDesc([...new Set(srcQs.filter(q => q.year).map(q => q.year))]);
 
     if (years.length === 0) {
       items.innerHTML = '<span style="color:var(--text-3);font-size:.82rem;padding:6px 0;display:block;">年度データがありません</span>';
@@ -3992,11 +4007,7 @@ function renderDrillSetupFilters() {
   }
 
   // ── 年度チップ ──
-  const years = [...new Set(relevantQs.filter(q => q.year).map(q => q.year))].sort((a, b) => {
-    const na = parseInt((a.match(/(\d+)/) || [0, 0])[1]);
-    const nb = parseInt((b.match(/(\d+)/) || [0, 0])[1]);
-    return nb - na;
-  });
+  const years = sortYearsDesc([...new Set(relevantQs.filter(q => q.year).map(q => q.year))]);
   const yearsEl = document.getElementById('drill-setup-years');
   yearsEl.innerHTML = '';
   if (years.length === 0) {
@@ -7823,12 +7834,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   }
   function showExamYearStep() {
     // 利用可能な年度を収集
-    const years = [...new Set(state.questions.filter(q => q.year).map(q => q.year))]
-      .sort((a, b) => {
-        const na = parseInt((a.match(/(\d+)/) || [0, 0])[1]);
-        const nb = parseInt((b.match(/(\d+)/) || [0, 0])[1]);
-        return nb - na; // 新しい順
-      });
+    const years = sortYearsDesc([...new Set(state.questions.filter(q => q.year).map(q => q.year))]);
     const list = document.getElementById('exam-year-list');
     list.innerHTML = '';
     years.forEach(year => {
