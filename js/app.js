@@ -6951,32 +6951,14 @@ function _refreshStudyAfterEdit(updatedQ) {
   const wasChecked   = state.checked;
   const savedAnswers = { ...state.answers };
 
-  if (wasChecked) {
-    // 前回の答え合わせ記録（sessionHistory / sessionStats）を取り消す
-    // → 直後に checkAnswers() で更新済み問題として再記録する
-    if (state.sessionHistory.length > 0) {
-      const last = state.sessionHistory[state.sessionHistory.length - 1];
-      if (last.question.id === updatedQ.id) {
-        state.sessionHistory.pop();
-        state.sessionStats.total = Math.max(0, state.sessionStats.total - 1);
-        const wasAllRight = last.isCalcMode
-          ? (last.choiceResults[0]?.isRight ?? false)
-          : last.choiceResults.every(r => r.isRight);
-        if (wasAllRight) {
-          state.sessionStats.correct = Math.max(0, state.sessionStats.correct - 1);
-        }
-      }
-    }
-  }
-
   // 最新の問題内容で再描画（state.checked=false・answers={} にリセットされる）
   renderQuestion();
 
   if (wasChecked) {
-    // 回答を復元して再度答え合わせ → 表示・セッション統計を更新するが state.progress は変えない
+    // 回答を復元して再度答え合わせ → 表示のみ更新（state.progress・sessionStats・sessionHistory は変えない）
     state.answers = savedAnswers;
-    _checkNoProgressRecord = true;
-    try { checkAnswers(); } finally { _checkNoProgressRecord = false; }
+    _checkNoRecord = true;
+    try { checkAnswers(); } finally { _checkNoRecord = false; }
   }
 }
 
