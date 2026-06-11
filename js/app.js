@@ -6959,6 +6959,14 @@ function _refreshStudyAfterEdit(updatedQ) {
     state.answers = savedAnswers;
     _checkNoRecord = true;
     try { checkAnswers(); } finally { _checkNoRecord = false; }
+    // checkAnswers() 後にボタンの選択済み状態（selected クラス）を復元
+    Object.entries(savedAnswers).forEach(([cid, ans]) => {
+      const item = document.querySelector(`.choice-item[data-cid="${cid}"]`);
+      if (!item) return;
+      item.querySelectorAll('.choice-judge-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.classList.contains(ans));
+      });
+    });
   }
 }
 
