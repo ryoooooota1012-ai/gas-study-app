@@ -6995,7 +6995,7 @@ function openEditModal(qId, choiceIndex, fromList) {
     choiceImgArea.appendChild(imgPasteZone);
     _renderChoiceImgPreview(choiceImgArea, c.id);
 
-    card.append(hdr, textToolbar, textInput, correctRow, expLabel, expToolbar, expInput, choiceImgArea);
+    card.append(hdr, textToolbar, textInput, choiceImgArea, correctRow, expLabel, expToolbar, expInput);
     container.appendChild(card);
   });
 
