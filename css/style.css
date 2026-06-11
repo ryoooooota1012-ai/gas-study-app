@@ -576,6 +576,62 @@ pre {
 .edit-blocks-add-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .edit-paste-hint { font-size: .72rem; color: var(--text-3); }
 
+/* ===== Edit Choice Image ===== */
+.edit-choice-img-area { display: flex; flex-direction: column; gap: 6px; }
+.edit-choice-img-paste-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .78rem;
+  color: var(--text-3);
+  cursor: pointer;
+  text-align: center;
+  outline: none;
+  transition: border-color .15s, color .15s;
+  user-select: none;
+}
+.edit-choice-img-paste-zone:hover,
+.edit-choice-img-paste-zone.focused {
+  border-color: var(--primary-light);
+  color: var(--primary-light);
+  background: rgba(99,179,237,.06);
+}
+.edit-choice-img-preview { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.edit-choice-img-thumb {
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 4px;
+  display: block;
+}
+.edit-choice-img-del {
+  background: none;
+  border: 1px solid var(--danger);
+  color: var(--danger-txt);
+  font-size: .75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.edit-choice-img-del:hover { background: var(--danger-bg); }
+
+/* ===== Choice Image (study screen) ===== */
+.choice-item-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 6px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  margin: 4px 0;
+}
+
 /* ===== Edit Explanation Image ===== */
 .edit-exp-image-preview { margin: 6px 0; }
 .edit-exp-image-thumb {

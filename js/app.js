@@ -11,6 +11,8 @@ let editingChoiceIndex  = null; // null=全選択肢モード, number=単一選�
 let editingTags         = [];   // 編集中のタグ配列
 let editingBlocks            = [];   // 編集中のブロック [{type:'text',content:''} | {type:'image',src:''}]
 let editingExplanationImage  = null; // 編集中の解説画像（base64 or null）
+let editingChoiceImages      = {};   // 編集中の選択肢画像 { [choiceId]: base64 }
+let _editChoiceImgFocus      = null; // 画像ペースト先の選択肢ID
 let qlistSelectMode     = false;
 let selectedQIds        = new Set();
 let createChoicesList   = []; // [{text, isCorrect}]
@@ -2897,7 +2899,16 @@ function createChoiceItem(choice, label) {
   const choiceHistDots = makeHistoryDots(state.progress[choice.id]);
   choiceHistDots.classList.add('choice-hist-dots');
 
-  item.append(choiceHistDots, top, txt, btns);
+  if (choice.image) {
+    const choiceImg = document.createElement('img');
+    choiceImg.src = choice.image;
+    choiceImg.className = 'choice-item-image';
+    choiceImg.alt = '選択肢画像';
+    choiceImg.loading = 'lazy';
+    item.append(choiceHistDots, top, txt, choiceImg, btns);
+  } else {
+    item.append(choiceHistDots, top, txt, btns);
+  }
   return item;
 }
 
@@ -6795,6 +6806,29 @@ function renderEditBlocks() {
   });
 }
 
+function _renderChoiceImgPreview(area, cid) {
+  const old = area.querySelector('.edit-choice-img-preview');
+  if (old) old.remove();
+  const src = editingChoiceImages[cid];
+  if (!src) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'edit-choice-img-preview';
+  const img = document.createElement('img');
+  img.src = src;
+  img.className = 'edit-choice-img-thumb';
+  img.alt = '選択肢画像';
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.className = 'edit-choice-img-del';
+  delBtn.textContent = '🗑 削除';
+  delBtn.addEventListener('click', () => {
+    delete editingChoiceImages[cid];
+    wrap.remove();
+  });
+  wrap.append(img, delBtn);
+  area.appendChild(wrap);
+}
+
 function handleEditImagePaste(e) {
   const modal = document.getElementById('modal-edit-q');
   if (!modal || modal.classList.contains('hidden')) return;
@@ -6803,6 +6837,19 @@ function handleEditImagePaste(e) {
   if (!items) return;
   for (const item of items) {
     if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      // 選択肢の画像ゾーンがフォーカスされている場合はそちらに貼り付け
+      if (_editChoiceImgFocus) {
+        const cid = _editChoiceImgFocus;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          editingChoiceImages[cid] = ev.target.result;
+          const area = document.querySelector(`.edit-choice-img-area[data-cid="${cid}"]`);
+          if (area) _renderChoiceImgPreview(area, cid);
+        };
+        reader.readAsDataURL(item.getAsFile());
+        break;
+      }
       // 解説画像セクション内からのペーストなら解説画像として扱う
       const expSection = document.getElementById('edit-exp-image-section');
       if (expSection && expSection.contains(e.target)) {
@@ -6810,7 +6857,6 @@ function handleEditImagePaste(e) {
       } else {
         loadImageFileToBlock(item.getAsFile());
       }
-      e.preventDefault();
       break;
     }
   }
@@ -6865,6 +6911,10 @@ function openEditModal(qId, choiceIndex, fromList) {
   // 解説画像初期化
   editingExplanationImage = q.explanationImage || null;
   renderEditExpImageSection();
+  // 選択肢画像初期化
+  editingChoiceImages = {};
+  _editChoiceImgFocus = null;
+  (q.choices || []).forEach(c => { if (c.image) editingChoiceImages[c.id] = c.image; });
   const expImgSection = document.getElementById('edit-exp-image-section');
   if (expImgSection) expImgSection.style.display = singleMode ? 'none' : '';
 
@@ -6928,7 +6978,24 @@ function openEditModal(qId, choiceIndex, fromList) {
     expInput.value = c.explanation || '';
     expToolbar.querySelector('.rtb-red').addEventListener('click', () => insertMarkup(expInput, '[r]', '[/r]'));
 
-    card.append(hdr, textToolbar, textInput, correctRow, expLabel, expToolbar, expInput);
+    // 選択肢画像エリア
+    const choiceImgArea = document.createElement('div');
+    choiceImgArea.className = 'edit-choice-img-area';
+    choiceImgArea.dataset.cid = c.id;
+    const imgPasteZone = document.createElement('div');
+    imgPasteZone.className = 'edit-choice-img-paste-zone';
+    imgPasteZone.tabIndex = 0;
+    imgPasteZone.textContent = '📋 ここをクリック → Ctrl+V で画像を貼り付け';
+    imgPasteZone.addEventListener('click', () => {
+      _editChoiceImgFocus = c.id;
+      document.querySelectorAll('.edit-choice-img-paste-zone').forEach(z => z.classList.remove('focused'));
+      imgPasteZone.classList.add('focused');
+      imgPasteZone.focus();
+    });
+    choiceImgArea.appendChild(imgPasteZone);
+    _renderChoiceImgPreview(choiceImgArea, c.id);
+
+    card.append(hdr, textToolbar, textInput, correctRow, expLabel, expToolbar, expInput, choiceImgArea);
     container.appendChild(card);
   });
 
@@ -7029,12 +7096,18 @@ function saveEditModal() {
       const textInput = card.querySelector('.edit-choice-text-input');
       const expInput  = card.querySelector('.edit-choice-exp-input');
       const maruBtn   = card.querySelector('.edit-maru');
+      const cid = q.choices[editingChoiceIndex].id;
       q.choices[editingChoiceIndex] = {
         ...q.choices[editingChoiceIndex],
         text:        textInput ? textInput.value.trim()                : q.choices[editingChoiceIndex].text,
         isCorrect:   maruBtn  ? maruBtn.classList.contains('selected') : q.choices[editingChoiceIndex].isCorrect,
         explanation: expInput  ? expInput.value.trim()                 : q.choices[editingChoiceIndex].explanation,
       };
+      if (editingChoiceImages[cid]) {
+        q.choices[editingChoiceIndex].image = editingChoiceImages[cid];
+      } else {
+        delete q.choices[editingChoiceIndex].image;
+      }
     }
   } else {
     // 通常モード: 全選択肢を更新
@@ -7043,12 +7116,18 @@ function saveEditModal() {
       const textInput = card.querySelector('.edit-choice-text-input');
       const expInput  = card.querySelector('.edit-choice-exp-input');
       const maruBtn   = card.querySelector('.edit-maru');
+      const cid = q.choices[i].id;
       q.choices[i] = {
         ...q.choices[i],
         text:        textInput ? textInput.value.trim()                : q.choices[i].text,
         isCorrect:   maruBtn  ? maruBtn.classList.contains('selected') : q.choices[i].isCorrect,
         explanation: expInput  ? expInput.value.trim()                 : q.choices[i].explanation,
       };
+      if (editingChoiceImages[cid]) {
+        q.choices[i].image = editingChoiceImages[cid];
+      } else {
+        delete q.choices[i].image;
+      }
     });
   }
 
@@ -7059,6 +7138,8 @@ function saveEditModal() {
   document.removeEventListener('paste', handleEditImagePaste);
   editingQId         = null;
   editingChoiceIndex = null;
+  editingChoiceImages = {};
+  _editChoiceImgFocus = null;
 
   // 現在表示中の画面を再描画
   if (!document.getElementById('screen-questions').classList.contains('hidden')) {
@@ -8913,8 +8994,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const ch = document.querySelector('#modal-edit-q .edit-choices-header');
     if (mg) mg.style.display = '';
     if (ch) ch.style.display = '';
-    editingQId         = null;
-    editingChoiceIndex = null;
+    editingQId          = null;
+    editingChoiceIndex  = null;
+    editingChoiceImages = {};
+    _editChoiceImgFocus = null;
   };
   document.getElementById('modal-edit-close').addEventListener('click', closeEditModal);
   document.getElementById('modal-edit-cancel').addEventListener('click', closeEditModal);
