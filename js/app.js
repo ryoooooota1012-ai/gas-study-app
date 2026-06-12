@@ -12,6 +12,7 @@ let editingTags         = [];   // 編集中のタグ配列
 let editingBlocks            = [];   // 編集中のブロック [{type:'text',content:''} | {type:'image',src:''}]
 let editingExplanationImage  = null; // 編集中の解説画像（base64 or null）
 let editingChoiceImages      = {};   // 編集中の選択肢画像 { [choiceId]: base64 }
+let editingChoiceWidths      = {};   // 編集中の選択肢画像幅 { [choiceId]: number|null }
 let _editChoiceImgFocus      = null; // 画像ペースト先の選択肢ID
 let qlistSelectMode     = false;
 let selectedQIds        = new Set();
@@ -2934,12 +2935,19 @@ function createChoiceItem(choice, label) {
   choiceHistDots.classList.add('choice-hist-dots');
 
   if (choice.image) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'choice-img-resizable';
+    if (choice.imageWidth) imgWrap.style.width = choice.imageWidth + 'px';
     const choiceImg = document.createElement('img');
     choiceImg.src = choice.image;
     choiceImg.className = 'choice-item-image';
     choiceImg.alt = '選択肢画像';
     choiceImg.loading = 'lazy';
-    item.append(choiceHistDots, top, txt, choiceImg, btns);
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'choice-img-resize-handle';
+    imgWrap.append(choiceImg, resizeHandle);
+    _addResizeHandle(resizeHandle, choiceImg, () => choice.id);
+    item.append(choiceHistDots, top, txt, imgWrap, btns);
   } else {
     item.append(choiceHistDots, top, txt, btns);
   }
@@ -4298,14 +4306,23 @@ function renderDrillChoice() {
     DRILL_CHOICE_LABELS[choiceIndex] || String(choiceIndex + 1);
   document.getElementById('drill-choice-text').innerHTML = renderText(c.text);
   // 選択肢画像
+  const drillImgWrap = document.getElementById('drill-choice-img-wrap');
   const drillChoiceImg = document.getElementById('drill-choice-image');
-  if (drillChoiceImg) {
+  if (drillImgWrap && drillChoiceImg) {
     if (c.image) {
       drillChoiceImg.src = c.image;
-      drillChoiceImg.classList.remove('hidden');
+      drillImgWrap.style.width = c.imageWidth ? c.imageWidth + 'px' : '';
+      drillImgWrap.classList.remove('hidden');
+      const oldHandle = document.getElementById('drill-choice-img-handle');
+      if (oldHandle) {
+        const newHandle = oldHandle.cloneNode(true);
+        oldHandle.parentNode.replaceChild(newHandle, oldHandle);
+        _addResizeHandle(newHandle, drillChoiceImg, () => c.id);
+      }
     } else {
       drillChoiceImg.src = '';
-      drillChoiceImg.classList.add('hidden');
+      drillImgWrap.style.width = '';
+      drillImgWrap.classList.add('hidden');
     }
   }
 
@@ -6868,10 +6885,85 @@ function _renderChoiceImgPreview(area, cid) {
   delBtn.textContent = '🗑 削除';
   delBtn.addEventListener('click', () => {
     delete editingChoiceImages[cid];
+    delete editingChoiceWidths[cid];
     wrap.remove();
   });
-  wrap.append(img, delBtn);
+  const widthWrap = document.createElement('div');
+  widthWrap.className = 'edit-choice-img-width-wrap';
+  const widthLabel = document.createElement('label');
+  widthLabel.textContent = '表示幅(px):';
+  widthLabel.className = 'edit-choice-img-width-label';
+  const widthInput = document.createElement('input');
+  widthInput.type = 'number';
+  widthInput.className = 'edit-choice-img-width-input';
+  widthInput.min = '50';
+  widthInput.max = '800';
+  widthInput.placeholder = '自動';
+  const curW = editingChoiceWidths[cid];
+  if (curW) widthInput.value = curW;
+  widthInput.addEventListener('input', () => {
+    const v = parseInt(widthInput.value, 10);
+    editingChoiceWidths[cid] = isNaN(v) ? null : v;
+  });
+  widthWrap.append(widthLabel, widthInput);
+  wrap.append(img, widthWrap, delBtn);
   area.appendChild(wrap);
+}
+
+function _addResizeHandle(handle, imgEl, getChoiceId) {
+  let startX, startW;
+  const getWrap = () => imgEl.closest('.choice-img-resizable') || imgEl.parentElement;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = getWrap().offsetWidth;
+    const onMove = ev => {
+      const w = Math.max(50, startW + ev.clientX - startX);
+      getWrap().style.width = w + 'px';
+    };
+    const onUp = ev => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const w = Math.max(50, startW + ev.clientX - startX);
+      getWrap().style.width = w + 'px';
+      const cid = getChoiceId();
+      if (cid) _saveChoiceImageWidth(cid, w);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  handle.addEventListener('touchstart', e => {
+    e.preventDefault();
+    startX = e.touches[0].clientX;
+    startW = getWrap().offsetWidth;
+    const onMove = ev => {
+      const w = Math.max(50, startW + ev.touches[0].clientX - startX);
+      getWrap().style.width = w + 'px';
+    };
+    const onEnd = ev => {
+      handle.removeEventListener('touchmove', onMove);
+      handle.removeEventListener('touchend', onEnd);
+      const w = Math.max(50, startW + ev.changedTouches[0].clientX - startX);
+      getWrap().style.width = w + 'px';
+      const cid = getChoiceId();
+      if (cid) _saveChoiceImageWidth(cid, w);
+    };
+    handle.addEventListener('touchmove', onMove, { passive: false });
+    handle.addEventListener('touchend', onEnd);
+  }, { passive: false });
+}
+
+function _saveChoiceImageWidth(choiceId, width) {
+  for (const q of state.questions) {
+    const c = (q.choices || []).find(ch => ch.id === choiceId);
+    if (c) {
+      c.imageWidth = Math.round(width);
+      saveQuestions();
+      return;
+    }
+  }
 }
 
 function handleEditImagePaste(e) {
@@ -6958,8 +7050,12 @@ function openEditModal(qId, choiceIndex, fromList) {
   renderEditExpImageSection();
   // 選択肢画像初期化
   editingChoiceImages = {};
+  editingChoiceWidths = {};
   _editChoiceImgFocus = null;
-  (q.choices || []).forEach(c => { if (c.image) editingChoiceImages[c.id] = c.image; });
+  (q.choices || []).forEach(c => {
+    if (c.image) editingChoiceImages[c.id] = c.image;
+    if (c.imageWidth) editingChoiceWidths[c.id] = c.imageWidth;
+  });
   const expImgSection = document.getElementById('edit-exp-image-section');
   if (expImgSection) expImgSection.style.display = singleMode ? 'none' : '';
 
@@ -7153,6 +7249,11 @@ function saveEditModal() {
       } else {
         delete q.choices[editingChoiceIndex].image;
       }
+      if (editingChoiceWidths[cid] != null) {
+        q.choices[editingChoiceIndex].imageWidth = editingChoiceWidths[cid];
+      } else {
+        delete q.choices[editingChoiceIndex].imageWidth;
+      }
     }
   } else {
     // 通常モード: 全選択肢を更新
@@ -7173,6 +7274,11 @@ function saveEditModal() {
       } else {
         delete q.choices[i].image;
       }
+      if (editingChoiceWidths[cid] != null) {
+        q.choices[i].imageWidth = editingChoiceWidths[cid];
+      } else {
+        delete q.choices[i].imageWidth;
+      }
     });
   }
 
@@ -7184,6 +7290,7 @@ function saveEditModal() {
   editingQId         = null;
   editingChoiceIndex = null;
   editingChoiceImages = {};
+  editingChoiceWidths = {};
   _editChoiceImgFocus = null;
 
   // 現在表示中の画面を再描画
@@ -9042,6 +9149,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     editingQId          = null;
     editingChoiceIndex  = null;
     editingChoiceImages = {};
+    editingChoiceWidths = {};
     _editChoiceImgFocus = null;
   };
   document.getElementById('modal-edit-close').addEventListener('click', closeEditModal);

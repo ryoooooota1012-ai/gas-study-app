@@ -629,8 +629,41 @@ pre {
   padding: 6px;
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  margin: 0;
+}
+.choice-img-resizable {
+  position: relative;
+  display: block;
+  max-width: 100%;
   margin: 4px 0;
 }
+.choice-img-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-light, #63b3ed);
+  border-radius: 3px 0 6px 0;
+  cursor: se-resize;
+  opacity: 0.75;
+  touch-action: none;
+  user-select: none;
+}
+.choice-img-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+}
+/* ===== Edit choice image width input ===== */
+.edit-choice-img-width-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.edit-choice-img-width-label { font-size: .78rem; color: var(--text-3); white-space: nowrap; }
+.edit-choice-img-width-input { width: 72px; font-size: .82rem; padding: 3px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
 
 /* ===== Edit Explanation Image ===== */
 .edit-exp-image-preview { margin: 6px 0; }
