@@ -4297,6 +4297,17 @@ function renderDrillChoice() {
   document.getElementById('drill-choice-label-badge').textContent =
     DRILL_CHOICE_LABELS[choiceIndex] || String(choiceIndex + 1);
   document.getElementById('drill-choice-text').innerHTML = renderText(c.text);
+  // 選択肢画像
+  const drillChoiceImg = document.getElementById('drill-choice-image');
+  if (drillChoiceImg) {
+    if (c.image) {
+      drillChoiceImg.src = c.image;
+      drillChoiceImg.classList.remove('hidden');
+    } else {
+      drillChoiceImg.src = '';
+      drillChoiceImg.classList.add('hidden');
+    }
+  }
 
   // 過去3回ドット
   const dotsEl = document.getElementById('drill-history-dots');
