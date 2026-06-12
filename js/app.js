@@ -486,12 +486,19 @@ async function loadStoredQuestions() {
           return b;
         }));
       }
+      if (Array.isArray(q.choices)) {
+        r.choices = await Promise.all(q.choices.map(async c => {
+          if (!c.image) return c;
+          return { ...c, image: await idbResolveImage(c.image) };
+        }));
+      }
       return r;
     }));
     // 旧形式（data:直埋め）を検出したら自動でIDBへ移行
     const hasLegacy = data.some(q =>
       q.explanationImage?.startsWith('data:') ||
-      (Array.isArray(q.blocks) && q.blocks.some(b => b.type === 'image' && b.src?.startsWith('data:')))
+      (Array.isArray(q.blocks) && q.blocks.some(b => b.type === 'image' && b.src?.startsWith('data:'))) ||
+      (Array.isArray(q.choices) && q.choices.some(c => c.image?.startsWith('data:')))
     );
     if (hasLegacy) saveQuestions();
     return true;
@@ -510,6 +517,13 @@ function saveQuestions() {
         (b.type === 'image' && b.src?.startsWith('data:'))
           ? { ...b, src: IDB_REF + 'q_' + q.id + '_b' + i }
           : b
+      );
+    }
+    if (Array.isArray(q.choices)) {
+      s.choices = q.choices.map((c, ci) =>
+        c.image?.startsWith('data:')
+          ? { ...c, image: IDB_REF + 'q_' + q.id + '_c' + ci }
+          : c
       );
     }
     return s;
@@ -536,6 +550,12 @@ function saveQuestions() {
           const b = q.blocks[i];
           if (b.type === 'image' && b.src?.startsWith('data:'))
             await idbSet('q_' + q.id + '_b' + i, b.src);
+        }
+      }
+      if (Array.isArray(q.choices)) {
+        for (let ci = 0; ci < q.choices.length; ci++) {
+          if (q.choices[ci].image?.startsWith('data:'))
+            await idbSet('q_' + q.id + '_c' + ci, q.choices[ci].image);
         }
       }
     }
