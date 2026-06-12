@@ -1032,10 +1032,24 @@ function updateSubPanelVisibility() {
 }
 
 
+function sortTagsJa(tags) {
+  return [...tags].sort((a, b) => {
+    const aNum = /^\d/.test(a);
+    const bNum = /^\d/.test(b);
+    if (aNum && bNum) {
+      const diff = parseFloat(a) - parseFloat(b);
+      return diff !== 0 ? diff : a.localeCompare(b, 'ja');
+    }
+    if (aNum) return -1;
+    if (bNum) return  1;
+    return a.localeCompare(b, 'ja');
+  });
+}
+
 function getAllTags() {
   const tags = new Set();
   state.questions.forEach(q => (q.tags || []).forEach(t => tags.add(t)));
-  return [...tags].sort((a, b) => a.localeCompare(b, 'ja'));
+  return sortTagsJa(tags);
 }
 
 function matchesSearch(q, query) {
@@ -2401,9 +2415,9 @@ function renderTagStudyArea() {
   area.innerHTML = '';
 
   // choice タグを収集（壁打ち用）
-  const allTags = [...new Set(
+  const allTags = sortTagsJa([...new Set(
     state.questions.flatMap(q => (q.choices || []).flatMap(c => c.tags || []))
-  )].sort((a, b) => a.localeCompare(b, 'ja'));
+  )]);
 
   if (allTags.length === 0) {
     const msg = document.createElement('p');
@@ -4447,9 +4461,9 @@ function renderDrillTagSection(q, c) {
 
   // サジェスト（全選択肢のタグを収集）
   suggestEl.innerHTML = '';
-  const allTags = [...new Set(
+  const allTags = sortTagsJa([...new Set(
     state.questions.flatMap(x => (x.choices || []).flatMap(ch => ch.tags || []))
-  )].sort();
+  )]);
   allTags.forEach(tag => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -5074,7 +5088,7 @@ function renderQlistFilterBar() {
 
   // ── タグパネル ──
   if (qlistTagPanelOpen) {
-    const allTags = [...new Set(state.questions.flatMap(q => q.tags || []))].sort((a, b) => a.localeCompare(b, 'ja'));
+    const allTags = sortTagsJa([...new Set(state.questions.flatMap(q => q.tags || []))]);
     if (allTags.length > 0) {
       const tagRow = document.createElement('div');
       tagRow.className = 'qlist-filter-row qlist-tag-panel';
