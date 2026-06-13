@@ -2457,6 +2457,70 @@ body.tier-border-diamond .card {
 .top-filter-item-cnt {
   font-size: .75rem;
   opacity: .65;
+  flex: 0 0 auto;
+}
+.tfi-name { flex: 0 0 auto; white-space: nowrap; }
+
+/* ===== フィルター中央の進捗表示（達成度別の積み上げバー1本） ===== */
+.tfi-progress {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0 10px;
+}
+.tfi-progress-empty {
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--text-3);
+  opacity: .7;
+}
+.tfi-bar {
+  display: flex;
+  width: 100%;
+  height: 9px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.tfi-seg {
+  height: 100%;
+  transition: width .3s;
+}
+.tfi-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  font-size: .62rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.tfi-lg {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.tfi-lg i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  margin-right: 3px;
+}
+.tfi-l3 { color: #ffc94d; }                                          /* 3連続正解 */
+.tfi-l3-fill { background: linear-gradient(90deg, #ffd76a, #ffb347); }
+.tfi-l2 { color: #34d399; }                                          /* 2連続正解 */
+.tfi-l2-fill { background: #10b981; }
+.tfi-l1 { color: #8fb3e0; }                                          /* 1回正解 */
+.tfi-l1-fill { background: #5a7fb5; }
+
+@media (max-width: 480px) {
+  .tfi-legend { font-size: .56rem; gap: 2px 7px; }
+  .tfi-progress { padding: 0 6px; }
 }
 
 /* ===== フィルター完全習得（全問3連続正解）＝ダイヤ輝きエフェクト ===== */

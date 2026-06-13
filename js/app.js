@@ -1958,6 +1958,67 @@ function isFilterMastered(questions) {
   return hasAny;
 }
 
+/**
+ * 指定問題群の選択肢ベース進捗統計を集計する。
+ * 各選択肢の直近の連続正解数を見て階層的にカウントする。
+ *  c1: 直近1回正解(以上)  c2: 直近2連続正解(以上)  c3: 直近3連続正解
+ *  （c3 ⊆ c2 ⊆ c1 の入れ子関係）
+ */
+function computeFilterProgress(questions) {
+  let total = 0, attempted = 0;
+  let e1 = 0, e2 = 0, e3 = 0; // 排他: ちょうど1回 / ちょうど2連続 / 3連続(以上)
+  for (const q of (questions || [])) {
+    for (const c of (q.choices || [])) {
+      if (!c.id) continue;
+      total++;
+      const hist = state.progress[c.id]?.history;
+      const h = Array.isArray(hist) ? hist.slice(-3) : [];
+      if (h.length > 0) attempted++;
+      // 末尾からの連続正解数
+      let streak = 0;
+      for (let i = h.length - 1; i >= 0; i--) {
+        if (h[i] === true) streak++;
+        else break;
+      }
+      if (streak >= 3)      e3++;
+      else if (streak === 2) e2++;
+      else if (streak === 1) e1++;
+    }
+  }
+  const pct = n => total > 0 ? Math.round((n / total) * 100) : 0;
+  // 累積（3連続 ⊆ 2連続 ⊆ 1回）
+  const c3 = e3, c2 = e3 + e2, c1 = e3 + e2 + e1;
+  return {
+    total, attempted,
+    e1, e2, e3, e1p: pct(e1), e2p: pct(e2), e3p: pct(e3),
+    c1, c2, c3, p1: pct(c1), p2: pct(c2), p3: pct(c3),
+    pAttempted: pct(attempted),
+  };
+}
+
+/** フィルターアイテム中央の進捗表示HTMLを生成 */
+function filterProgressHTML(questions) {
+  const s = computeFilterProgress(questions);
+  if (s.total === 0) return '';
+  if (s.attempted === 0) {
+    return `<span class="tfi-progress tfi-progress-empty">未学習</span>`;
+  }
+  const lg = (cls, label, pct) =>
+    `<span class="tfi-lg ${cls}"><i class="${cls}-fill"></i>${label} ${pct}%</span>`;
+  return `<span class="tfi-progress">
+    <span class="tfi-bar">
+      <span class="tfi-seg tfi-l3-fill" style="width:${s.e3p}%"></span>
+      <span class="tfi-seg tfi-l2-fill" style="width:${s.e2p}%"></span>
+      <span class="tfi-seg tfi-l1-fill" style="width:${s.e1p}%"></span>
+    </span>
+    <span class="tfi-legend">
+      ${lg('tfi-l3', '3連続', s.e3p)}
+      ${lg('tfi-l2', '2連続', s.e2p)}
+      ${lg('tfi-l1', '1回',   s.e1p)}
+    </span>
+  </span>`;
+}
+
 function renderTopFilterCard() {
   const card = document.getElementById('top-filter-card');
   if (!card) return;
@@ -2127,7 +2188,7 @@ function renderTopFilterCard() {
         const mastered = isFilterMastered(yearQs);
         const btn = document.createElement('button');
         btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (mastered ? ' mastered' : '');
-        btn.innerHTML = `<span>${year}${mastered ? ' 💎' : ''}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.innerHTML = `<span class="tfi-name">${year}${mastered ? ' 💎' : ''}</span>${filterProgressHTML(yearQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeYears.has(year)) state.activeYears.delete(year);
           else state.activeYears.add(year);
@@ -2154,7 +2215,7 @@ function renderTopFilterCard() {
         const mastered = isFilterMastered(secQs);
         const btn = document.createElement('button');
         btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (mastered ? ' mastered' : '');
-        btn.innerHTML = `<span>${sec}${mastered ? ' 💎' : ''}</span><span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.innerHTML = `<span class="tfi-name">${sec}${mastered ? ' 💎' : ''}</span>${filterProgressHTML(secQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeSections.has(sec)) state.activeSections.delete(sec);
           else state.activeSections.add(sec);
