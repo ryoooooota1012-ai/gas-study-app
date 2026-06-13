@@ -324,6 +324,15 @@ function _updateMarkerBtn() {
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
 }
 
+/** 答え合わせ時：マーキングがある問題なら自動でマーカーを表示する */
+function _autoRevealMarkersOnCheck(q) {
+  if (!q) return;
+  const hasMarks = (highlightsData[q.id] || []).length > 0;
+  if (hasMarks) markerDisplayOn = true;
+  _applyHighlights(q);   // 解説の赤マーカーは常時、選択肢の黄色マーカーは markerDisplayOn 時に反映
+  _updateMarkerBtn();
+}
+
 /** 壁打ちモード用マーカー適用（選択肢テキスト＋解説） */
 function _applyDrillHighlights(q, c) {
   const textEl = document.getElementById('drill-choice-text');
@@ -3217,6 +3226,7 @@ function checkAnswers() {
     const accText = total > 0 ? `今回合計: ${correct}/${total} (${Math.round((correct / total) * 100)}%)` : '';
     document.getElementById('session-acc').textContent =
       `この問題: ${isRight ? '✓ 正解' : '✗ 不正解'}` + (accText ? ` ／ ${accText}` : '');
+    _autoRevealMarkersOnCheck(q);
     return;
   }
 
@@ -3333,6 +3343,8 @@ function checkAnswers() {
   const accText2 = total > 0 ? ` ／ 今回合計: ${correct}/${total} (${Math.round((correct / total) * 100)}%)` : '';
   document.getElementById('session-acc').textContent =
     `この問題: ${qCorrect}/${q.choices.length} 選択肢正解${accText2}`;
+
+  _autoRevealMarkersOnCheck(q);
 }
 
 // ========== Exam Mode ==========
