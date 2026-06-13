@@ -187,7 +187,9 @@ function renderText(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-  return escaped.replace(/\[r\]([\s\S]*?)\[\/r\]/g, '<span class="q-red">$1</span>');
+  return escaped
+    .replace(/\[r\]([\s\S]*?)\[\/r\]/g, '<span class="q-red">$1</span>')
+    .replace(/\n/g, '<br>');
 }
 
 /**
