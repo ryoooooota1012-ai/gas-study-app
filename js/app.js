@@ -517,7 +517,8 @@ async function loadStoredQuestions() {
   } catch { return false; }
 }
 
-function saveQuestions() {
+// skipImageWrite=true: 画像はIDBへ書き戻さない（画像以外の軽微な変更＝表示幅など用）
+function saveQuestions(skipImageWrite = false) {
   // 画像をIDB参照に置き換えてLocalStorageに保存（容量節約）
   const stripped = state.questions.map(q => {
     const s = { ...q };
@@ -553,6 +554,7 @@ function saveQuestions() {
     throw e;
   }
   // 画像をIDBに非同期で保存（fire-and-forget）
+  if (skipImageWrite) return;
   (async () => {
     for (const q of state.questions) {
       if (q.explanationImage?.startsWith('data:'))
@@ -7035,7 +7037,7 @@ function _saveChoiceImageWidth(choiceId, width) {
     const c = (q.choices || []).find(ch => ch.id === choiceId);
     if (c) {
       c.imageWidth = Math.round(width);
-      saveQuestions();
+      saveQuestions(true); // 幅のみの変更なので画像のIDB再書き込みは省略
       return;
     }
   }
