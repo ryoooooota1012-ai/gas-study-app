@@ -2973,42 +2973,108 @@ body.tier-border-diamond .card {
 .memo-textarea::placeholder { color: var(--text-3); }
 
 /* ===== Weakness Report ===== */
-.weakness-row {
+/* 全体サマリー */
+.wk-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.wk-sum-item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.wk-sum-val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.wk-sum-cap { font-size: .72rem; color: var(--text-2); font-weight: 600; }
+.wk-sum-sub { font-size: .66rem; color: var(--text-3); }
+
+/* 凡例 */
+.wk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: .68rem;
+  color: var(--text-3);
   margin-bottom: 14px;
 }
-.weakness-row-header {
+.wk-legend span { display: inline-flex; align-items: center; }
+.wk-legend i { width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; display: inline-block; }
+
+/* セクション見出し */
+.wk-section-title {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 4px;
-}
-.weakness-cat-name {
-  font-size: .88rem;
+  gap: 8px;
+  font-size: .82rem;
   font-weight: 700;
   color: var(--text-1);
+  margin: 18px 0 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
 }
-.weakness-pct {
-  font-size: .9rem;
-  font-weight: 700;
+.wk-hint { font-size: .64rem; font-weight: 500; color: var(--text-3); }
+
+/* 年度×科目 ヒートマップ */
+.wk-heat-scroll { overflow-x: auto; margin-bottom: 4px; }
+.wk-heat { border-collapse: separate; border-spacing: 3px; width: 100%; }
+.wk-heat th { font-weight: 700; color: var(--text-2); }
+.wk-heat-cath { font-size: .64rem; text-align: center; padding: 2px; white-space: nowrap; }
+.wk-heat-yearh { font-size: .68rem; text-align: right; padding-right: 6px; white-space: nowrap; color: var(--text-1); }
+.wk-heat-corner { width: 1%; }
+.wk-cell {
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 800;
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 2px;
+  min-width: 42px;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
-.weakness-bar-bg {
-  height: 8px;
+.wk-cell[data-year] { cursor: pointer; transition: transform .1s, box-shadow .1s; }
+.wk-cell[data-year]:hover { transform: scale(1.06); box-shadow: 0 0 0 2px var(--primary-light, #63b3ed); position: relative; z-index: 1; }
+.wk-cell[data-year]:active { transform: scale(.97); }
+.wk-cell small { display: block; font-size: .56rem; font-weight: 600; opacity: .9; }
+.wk-cell-empty { background: transparent; }
+.wk-cell-untried {
   background: var(--bg-card2);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-.weakness-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width .4s ease;
-}
-.weakness-sub {
-  display: flex;
-  justify-content: space-between;
-  font-size: .72rem;
   color: var(--text-3);
+  border: 1px dashed var(--border);
+  font-weight: 600;
+  text-shadow: none;
 }
+
+/* 苦手スポット ランキング */
+.wk-rank { display: flex; flex-direction: column; gap: 6px; }
+.wk-rank-row { display: flex; align-items: center; gap: 8px; font-size: .76rem; cursor: pointer; padding: 3px 4px; margin: 0 -4px; border-radius: 6px; transition: background .1s; }
+.wk-rank-row:hover { background: var(--bg-card2); }
+.wk-rank-row:active { background: var(--border); }
+.wk-rank-name { flex: 0 0 38%; font-weight: 700; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-rank-sep { color: var(--text-3); margin: 0 2px; }
+.wk-rank-bar { flex: 1 1 auto; height: 7px; background: var(--bg-card2); border-radius: 4px; overflow: hidden; }
+.wk-rank-fill { display: block; height: 100%; border-radius: 4px; }
+.wk-rank-acc { flex: 0 0 auto; width: 2.8em; text-align: right; font-weight: 800; }
+.wk-rank-cnt { flex: 0 0 auto; font-size: .64rem; color: var(--text-3); white-space: nowrap; }
+
+/* 科目別・年度別 行（正答率＋挑戦度） */
+.wk-row { margin-bottom: 12px; }
+.wk-row-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.wk-name { font-size: .86rem; font-weight: 700; color: var(--text-1); }
+.wk-acc { font-size: .9rem; font-weight: 800; }
+.wk-metric { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+.wk-mlabel { flex: 0 0 auto; width: 3.2em; font-size: .64rem; color: var(--text-3); font-weight: 600; }
+.wk-bar { flex: 1 1 auto; height: 8px; background: var(--bg-card2); border-radius: 4px; overflow: hidden; }
+.wk-bar-fill { display: block; height: 100%; border-radius: 4px; transition: width .4s ease; }
+.wk-cov { background: #5a9bf0; }
+.wk-mnum { flex: 0 0 auto; font-size: .64rem; color: var(--text-3); white-space: nowrap; }
+.wk-sub { font-size: .68rem; color: var(--text-3); margin-top: 2px; }
 
 /* ===== Settings Panel ===== */
 .settings-row {

@@ -2284,77 +2284,209 @@ function onCalcFilterClick() {
 }
 
 // ========== Weakness Report ==========
+// 集計単位の生成・加算ヘルパー
+function _wkAgg() { return { total: 0, tried: 0, attempts: 0, correct: 0 }; }
+function _wkAdd(s, choiceId) {
+  s.total++;
+  const p = state.progress[choiceId];
+  if (p && p.attempts > 0) {
+    s.tried++;
+    s.attempts += p.attempts;
+    s.correct  += p.correct || 0;
+  }
+}
+function _wkAcc(s)  { return s.attempts > 0 ? Math.round((s.correct / s.attempts) * 100) : null; }
+function _wkCov(s)  { return s.total > 0 ? Math.round((s.tried / s.total) * 100) : 0; }
+function _wkColor(s) {
+  const a = _wkAcc(s);
+  if (a === null) return 'var(--text-3)';
+  return a < 50 ? '#ef4444' : a < 75 ? '#f59e0b' : '#10b981';
+}
+// 弱い順ソート（未着手は末尾）。entries: [key, stats][]
+function _wkWeakSort(entries) {
+  return entries.sort((a, b) => {
+    const ra = a[1].attempts > 0 ? a[1].correct / a[1].attempts : 1.1;
+    const rb = b[1].attempts > 0 ? b[1].correct / b[1].attempts : 1.1;
+    if (ra !== rb) return ra - rb;
+    return b[1].tried - a[1].tried;
+  });
+}
+// 正答率バー＋挑戦度バーの行HTML
+function _wkRowHTML(name, s) {
+  const acc = _wkAcc(s);
+  const cov = _wkCov(s);
+  const col = _wkColor(s);
+  return `
+    <div class="wk-row">
+      <div class="wk-row-head">
+        <span class="wk-name">${name}</span>
+        <span class="wk-acc" style="color:${col}">${acc !== null ? acc + '%' : '未着手'}</span>
+      </div>
+      <div class="wk-metric">
+        <span class="wk-mlabel">正答率</span>
+        <span class="wk-bar"><span class="wk-bar-fill" style="width:${acc ?? 0}%;background:${col};"></span></span>
+      </div>
+      <div class="wk-metric">
+        <span class="wk-mlabel">挑戦度</span>
+        <span class="wk-bar"><span class="wk-bar-fill wk-cov" style="width:${cov}%;"></span></span>
+        <span class="wk-mnum">${s.tried}/${s.total}</span>
+      </div>
+      ${s.attempts > 0 ? `<div class="wk-sub">延べ ${s.correct}/${s.attempts} 正解（挑戦度 ${cov}%）</div>` : ''}
+    </div>`;
+}
+
 function renderWeaknessReport() {
   const container = document.getElementById('weakness-report');
   if (!container) return;
 
-  // カテゴリ別に集計
-  // attempts: 解答した延べ回数, correct: 正解した延べ回数, choiceTried: 1回以上解いた選択肢数
-  const catStats = {}; // { cat: { total, choiceTried, attempts, correct } }
+  const overall = _wkAgg();
+  const byCat   = {};   // 科目別
+  const byYear  = {};   // 年度別
+  const byCell  = {};   // 年度×科目 { 'yearcat': stats }
 
   state.questions.forEach(q => {
-    const cat = q.category || 'その他';
-    if (!catStats[cat]) catStats[cat] = { total: 0, choiceTried: 0, attempts: 0, correct: 0 };
+    const cat  = q.category || 'その他';
+    const year = q.year || '年度不明';
+    if (!byCat[cat])   byCat[cat]   = _wkAgg();
+    if (!byYear[year]) byYear[year] = _wkAgg();
+    const ck = year + '' + cat;
+    if (!byCell[ck]) byCell[ck] = _wkAgg();
     (q.choices || []).forEach(c => {
-      catStats[cat].total++;
-      const p = state.progress[c.id];
-      if (p && p.attempts > 0) {
-        catStats[cat].choiceTried++;
-        catStats[cat].attempts += p.attempts;
-        catStats[cat].correct  += p.correct || 0;
-      }
+      if (!c.id) return;
+      _wkAdd(overall, c.id);
+      _wkAdd(byCat[cat], c.id);
+      _wkAdd(byYear[year], c.id);
+      _wkAdd(byCell[ck], c.id);
     });
   });
 
-  const cats = Object.keys(catStats);
-  if (cats.length === 0) {
+  if (overall.total === 0) {
     container.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;text-align:center;padding:16px 0;">問題データがありません</p>';
     return;
   }
 
-  // 正答率でソート（弱い順。未着手は末尾）
-  cats.sort((a, b) => {
-    const sa = catStats[a];
-    const sb = catStats[b];
-    const ra = sa.attempts > 0 ? sa.correct / sa.attempts : 1.1;
-    const rb = sb.attempts > 0 ? sb.correct / sb.attempts : 1.1;
-    return ra - rb;
+  const oAcc = _wkAcc(overall);
+  const oCov = _wkCov(overall);
+  const oCol = _wkColor(overall);
+
+  let html = '';
+
+  // ── 全体サマリー ──
+  html += `
+    <div class="wk-summary">
+      <div class="wk-sum-item">
+        <span class="wk-sum-val" style="color:${oCol}">${oAcc !== null ? oAcc + '%' : '—'}</span>
+        <span class="wk-sum-cap">累計正答率</span>
+        <span class="wk-sum-sub">${overall.attempts > 0 ? `延べ ${overall.correct}/${overall.attempts}` : '未挑戦'}</span>
+      </div>
+      <div class="wk-sum-item">
+        <span class="wk-sum-val" style="color:#5a9bf0">${oCov}%</span>
+        <span class="wk-sum-cap">学習済み</span>
+        <span class="wk-sum-sub">${overall.tried}/${overall.total} 選択肢</span>
+      </div>
+    </div>
+    <div class="wk-legend">
+      <span><i style="background:#ef4444"></i>〜49%</span>
+      <span><i style="background:#f59e0b"></i>50〜74%</span>
+      <span><i style="background:#10b981"></i>75%〜</span>
+      <span><i style="background:var(--text-3)"></i>未着手</span>
+    </div>`;
+
+  // ── 年度×科目 ヒートマップ ──
+  const years = sortYearsDesc(Object.keys(byYear).filter(y => y !== '年度不明'));
+  if (byYear['年度不明']) years.push('年度不明');
+  const catList = _wkWeakSort(Object.entries(byCat)).map(e => e[0]); // 弱い科目を左に
+  if (years.length > 0 && catList.length > 0) {
+    html += `<div class="wk-section-title">📊 年度 × 科目 ヒートマップ<span class="wk-hint">数字＝正答率／薄い枠＝未着手</span></div>`;
+    html += `<div class="wk-heat-scroll"><table class="wk-heat"><thead><tr><th class="wk-heat-corner"></th>`;
+    catList.forEach(cat => { html += `<th class="wk-heat-cath">${_wkShortCat(cat)}</th>`; });
+    html += `</tr></thead><tbody>`;
+    years.forEach(year => {
+      html += `<tr><th class="wk-heat-yearh">${year}</th>`;
+      catList.forEach(cat => {
+        const s = byCell[year + '' + cat];
+        if (!s || s.total === 0) { html += `<td class="wk-cell wk-cell-empty"></td>`; return; }
+        const acc = _wkAcc(s);
+        const cov = _wkCov(s);
+        if (acc === null) {
+          html += `<td class="wk-cell wk-cell-untried" data-year="${year}" data-cat="${cat}" title="${year} ${cat}｜未着手 0/${s.total}／タップで出題">–</td>`;
+        } else {
+          const col = _wkColor(s);
+          // 挑戦度が低いセルは半透明にして「数字の信頼度が低い」ことを示す
+          const op = 0.4 + 0.6 * (cov / 100);
+          html += `<td class="wk-cell" data-year="${year}" data-cat="${cat}" style="background:${col};opacity:${op.toFixed(2)};" title="${year} ${cat}｜正答率${acc}% 挑戦度${cov}% (${s.tried}/${s.total})／タップで出題">${acc}<small>${cov}%</small></td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── 苦手スポット ランキング（年度×科目、挑戦済みのみ・弱い順） ──
+  const cells = Object.entries(byCell)
+    .filter(([, s]) => s.attempts > 0)
+    .map(([k, s]) => { const [y, c] = k.split(''); return { y, c, s }; });
+  cells.sort((a, b) => {
+    const ra = a.s.correct / a.s.attempts, rb = b.s.correct / b.s.attempts;
+    if (ra !== rb) return ra - rb;
+    return b.s.tried - a.s.tried;
   });
+  if (cells.length > 0) {
+    html += `<div class="wk-section-title">🎯 苦手スポット（弱い順）</div>`;
+    html += `<div class="wk-rank">`;
+    cells.slice(0, 8).forEach(({ y, c, s }) => {
+      const acc = _wkAcc(s);
+      const col = _wkColor(s);
+      html += `
+        <div class="wk-rank-row" data-year="${y}" data-cat="${c}" title="${y} ${c}／タップで出題">
+          <span class="wk-rank-name">${y}<span class="wk-rank-sep">・</span>${_wkShortCat(c)}</span>
+          <span class="wk-rank-bar"><span class="wk-rank-fill" style="width:${acc}%;background:${col};"></span></span>
+          <span class="wk-rank-acc" style="color:${col}">${acc}%</span>
+          <span class="wk-rank-cnt">挑戦 ${s.tried}/${s.total}</span>
+        </div>`;
+    });
+    html += `</div>`;
+  }
 
-  container.innerHTML = '';
+  // ── 科目別 ──
+  html += `<div class="wk-section-title">📚 科目別（弱い順）</div>`;
+  _wkWeakSort(Object.entries(byCat)).forEach(([cat, s]) => { html += _wkRowHTML(cat, s); });
 
-  cats.forEach(cat => {
-    const s = catStats[cat];
-    const rate = s.attempts > 0 ? s.correct / s.attempts : null;
-    const pct  = rate !== null ? Math.round(rate * 100) : null;
-    const attempted = s.choiceTried;
-    const total     = s.total;
+  // ── 年度別 ──
+  html += `<div class="wk-section-title">📅 年度別（弱い順）</div>`;
+  _wkWeakSort(Object.entries(byYear)).forEach(([year, s]) => { html += _wkRowHTML(year, s); });
 
-    // 色: 赤(<50%) / 黄(50-75%) / 緑(>75%) / グレー(未着手)
-    const barColor = rate === null ? 'var(--text-3)'
-                   : pct < 50     ? '#ef4444'
-                   : pct < 75     ? '#f59e0b'
-                   :                '#10b981';
+  container.innerHTML = html;
 
-    const row = document.createElement('div');
-    row.className = 'weakness-row';
-    row.innerHTML = `
-      <div class="weakness-row-header">
-        <span class="weakness-cat-name">${cat}</span>
-        <span class="weakness-pct" style="color:${barColor}">
-          ${rate !== null ? pct + '%' : '未着手'}
-        </span>
-      </div>
-      <div class="weakness-bar-bg">
-        <div class="weakness-bar-fill" style="width:${pct ?? 0}%;background:${barColor};"></div>
-      </div>
-      <div class="weakness-sub">
-        <span>${attempted.toLocaleString()} / ${total.toLocaleString()} 選択肢 学習済み</span>
-        <span>${s.attempted > 0 ? s.correct.toLocaleString() + ' 正解' : ''}</span>
-      </div>
-    `;
-    container.appendChild(row);
-  });
+  // ヒートマップのセルをタップ→その年度×科目で出題開始
+  container.onclick = (e) => {
+    const target = e.target.closest('[data-year][data-cat]');
+    if (!target) return;
+    _startSessionForCell(target.dataset.year, target.dataset.cat);
+  };
+}
+
+// 指定の年度×科目で学習セッションを開始
+function _startSessionForCell(year, cat) {
+  const filtered = state.questions.filter(q =>
+    (q.category || 'その他') === cat &&
+    (q.year || '年度不明') === year &&
+    q.choices && q.choices.length
+  );
+  if (filtered.length === 0) { alert('この年度・科目には出題できる問題がありません。'); return; }
+  // フィルター状態も合わせておく（結果画面の「もう一度」等の一貫性のため）
+  state.activeCategories = new Set([cat]);
+  state.activeYears      = new Set([year]);
+  state.activeSections   = new Set();
+  _startSession('sequential', filtered);
+}
+
+// 科目名を短く（ヒートマップ・ランキング用）
+function _wkShortCat(cat) {
+  return cat
+    .replace('ガス技術（', '')
+    .replace('）', '')
+    .replace('ガス技術', 'ガス技術');
 }
 
 function renderCalendar() {
