@@ -5875,11 +5875,26 @@ function setNameToFilename(setName) {
     + '.json';
 }
 
-function openExportQuestionsModal() {
+function openExportQuestionsModal(mode = 'set') {
+  const byCategory = (mode === 'category');
+
+  // タイトル・説明をモードに合わせて更新
+  const titleEl = document.getElementById('modal-export-q-title');
+  const descEl  = document.getElementById('modal-export-q-desc');
+  if (titleEl) titleEl.textContent = byCategory ? '📤 問題を科目別書き出し' : '📤 問題を年度別書き出し';
+  if (descEl)  descEl.innerHTML = byCategory
+    ? '登録済みの問題を科目（分野）ごとに1つのJSONファイルへ書き出します。<br>ダウンロードしたファイルは「JSONファイルを追加」で再度読み込めます。'
+    : '登録済みの問題セットをJSONファイルに書き出します。<br>ダウンロードしたファイルは「JSONファイルを追加」で再度読み込めます。';
+
   const sets = {};
   state.questions.forEach(q => {
-    const key = q._setName || 'その他';
-    if (key === 'デフォルト問題') return; // デフォルトは書き出し対象外
+    let key;
+    if (byCategory) {
+      key = q.category || 'その他';
+    } else {
+      key = q._setName || 'その他';
+      if (key === 'デフォルト問題') return; // デフォルトは書き出し対象外
+    }
     if (!sets[key]) sets[key] = [];
     sets[key].push(q);
   });
@@ -5888,25 +5903,28 @@ function openExportQuestionsModal() {
   list.innerHTML = '';
 
   if (Object.keys(sets).length === 0) {
-    list.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;">書き出せる問題セットがありません。</p>';
+    list.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;">書き出せる問題がありません。</p>';
     document.getElementById('btn-export-q-all').disabled = true;
   } else {
     document.getElementById('btn-export-q-all').disabled = false;
 
-    // 年度昇順 → 同年度内はカテゴリ順（CATEGORY_ORDER）→ 50音順
-    const sortedSets = Object.entries(sets).sort(([a], [b]) => {
-      const yearA = parseInt((a.match(/令和(\d+)年度/) || [])[1] || '0');
-      const yearB = parseInt((b.match(/令和(\d+)年度/) || [])[1] || '0');
-      if (yearA !== yearB) return yearA - yearB;
-      const catIdx = cat => {
-        const i = CATEGORY_ORDER.findIndex(c => a.includes(c) || a.includes(c.replace('ガス技術：', 'ガス技術')));
-        return i !== -1 ? i : 99;
-      };
-      const ia = CATEGORY_ORDER.findIndex(c => a.includes(c) || a.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
-      const ib = CATEGORY_ORDER.findIndex(c => b.includes(c) || b.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
-      if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-      return a.localeCompare(b, 'ja');
-    });
+    // 並び順: 科目別はCATEGORY_ORDER順、年度別は年度昇順→カテゴリ順→50音順
+    const sortedSets = byCategory
+      ? Object.entries(sets).sort(([a], [b]) => {
+          const ia = CATEGORY_ORDER.indexOf(a);
+          const ib = CATEGORY_ORDER.indexOf(b);
+          if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          return a.localeCompare(b, 'ja');
+        })
+      : Object.entries(sets).sort(([a], [b]) => {
+          const yearA = parseInt((a.match(/令和(\d+)年度/) || [])[1] || '0');
+          const yearB = parseInt((b.match(/令和(\d+)年度/) || [])[1] || '0');
+          if (yearA !== yearB) return yearA - yearB;
+          const ia = CATEGORY_ORDER.findIndex(c => a.includes(c) || a.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
+          const ib = CATEGORY_ORDER.findIndex(c => b.includes(c) || b.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
+          if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          return a.localeCompare(b, 'ja');
+        });
 
     sortedSets.forEach(([setName, qs]) => {
       const row = document.createElement('div');
@@ -9266,7 +9284,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('json-editor-apply').addEventListener('click', applyJsonEdit);
 
   // Questions export
-  document.getElementById('btn-export-questions').addEventListener('click', openExportQuestionsModal);
+  document.getElementById('btn-export-questions').addEventListener('click', () => openExportQuestionsModal('set'));
+  document.getElementById('btn-export-questions-cat').addEventListener('click', () => openExportQuestionsModal('category'));
   const closeExportQ = () => document.getElementById('modal-export-questions').classList.add('hidden');
   document.getElementById('modal-export-q-close').addEventListener('click', closeExportQ);
   document.getElementById('btn-export-q-close2').addEventListener('click', closeExportQ);
