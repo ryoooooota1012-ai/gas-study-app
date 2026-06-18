@@ -122,6 +122,15 @@ function sortCategories(cats) {
   });
 }
 
+/** 分野(section)を節番号順に並べる（「第1節」「1節」等の先頭数値で比較、数値なしは末尾） */
+function sortSections(sections) {
+  return [...sections].sort((a, b) => {
+    const na = parseInt((String(a).match(/^第?\s*(\d+)/) || ['', '99'])[1]);
+    const nb = parseInt((String(b).match(/^第?\s*(\d+)/) || ['', '99'])[1]);
+    return na !== nb ? na - nb : String(a).localeCompare(String(b), 'ja');
+  });
+}
+
 // カテゴリ名の表示用変換（データ上は「ガス技術：消費」だが画面上は「消費機器」と表示）
 function displayCategoryName(cat) {
   return cat === 'ガス技術：消費' ? 'ガス技術：消費機器' : cat;
@@ -980,11 +989,7 @@ function refreshSubFilters() {
   state.activeSections = new Set();
 
   const sortedYears = sortYearsDesc([...years]);
-  const sortedSections = [...sections].sort((a, b) => {
-    const na = parseInt((a.match(/^(\d+)/) || [])[1] || '99');
-    const nb = parseInt((b.match(/^(\d+)/) || [])[1] || '99');
-    return na !== nb ? na - nb : a.localeCompare(b, 'ja');
-  });
+  const sortedSections = sortSections([...sections]);
 
   renderSubFilterPanel(sortedYears, sortedSections);
   updateSubPanelVisibility();
@@ -2729,15 +2734,10 @@ function renderHome() {
   flushSessionTime();
   gdriveCheckRemote().catch(() => {}); // Drive に新しいデータがあれば通知のみ（自動上書きはしない）
   updateHeaderStats();
-  // ホームに戻るたびにフィルターをリセット
-  state.activeCategories = new Set();
-  state.activeYears      = new Set();
-  state.activeSections   = new Set();
-  state.activeTags       = new Set();
-  state.calcFilter       = false;
-  topFilterOpenCat       = null;
-  topFilterSubMode       = 'year';
-  topFilterStartOpen     = false;
+  // フィルター選択（カテゴリ・年度・分野・タグ）はホームに戻っても維持する。
+  // 学習→ホーム→同じ範囲で再学習、のたびに選び直す手間をなくすため。
+  // クリアは出題フィルターの「絞り込みクリア」やカテゴリ再クリックで行える。
+  topFilterStartOpen     = false;  // 出題開始ポップアップだけは閉じる
   const categories = [...new Set(state.questions.map(q => q.category))]
     .sort((a, b) => a.localeCompare(b, 'ja'));
   renderCategoryFilter(categories);
@@ -4298,11 +4298,7 @@ function renderDrillSetupFilters() {
   }
 
   // ── 分野チップ ──
-  const sections = [...new Set(relevantQs.filter(q => q.section).map(q => q.section))].sort((a, b) => {
-    const na = parseInt((a.match(/^(\d+)/) || [0, 99])[1]);
-    const nb = parseInt((b.match(/^(\d+)/) || [0, 99])[1]);
-    return na - nb;
-  });
+  const sections = sortSections([...new Set(relevantQs.filter(q => q.section).map(q => q.section))]);
   const secsEl = document.getElementById('drill-setup-sections');
   secsEl.innerHTML = '';
   if (sections.length === 0) {
@@ -5677,11 +5673,7 @@ function renderFilteredQuestionList(openState) {
   });
 
   // Sort sections numerically by leading number
-  const sortedSections = Object.keys(grouped).sort((a, b) => {
-    const na = parseInt((a.match(/^第?(\d+)/) || ['','99'])[1]);
-    const nb = parseInt((b.match(/^第?(\d+)/) || ['','99'])[1]);
-    return na !== nb ? na - nb : a.localeCompare(b, 'ja');
-  });
+  const sortedSections = sortSections(Object.keys(grouped));
 
   sortedSections.forEach(sec => {
     const qs = grouped[sec];
