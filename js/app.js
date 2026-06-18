@@ -979,7 +979,7 @@ function refreshSubFilters() {
   state.activeYears    = new Set(years);
   state.activeSections = new Set();
 
-  const sortedYears = [...years].sort((a, b) => b.localeCompare(a, 'ja'));
+  const sortedYears = sortYearsDesc([...years]);
   const sortedSections = [...sections].sort((a, b) => {
     const na = parseInt((a.match(/^(\d+)/) || [])[1] || '99');
     const nb = parseInt((b.match(/^(\d+)/) || [])[1] || '99');
@@ -1487,7 +1487,7 @@ function buildQueue(questions, mode) {
   } else {
     // sequential: 年度↓新しい順 → 問番号順
     qs.sort((a, b) => {
-      const yearCmp = (b.year || '').localeCompare(a.year || '', 'ja');
+      const yearCmp = yearToNumber(b.year) - yearToNumber(a.year);
       if (yearCmp !== 0) return yearCmp;
       return getQNum(a) - getQNum(b);
     });
@@ -1554,7 +1554,7 @@ function openCreateModal() {
 
   // 年度サジェスト
   const yearList = document.getElementById('create-year-list');
-  const years = [...new Set(state.questions.map(q => q.year).filter(Boolean))].sort().reverse();
+  const years = sortYearsDesc([...new Set(state.questions.map(q => q.year).filter(Boolean))]);
   yearList.innerHTML = years.map(y => `<option value="${y}">`).join('');
 
   // 入力クリア
@@ -1763,7 +1763,7 @@ function openBulkEditModal() {
   document.getElementById('bulk-category').value = '';
 
   // 年度サジェスト
-  const years = [...new Set(state.questions.map(q => q.year).filter(Boolean))].sort().reverse();
+  const years = sortYearsDesc([...new Set(state.questions.map(q => q.year).filter(Boolean))]);
   document.getElementById('bulk-year-list').innerHTML = years.map(y => `<option value="${y}">`).join('');
 
   // カテゴリ選択肢
@@ -4910,7 +4910,7 @@ function renderHistoryView() {
 
       // 年度別（折りたたみ）
       const byYear = rec.byYear || {};
-      const yearKeys = Object.keys(byYear).filter(Boolean).sort((a, b) => b.localeCompare(a, 'ja'));
+      const yearKeys = sortYearsDesc(Object.keys(byYear).filter(Boolean));
       if (yearKeys.length > 0) {
         const toggle = document.createElement('button');
         toggle.className = 'btn btn-ghost btn-sm hist-year-toggle';
@@ -5060,9 +5060,9 @@ function _renderStatsImpl(openState) {
     const yearsMap     = grouped[cat];
     const catOpenState = openState[cat] || {};
 
-    // 年度の並び順
+    // 年度の並び順（西暦数値で比較。昇順/降順トグル対応）
     const sortedYears = Object.keys(yearsMap).sort((a, b) =>
-      statsSortMode === 'year-asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja')
+      statsSortMode === 'year-asc' ? yearToNumber(a) - yearToNumber(b) : yearToNumber(b) - yearToNumber(a)
     );
 
     // カテゴリ集計
@@ -5440,7 +5440,7 @@ function renderQuestionList(openState) {
         const nb = parseInt((b.slice(7).match(/^(\d+)/) || [])[1] || '99');
         return na - nb;
       }
-      return qlistSortMode === 'year-asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja');
+      return qlistSortMode === 'year-asc' ? yearToNumber(a) - yearToNumber(b) : yearToNumber(b) - yearToNumber(a);
     });
 
     // ── カテゴリ行 ──
@@ -5689,7 +5689,7 @@ function renderFilteredQuestionList(openState) {
 
     // Sort: year desc → qnum asc
     qs.sort((a, b) => {
-      const yearCmp = (b.year || '').localeCompare(a.year || '', 'ja');
+      const yearCmp = yearToNumber(b.year) - yearToNumber(a.year);
       if (yearCmp !== 0) return yearCmp;
       return getQNum(a) - getQNum(b);
     });
