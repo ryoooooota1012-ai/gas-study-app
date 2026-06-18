@@ -2727,7 +2727,7 @@ function startTagSession(mode, tagQs) {
 
 function renderHome() {
   flushSessionTime();
-  gdriveAutoDownload().catch(() => {}); // Drive 差分ダウンロード（サイレント）
+  gdriveCheckRemote().catch(() => {}); // Drive に新しいデータがあれば通知のみ（自動上書きはしない）
   updateHeaderStats();
   // ホームに戻るたびにフィルターをリセット
   state.activeCategories = new Set();
@@ -4603,6 +4603,9 @@ function renderDrillChoice() {
     const skipBtn = document.getElementById('btn-drill-skip');
     if (skipBtn) skipBtn.classList.toggle('hidden', state.drillMode !== 'keyword-search' && !q.drillExcluded);
     state.drillAnswered = false;
+    // 答え合わせ前でもマーカーの表示/非表示を切り替えられるよう、ボタン状態を反映
+    _applyDrillHighlights(q, c);
+    _updateDrillMarkerBtn(q, c);
   }
 }
 
@@ -5948,7 +5951,6 @@ const GDRIVE_CONNECTED_KEY = 'gas_drive_connected'; // ユーザーが一度で�
 
 let _gisTokenClient    = null;
 let _gdriveToken       = null;
-let _autoDownloadDone  = false; // 1ページロードにつき1回だけ
 
 /** GIS ライブラリロード完了時に呼ばれる（index.html の onload 属性から） */
 function _gisLoaded() {
@@ -5975,9 +5977,9 @@ function _onTokenResponse(res) {
   if (res.error) { console.warn('[GDrive] token response error:', res.error); return; }
   _gdriveToken = res.access_token;
   _updateDriveBtnUI();
-  // ホーム画面が表示中なら自動ダウンロードを試みる
+  // 自動上書きはせず、Drive に新しいデータがあるかだけ確認して通知
   if (!document.getElementById('screen-home')?.classList.contains('hidden')) {
-    gdriveAutoDownload().catch(() => {});
+    gdriveCheckRemote().catch(() => {});
   }
 }
 
@@ -6091,45 +6093,101 @@ async function gdriveUpload(silent = false) {
   }
 }
 
-/** ホーム表示時に Drive から差分ダウンロード（Drive が新しければ適用してリロード） */
-async function gdriveAutoDownload() {
-  if (!_gdriveToken || _autoDownloadDone) return;
-  _autoDownloadDone = true;
+/** Drive 上のバックアップファイル情報（id, modifiedTime）を取得 */
+async function _gdriveFindFile() {
+  const listRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id,modifiedTime)`,
+    { headers: { Authorization: `Bearer ${_gdriveToken}` } }
+  );
+  if (!listRes.ok) {
+    if (listRes.status === 401) { _gdriveToken = null; _updateDriveBtnUI(); }
+    return null;
+  }
+  const listData = await listRes.json();
+  return listData.files?.[0] || null;
+}
+
+/** Drive からデータを取得してローカルへ適用（タイムスタンプ問わず上書き） */
+async function _gdriveFetchAndApply(fileId, driveTime) {
+  const fileRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { Authorization: `Bearer ${_gdriveToken}` } }
+  );
+  const data = await fileRes.json();
+
+  const ls = data.localStorage || {};
+  for (const key of BACKUP_LS_KEYS) {
+    if (ls[key] !== undefined) localStorage.setItem(key, JSON.stringify(ls[key]));
+  }
+  const images = data.indexedDB?.images || {};
+  for (const [key, val] of Object.entries(images)) await idbSet(key, val);
+
+  localStorage.setItem(GDRIVE_SYNCED_KEY, driveTime.toString());
+  // location.reload() はiOSでクラッシュするため、アプリ状態をその場で再初期化
+  await _reloadAppState();
+}
+
+/** 手動ダウンロード：ユーザーが明示的に選んだ場合のみ、Drive の内容で上書きする */
+async function gdriveDownloadNow() {
+  if (!_gdriveToken) { showSyncStatus('⚠️ 先に「Driveに接続する」を押してください'); return; }
   try {
-    const listRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id,modifiedTime)`,
-      { headers: { Authorization: `Bearer ${_gdriveToken}` } }
-    );
-    if (!listRes.ok) return;
-    const listData = await listRes.json();
-    const file     = listData.files?.[0];
-    if (!file) return;
-
+    showSyncStatus('☁️ Drive から取得中…');
+    const file = await _gdriveFindFile();
+    if (!file) { showSyncStatus('⚠️ Drive にバックアップが見つかりません'); return; }
     const driveTime = new Date(file.modifiedTime).getTime();
-    const localTime = parseInt(localStorage.getItem(GDRIVE_SYNCED_KEY) || '0');
-    if (driveTime <= localTime) return; // ローカルが最新
-
-    showSyncStatus('☁️ Drive から最新データを取得中…');
-
-    const fileRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
-      { headers: { Authorization: `Bearer ${_gdriveToken}` } }
-    );
-    const data = await fileRes.json();
-
-    const ls = data.localStorage || {};
-    for (const key of BACKUP_LS_KEYS) {
-      if (ls[key] !== undefined) localStorage.setItem(key, JSON.stringify(ls[key]));
-    }
-    const images = data.indexedDB?.images || {};
-    for (const [key, val] of Object.entries(images)) await idbSet(key, val);
-
-    localStorage.setItem(GDRIVE_SYNCED_KEY, driveTime.toString());
-    showSyncStatus('✅ 最新データを読み込みました');
-    // location.reload() はiOSでクラッシュするため、アプリ状態をその場で再初期化
-    setTimeout(() => _reloadAppState(), 800);
+    await _gdriveFetchAndApply(file.id, driveTime);
+    showSyncStatus('✅ Drive のデータを反映しました');
   } catch(e) {
     console.error('[GDrive download]', e);
+    showSyncStatus('⚠️ ダウンロード失敗');
+  }
+}
+
+/** 手動同期モーダルを開く（アップロード／ダウンロードを選択） */
+async function openDriveSyncModal() {
+  if (!_gdriveToken) {
+    try {
+      _gdriveToken = await _gdriveRequestToken();
+      localStorage.setItem(GDRIVE_CONNECTED_KEY, '1');
+      _updateDriveBtnUI();
+    } catch {
+      showSyncStatus('⚠️ 先に「Driveに接続する」を押してください');
+      return;
+    }
+  }
+  const modal   = document.getElementById('modal-drive-sync');
+  const timesEl = document.getElementById('drive-sync-times');
+  const fmt = ms => ms ? new Date(ms).toLocaleString('ja-JP') : '—';
+  const localTime = parseInt(localStorage.getItem(GDRIVE_SYNCED_KEY) || '0');
+  if (timesEl) timesEl.innerHTML = `Drive 最終更新：確認中…<br>このデバイス最終同期：${fmt(localTime)}`;
+  modal.classList.remove('hidden');
+  // Drive 側の更新日時を取得して表示
+  try {
+    const file = await _gdriveFindFile();
+    const driveTime = file ? new Date(file.modifiedTime).getTime() : 0;
+    if (timesEl) {
+      const newer = driveTime > localTime ? '（Drive の方が新しい）'
+                  : driveTime && driveTime < localTime ? '（このデバイスの方が新しい）' : '';
+      timesEl.innerHTML = `Drive 最終更新：${file ? fmt(driveTime) : 'バックアップなし'} <span style="color:var(--primary-light)">${newer}</span><br>このデバイス最終同期：${fmt(localTime)}`;
+    }
+  } catch {
+    if (timesEl) timesEl.innerHTML = `Drive 最終更新：取得失敗<br>このデバイス最終同期：${fmt(localTime)}`;
+  }
+}
+
+/** 自動チェックのみ：Drive に新しいデータがあれば通知するだけ（自動では上書きしない） */
+async function gdriveCheckRemote() {
+  if (!_gdriveToken) return;
+  try {
+    const file = await _gdriveFindFile();
+    if (!file) return;
+    const driveTime = new Date(file.modifiedTime).getTime();
+    const localTime = parseInt(localStorage.getItem(GDRIVE_SYNCED_KEY) || '0');
+    if (driveTime > localTime) {
+      showSyncStatus('☁️ Drive に新しいデータがあります（設定 → 🔄 Drive と同期）');
+    }
+  } catch(e) {
+    console.error('[GDrive check]', e);
   }
 }
 
@@ -8570,7 +8628,6 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('btn-drill-batsu').addEventListener('click', () => answerDrill(false));
   document.getElementById('btn-drill-next').addEventListener('click',  nextDrill);
   document.getElementById('btn-drill-marker-toggle').addEventListener('click', () => {
-    if (!state.drillAnswered) return;
     markerDisplayOn = !markerDisplayOn;
     const di = state.drillQueue[state.drillIndex];
     if (!di) return;
@@ -8709,6 +8766,17 @@ document.addEventListener('DOMContentLoaded', async () => { try {
           const isBm = state.bookmarks.has(item.question.id);
           const bmBtn = document.getElementById('btn-drill-bookmark');
           if (bmBtn) { bmBtn.textContent = isBm ? '★' : '☆'; bmBtn.classList.toggle('bookmarked', isBm); }
+        }
+        break;
+      }
+      case '-': {
+        // マーカー表示/非表示トグル（答え合わせ前でも可・通常モードと同じ）
+        e.preventDefault();
+        markerDisplayOn = !markerDisplayOn;
+        const di = state.drillQueue[state.drillIndex];
+        if (di) {
+          _applyDrillHighlights(di.question, di.choice);
+          _updateDrillMarkerBtn(di.question, di.choice);
         }
         break;
       }
@@ -9226,30 +9294,25 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       localStorage.setItem(GDRIVE_CONNECTED_KEY, '1');
       _updateDriveBtnUI();
       showSyncStatus('☁️ Drive に接続しました');
-      _autoDownloadDone = false;
-      gdriveAutoDownload().catch(() => {});
+      gdriveCheckRemote().catch(() => {});
     } catch(e) {
       showSyncStatus('⚠️ サインイン失敗: ' + e);
     }
   });
 
-  // ── Drive 手動アップロード ──
-  document.getElementById('btn-drive-upload-manual').addEventListener('click', async () => {
-    if (!_gdriveToken) {
-      showSyncStatus('⚠️ 先に「Driveに接続する」を押してください');
-      return;
-    }
+  // ── Drive 手動同期：アップロード／ダウンロードを選ばせる ──
+  document.getElementById('btn-drive-sync').addEventListener('click', () => openDriveSyncModal());
+  document.getElementById('btn-drive-sync-cancel').addEventListener('click', () => {
+    document.getElementById('modal-drive-sync').classList.add('hidden');
+  });
+  document.getElementById('btn-drive-sync-upload').addEventListener('click', async () => {
+    document.getElementById('modal-drive-sync').classList.add('hidden');
     await gdriveUpload(false);
   });
-
-  // ── Drive 手動ダウンロード ──
-  document.getElementById('btn-drive-download-manual').addEventListener('click', async () => {
-    if (!_gdriveToken) {
-      showSyncStatus('⚠️ 先に「Driveに接続する」を押してください');
-      return;
-    }
-    _autoDownloadDone = false;
-    await gdriveAutoDownload();
+  document.getElementById('btn-drive-sync-download').addEventListener('click', async () => {
+    if (!confirm('⚠️ Drive の内容でこのデバイスを上書きします。\nこのデバイスの方が新しい場合、進捗が巻き戻る可能性があります。\n\nダウンロードを実行しますか？')) return;
+    document.getElementById('modal-drive-sync').classList.add('hidden');
+    await gdriveDownloadNow();
   });
 
   // ── タグ追加ボタン ──

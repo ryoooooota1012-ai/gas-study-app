@@ -403,8 +403,7 @@
   <hr style="margin:10px 0;border:none;border-top:1px solid var(--border);">
   <button id="btn-drive-signin" class="btn btn-ghost btn-sm" style="width:100%;">☁️ Driveに接続する</button>
   <div style="display:flex;gap:6px;margin-top:6px;">
-    <button id="btn-drive-upload-manual" class="btn btn-outline btn-sm" style="flex:1;">⬆️ アップロード</button>
-    <button id="btn-drive-download-manual" class="btn btn-outline btn-sm" style="flex:1;">⬇️ ダウンロード</button>
+    <button id="btn-drive-sync" class="btn btn-outline btn-sm" style="flex:1;">🔄 Drive と同期</button>
   </div>
   <input type="file" id="input-questions-file" accept=".json" class="hidden">
   <input type="file" id="input-progress-file" accept=".json" class="hidden">
@@ -1019,6 +1018,32 @@
   </div>
 </div>
 
+<!-- ==================== DRIVE SYNC CHOICE MODAL ==================== -->
+<div id="modal-drive-sync" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">🔄 Drive と同期</span>
+    </div>
+    <div class="modal-body" style="padding:18px 22px;">
+      <p style="font-size:.84rem;line-height:1.7;color:var(--text-2);margin:0 0 12px;">
+        アップロードとダウンロードのどちらを実行するか選んでください。
+      </p>
+      <div id="drive-sync-times" style="font-size:.76rem;line-height:1.7;color:var(--text-3);background:var(--bg-card2);border-radius:8px;padding:8px 12px;margin-bottom:14px;"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button id="btn-drive-sync-upload" class="btn btn-primary" style="display:block;width:100%;text-align:left;line-height:1.5;">
+          ⬆️ アップロード<br><span style="font-size:.72rem;font-weight:400;opacity:.85;">このデバイスの内容で Drive を上書き（安全）</span>
+        </button>
+        <button id="btn-drive-sync-download" class="btn btn-outline" style="display:block;width:100%;text-align:left;line-height:1.5;">
+          ⬇️ ダウンロード<br><span style="font-size:.72rem;font-weight:400;opacity:.85;">⚠️ Drive の内容でこのデバイスを上書き（進捗が巻き戻る場合あり）</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-drive-sync-cancel" class="btn btn-ghost">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== JSON EDITOR MODAL ==================== -->
 <div id="modal-json-editor" class="modal-overlay hidden">
   <div class="modal-box" style="max-width:680px;width:96%;">
@@ -1392,7 +1417,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260612h"></script>
+<script src="js/app.js?v=20260612i"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
