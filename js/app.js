@@ -5900,7 +5900,16 @@ function openExportQuestionsModal(mode = 'set') {
   } else {
     document.getElementById('btn-export-q-all').disabled = false;
 
-    // 並び順: 科目別はCATEGORY_ORDER順、年度別は年度昇順→カテゴリ順→50音順
+    // セット名に含まれる科目をCATEGORY_ORDER順のインデックスに変換（「：」以降のキーワードで判定）
+    const setNameCatIndex = (name) => {
+      const idx = CATEGORY_ORDER.findIndex(c => {
+        const kw = c.split('：').pop(); // 'ガス技術：製造' → '製造'
+        return name.includes(kw);
+      });
+      return idx === -1 ? 99 : idx;
+    };
+
+    // 並び順: 科目別はCATEGORY_ORDER順、年度別は年度↓新しい順→カテゴリ順→50音順（全画面と統一）
     const sortedSets = byCategory
       ? Object.entries(sets).sort(([a], [b]) => {
           const ia = CATEGORY_ORDER.indexOf(a);
@@ -5909,12 +5918,10 @@ function openExportQuestionsModal(mode = 'set') {
           return a.localeCompare(b, 'ja');
         })
       : Object.entries(sets).sort(([a], [b]) => {
-          const yearA = parseInt((a.match(/令和(\d+)年度/) || [])[1] || '0');
-          const yearB = parseInt((b.match(/令和(\d+)年度/) || [])[1] || '0');
-          if (yearA !== yearB) return yearA - yearB;
-          const ia = CATEGORY_ORDER.findIndex(c => a.includes(c) || a.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
-          const ib = CATEGORY_ORDER.findIndex(c => b.includes(c) || b.includes(c.replace('ガス技術：消費', 'ガス技術（消費')));
-          if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          const ya = yearToNumber(a), yb = yearToNumber(b); // 元号対応・令和元/平成/2桁もOK
+          if (ya !== yb) return yb - ya;                    // 新しい年度を上に
+          const ia = setNameCatIndex(a), ib = setNameCatIndex(b);
+          if (ia !== ib) return ia - ib;
           return a.localeCompare(b, 'ja');
         });
 
