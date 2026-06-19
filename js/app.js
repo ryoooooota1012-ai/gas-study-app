@@ -6234,20 +6234,42 @@ async function openDriveSyncModal() {
   }
 }
 
-/** 自動チェックのみ：Drive に新しいデータがあれば通知するだけ（自動では上書きしない） */
+/** 自動チェック：Drive が新しければ通知（自動上書きはしない）／ローカルが長期未保存なら自動バックアップ */
 async function gdriveCheckRemote() {
   if (!_gdriveToken) return;
   try {
     const file = await _gdriveFindFile();
-    if (!file) return;
-    const driveTime = new Date(file.modifiedTime).getTime();
     const localTime = parseInt(localStorage.getItem(GDRIVE_SYNCED_KEY) || '0');
+    const AUTO_BACKUP_MS = 3 * 86400000; // 3日
+    if (!file) {
+      // Drive にまだバックアップが無い → 初回バックアップを自動作成
+      gdriveUpload(true).catch(() => {});
+      return;
+    }
+    const driveTime = new Date(file.modifiedTime).getTime();
     if (driveTime > localTime) {
+      // 他端末などで更新あり → 巻き戻り防止のため自動では取り込まず通知のみ
       showSyncStatus('☁️ Drive に新しいデータがあります（設定 → 🔄 Drive と同期）');
+    } else if (localTime && Date.now() - localTime > AUTO_BACKUP_MS) {
+      // ローカルが最新だが長期間バックアップしていない → 自動バックアップ
+      gdriveUpload(true).catch(() => {});
     }
   } catch(e) {
     console.error('[GDrive check]', e);
   }
+}
+
+/** 未接続ユーザー向け：学習データが端末のみに保存されている旨を、たまに案内 */
+function checkLocalBackupReminder() {
+  if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) return; // 接続済みは対象外
+  const REMIND_KEY = 'gas_backup_remind_at';
+  const now  = Date.now();
+  const last = parseInt(localStorage.getItem(REMIND_KEY) || '0');
+  if (last && now - last < 7 * 86400000) return; // 7日に1回まで
+  // ある程度学習が貯まっている人にのみ表示（消えると痛い人向け）
+  if (Object.keys(state.progress || {}).length < 10) return;
+  showSyncStatus('💾 学習データはこの端末にのみ保存中です。設定 → ☁️ Drive 接続でバックアップを推奨');
+  localStorage.setItem(REMIND_KEY, now.toString());
 }
 
 /** ページリロードなしでアプリ状態を再初期化（Drive同期後に使用） */
@@ -8107,6 +8129,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   buildFilters();
   renderHome();
   scheduleMidnightReset();
+  setTimeout(checkLocalBackupReminder, 2500); // 未接続ユーザーへのバックアップ案内
 
   // ========== カレンダー日付ホバーツールチップ ==========
   (() => {
