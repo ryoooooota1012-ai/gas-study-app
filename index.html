@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260619c">
+  <link rel="stylesheet" href="css/style.css?v=20260620a">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -801,7 +801,6 @@
     </div>
     <div style="display:flex;gap:6px;">
       <button id="btn-create-q" class="btn btn-outline btn-sm">✏️ 新規作成</button>
-      <button id="btn-select-mode" class="btn btn-ghost btn-sm">☑ 選択</button>
       <button id="btn-delete-all" class="btn btn-danger btn-sm">全削除</button>
     </div>
   </div>
@@ -826,6 +825,7 @@
     <button class="btn-sort active" data-sort="year-desc">年度↓新しい順</button>
     <button class="btn-sort" data-sort="year-asc">年度↑古い順</button>
     <button class="btn-sort" data-sort="section">分野順</button>
+    <button id="btn-select-mode" class="btn btn-outline btn-sm" style="margin-left:auto;">☑ 選択</button>
   </div>
   <div id="questions-container"></div>
 </div>
