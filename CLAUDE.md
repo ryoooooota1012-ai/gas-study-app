@@ -102,6 +102,8 @@ window.DEFAULT_QUESTIONS = {
 | `gas_notes_v1` / `gas_bookmarks_v1` / `gas_choice_bookmarks_v1` | ノート・ブックマーク |
 | `gas_study_log_v1` / `gas_session_records_v1` | 学習ログ・セッション記録 |
 | `gas_settings_v1` / `gas_interrupted_session_v1` / `gas_drill_presets_v1` / `gas_calc_problems_v1` | 設定・中断復帰・壁打ちプリセット・計算問題 |
+| `gas_recent_wrong_v1` | 直近セッションで間違えた問題ID配列（ホームの「最近間違えた問題」復習用） |
+| `gas_drive_remind_at` / `gas_backup_remind_at` | Drive 関連の通知制御（端末ローカル、同期対象外） |
 
 ### IndexedDB（画像）
 
@@ -128,6 +130,9 @@ window.DEFAULT_QUESTIONS = {
 | フィルター進捗バー | `computeFilterProgress` / `filterProgressHTML` |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
 | タグ並び替え | `sortTagsJa`（数字→50音順） |
+| 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |
+| 直近の間違い復習 | `saveRecentWrong` / `loadRecentWrong` / `startRecentWrong`（結果画面表示時に保存→ホーム `#btn-start-recent-wrong` から復習） |
+| Drive 自動バックアップ・案内 | `gdriveCheckRemote`（Drive無し→初回UP／ローカルが3日以上未保存→自動UP）・`checkLocalBackupReminder`（未接続ユーザーへ7日毎に案内） |
 
 ---
 
