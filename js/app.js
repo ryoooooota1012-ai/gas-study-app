@@ -2812,6 +2812,12 @@ function renderHome() {
   const bmCount = state.bookmarks.size;
   const bmDesc  = document.getElementById('bookmark-count-desc');
   if (bmDesc) bmDesc.textContent = bmCount > 0 ? `${bmCount}問 登録済み` : '登録した問題を出題';
+  // 最近間違えた問題ボタン（件数があるときだけ表示）
+  const rwCount = loadRecentWrong().length;
+  const rwBtn   = document.getElementById('btn-start-recent-wrong');
+  const rwDesc  = document.getElementById('recent-wrong-desc');
+  if (rwBtn) rwBtn.classList.toggle('hidden', rwCount === 0);
+  if (rwDesc && rwCount) rwDesc.textContent = `直近で間違えた${rwCount}問を復習`;
   // 模試結果セクションをリセット
   document.getElementById('exam-result-section')?.classList.add('hidden');
   showScreen('home');
@@ -3917,6 +3923,7 @@ function finishExam() {
     });
   }
 
+  saveRecentWrong();
   const wrongQ = state.sessionWrongQuestions.length;
   const wrongC = state.sessionWrongChoices.length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -3943,6 +3950,7 @@ function showSessionResult() {
   document.getElementById('result-pct').textContent =
     total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
 
+  saveRecentWrong();
   const wrongQ = (state.sessionWrongQuestions || []).length;
   const wrongC = (state.sessionWrongChoices   || []).length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -4802,6 +4810,7 @@ function endDrillSession() {
   document.getElementById('result-pct').textContent =
     total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
 
+  saveRecentWrong();
   const wrongC = (state.sessionWrongChoices   || []).length;
   const wrongQ = (state.sessionWrongQuestions || []).length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -6440,6 +6449,23 @@ function resetProgress() {
 }
 
 // ========== Retry Wrong ==========
+// 直近セッションで間違えた問題IDを保存（ホームからいつでも復習できるように）
+const RECENT_WRONG_KEY = 'gas_recent_wrong_v1';
+function loadRecentWrong() {
+  try { return JSON.parse(localStorage.getItem(RECENT_WRONG_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveRecentWrong() {
+  const ids = [...new Set((state.sessionWrongQuestions || []).map(q => q.id))];
+  if (ids.length) localStorage.setItem(RECENT_WRONG_KEY, JSON.stringify(ids));
+}
+function startRecentWrong() {
+  const ids = loadRecentWrong();
+  const qs  = ids.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
+  if (qs.length === 0) { alert('最近間違えた問題はありません。'); return; }
+  _startSession('sequential', qs);
+}
+
 function retryWrongQuestions() {
   const qs = state.sessionWrongQuestions || [];
   if (qs.length === 0) return;
@@ -8457,6 +8483,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('btn-exam-next').addEventListener('click', examNextQuestion);
   document.getElementById('btn-exam-skip').addEventListener('click', examSkipQuestion);
   document.getElementById('btn-exam-submit-confirm').addEventListener('click', confirmExamSubmission);
+
+  // ── 最近間違えた問題 ──
+  const _rwBtn = document.getElementById('btn-start-recent-wrong');
+  if (_rwBtn) _rwBtn.addEventListener('click', startRecentWrong);
 
   // ── ブックマーク ──
   const bookmarkPopup = document.getElementById('bookmark-start-popup');

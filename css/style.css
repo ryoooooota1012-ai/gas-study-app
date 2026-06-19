@@ -1442,6 +1442,8 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .btn-drill-exclude.excluded { opacity:1; filter:drop-shadow(0 0 3px #ef4444); }
 .start-btn-card.bookmark-mode { background:linear-gradient(135deg,#2a2206,#1e1804); border-color:#a37d10; }
 .start-btn-card.bookmark-mode:hover { background:linear-gradient(135deg,#3d3208,#2e2406); border-color:#d4a81a; }
+.start-btn-card.recent-wrong-mode { background:linear-gradient(135deg,#2a0a0a,#1d0606); border-color:#a33b3b; }
+.start-btn-card.recent-wrong-mode:hover { background:linear-gradient(135deg,#3a0e0e,#2a0808); border-color:#d45050; }
 
 /* ===== Exam Mode ===== */
 .start-btn-card.exam-mode { background:linear-gradient(135deg,#3a0a18,#280612); border-color:#be185d; }
