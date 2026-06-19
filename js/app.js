@@ -477,7 +477,7 @@ function saveProgress() {
 }
 
 // ========== App Settings ==========
-let appSettings = { fontSize: 15, fontWeight: 400, soundEnabled: false };
+let appSettings = { fontSize: 15, fontWeight: 400 };
 
 function loadAppSettings() {
   try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch {}
@@ -491,93 +491,6 @@ function applyAppSettings() {
 
 function saveAppSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
-}
-
-// ========== Sound Effects ==========
-let _audioCtx = null;
-let _noiseBuffer = null;
-let _hoverSoundThrottle = 0;
-
-function _getAudioCtx() {
-  if (!_audioCtx) {
-    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const sr = _audioCtx.sampleRate;
-    const len = Math.ceil(sr * 0.12);
-    _noiseBuffer = _audioCtx.createBuffer(1, len, sr);
-    const d = _noiseBuffer.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  }
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-  return _audioCtx;
-}
-
-function playFilterSound(type) {
-  if (!appSettings.soundEnabled) return;
-  const ac = _getAudioCtx();
-  const now = ac.currentTime;
-  const isHover = type === 'hover';
-  const pitch   = isHover ? 190 : 210;
-  const decay   = 0.028;
-  const hardness = 0.72;
-  const body    = 0.35;
-  const vol     = isHover ? 0.16 : 0.35;
-
-  const master = ac.createGain();
-  master.gain.setValueAtTime(vol, now);
-  master.gain.exponentialRampToValueAtTime(0.0001, now + decay * 3.5);
-  master.connect(ac.destination);
-
-  const transOsc = ac.createOscillator();
-  transOsc.type = 'square';
-  transOsc.frequency.setValueAtTime(pitch * 4.2, now);
-  transOsc.frequency.exponentialRampToValueAtTime(pitch * 1.1, now + decay * 0.35);
-  const transLpf = ac.createBiquadFilter();
-  transLpf.type = 'lowpass';
-  transLpf.frequency.setValueAtTime(pitch * 12, now);
-  transLpf.frequency.exponentialRampToValueAtTime(pitch * 2, now + decay * 0.4);
-  const transGain = ac.createGain();
-  transGain.gain.setValueAtTime(hardness * 1.1, now);
-  transGain.gain.exponentialRampToValueAtTime(0.0001, now + decay * 0.45);
-  transOsc.connect(transLpf); transLpf.connect(transGain); transGain.connect(master);
-  transOsc.start(now); transOsc.stop(now + decay * 0.5);
-
-  if (_noiseBuffer) {
-    const ns = ac.createBufferSource();
-    ns.buffer = _noiseBuffer;
-    const hpf = ac.createBiquadFilter();
-    hpf.type = 'highpass';
-    hpf.frequency.value = pitch * 2.5;
-    const bpf = ac.createBiquadFilter();
-    bpf.type = 'bandpass';
-    bpf.frequency.value = pitch * 5;
-    bpf.Q.value = 0.8;
-    const ng = ac.createGain();
-    ng.gain.setValueAtTime(hardness * 0.9, now);
-    ng.gain.exponentialRampToValueAtTime(0.0001, now + decay * 0.3);
-    ns.connect(hpf); hpf.connect(bpf); bpf.connect(ng); ng.connect(master);
-    ns.start(now); ns.stop(now + decay * 0.4);
-
-    const tail = ac.createBufferSource();
-    tail.buffer = _noiseBuffer;
-    const tlpf = ac.createBiquadFilter();
-    tlpf.type = 'lowpass';
-    tlpf.frequency.value = pitch * 2;
-    const tg = ac.createGain();
-    tg.gain.setValueAtTime((1 - hardness * 0.6) * 0.18, now + decay * 0.05);
-    tg.gain.exponentialRampToValueAtTime(0.0001, now + decay * 2.8);
-    tail.connect(tlpf); tlpf.connect(tg); tg.connect(master);
-    tail.start(now + decay * 0.05); tail.stop(now + decay * 3);
-  }
-
-  const bodyOsc = ac.createOscillator();
-  bodyOsc.type = 'triangle';
-  bodyOsc.frequency.setValueAtTime(pitch * 0.85, now);
-  bodyOsc.frequency.exponentialRampToValueAtTime(pitch * 0.5, now + decay * 1.5);
-  const bg = ac.createGain();
-  bg.gain.setValueAtTime(body * 0.7, now);
-  bg.gain.exponentialRampToValueAtTime(0.0001, now + decay * 2.0);
-  bodyOsc.connect(bg); bg.connect(master);
-  bodyOsc.start(now); bodyOsc.stop(now + decay * 2.2);
 }
 
 async function loadStoredQuestions() {
@@ -9554,31 +9467,6 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       document.getElementById('settings-font-weight').querySelectorAll('.settings-btn')
         .forEach(b => b.classList.toggle('active', b === btn));
     });
-  });
-
-  document.getElementById('settings-sound').querySelectorAll('.settings-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.value === (appSettings.soundEnabled ? 'on' : 'off'));
-    btn.addEventListener('click', () => {
-      appSettings.soundEnabled = btn.dataset.value === 'on';
-      saveAppSettings();
-      document.getElementById('settings-sound').querySelectorAll('.settings-btn')
-        .forEach(b => b.classList.toggle('active', b === btn));
-    });
-  });
-
-  // フィルター効果音（イベント委譲）
-  const _homeEl = document.getElementById('screen-home');
-  _homeEl.addEventListener('click', (e) => {
-    const tgt = e.target.closest('.chip, .top-filter-item');
-    if (tgt) playFilterSound('click');
-  });
-  _homeEl.addEventListener('mouseover', (e) => {
-    const tgt = e.target.closest('.chip, .top-filter-item');
-    if (!tgt) return;
-    const now = Date.now();
-    if (now - _hoverSoundThrottle < 80) return;
-    _hoverSoundThrottle = now;
-    playFilterSound('hover');
   });
 
   // ── 編集モーダル ──
