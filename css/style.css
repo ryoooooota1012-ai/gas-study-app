@@ -1931,11 +1931,55 @@ body.tier-border-diamond .card {
 .tag-study-area {
   margin-bottom: 4px;
 }
+.tag-study-search-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.tag-study-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .82rem;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-1);
+}
+.tag-study-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.tag-study-clear {
+  flex: 0 0 auto;
+  font-size: .74rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tag-study-clear:hover {
+  color: var(--text-1);
+  border-color: var(--text-3);
+}
 .tag-study-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 4px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.tag-study-empty {
+  width: 100%;
+  font-size: .78rem;
+  color: var(--text-3);
+  padding: 8px 2px;
 }
 .tag-study-chip {
   font-size: .8rem;

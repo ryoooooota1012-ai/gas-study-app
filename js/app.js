@@ -42,6 +42,7 @@ let pendingStartMode        = null;
 let _checkNoRecord          = false;  // true のとき checkAnswers() が記録処理をスキップ
 let _checkNoProgressRecord  = false;  // true のとき recordAnswer() のみスキップ（編集後の再チェック用）
 let tagStudySelectedTags    = new Set(); // タグ出題エリアで選択中のタグ
+let tagStudyFilter          = '';        // タグ出題エリアの検索キーワード
 let statsTabMode            = 'progress'; // 'progress' | 'history'
 let histFilterCats          = new Set();  // 成績履歴フィルター（カテゴリ）
 let qlistNavQueue        = []; // 問題リストの現在の表示順（問題ID配列）
@@ -2659,13 +2660,33 @@ function renderTagStudyArea() {
     return;
   }
 
-  // タグチップ行
+  // 検索ボックス＋選択クリア（タグが多いとき探しやすく）
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'tag-study-search-wrap';
+  const search = document.createElement('input');
+  search.type = 'text';
+  search.className = 'tag-study-search';
+  search.placeholder = `🔍 タグを検索（全${allTags.length}件）`;
+  search.value = tagStudyFilter;
+  searchWrap.appendChild(search);
+  if (tagStudySelectedTags.size > 0) {
+    const clr = document.createElement('button');
+    clr.type = 'button';
+    clr.className = 'tag-study-clear';
+    clr.textContent = `選択クリア（${tagStudySelectedTags.size}）`;
+    clr.addEventListener('click', () => { tagStudySelectedTags.clear(); renderTagStudyArea(); });
+    searchWrap.appendChild(clr);
+  }
+  area.appendChild(searchWrap);
+
+  // タグチップ行（スクロール可）
   const chipsRow = document.createElement('div');
   chipsRow.className = 'tag-study-chips';
   allTags.forEach(tag => {
     const chip = document.createElement('button');
     chip.className = 'chip tag-study-chip' + (tagStudySelectedTags.has(tag) ? ' active' : '');
     chip.textContent = '#' + tag;
+    chip.dataset.tag = tag;
     chip.addEventListener('click', () => {
       if (tagStudySelectedTags.has(tag)) tagStudySelectedTags.delete(tag);
       else tagStudySelectedTags.add(tag);
@@ -2674,6 +2695,27 @@ function renderTagStudyArea() {
     chipsRow.appendChild(chip);
   });
   area.appendChild(chipsRow);
+
+  // 該当なしメッセージ用
+  const emptyMsg = document.createElement('div');
+  emptyMsg.className = 'tag-study-empty hidden';
+  emptyMsg.textContent = '該当するタグがありません';
+  chipsRow.appendChild(emptyMsg);
+
+  // 検索フィルター（選択中タグは常に表示してロストを防ぐ）。入力中は再描画せず表示切替のみ＝フォーカス維持
+  const applyTagFilter = () => {
+    const q = tagStudyFilter.trim().toLowerCase().replace(/^#/, '');
+    let visible = 0;
+    chipsRow.querySelectorAll('.tag-study-chip').forEach(c => {
+      const isActive = tagStudySelectedTags.has(c.dataset.tag);
+      const match = isActive || !q || c.dataset.tag.toLowerCase().includes(q);
+      c.classList.toggle('hidden', !match);
+      if (match) visible++;
+    });
+    emptyMsg.classList.toggle('hidden', visible > 0);
+  };
+  applyTagFilter();
+  search.addEventListener('input', () => { tagStudyFilter = search.value; applyTagFilter(); });
 
   // タグ選択時: 壁打ちボタン（選択肢単位）
   if (tagStudySelectedTags.size > 0) {
