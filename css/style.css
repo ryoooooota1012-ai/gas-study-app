@@ -3662,6 +3662,20 @@ body.tier-border-diamond .card {
 @media (hover: none) and (pointer: coarse) {
   .kb-guide-pc    { display: none; }
   .kb-guide-touch { display: flex; }
+
+  /* ── タップ領域の拡大（指で押しやすく） ── */
+  .chip { padding: 9px 14px; }
+  .btn-marker-toggle,
+  .btn-bookmark,
+  .choice-bm-btn,
+  .btn-drill-exclude {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .study-nav-btn { min-height: 44px; }
 }
 .kb-item { display: inline-flex; align-items: center; gap: 3px; font-size: .72rem; color: var(--text-3); white-space: nowrap; }
 .kb-sep { color: var(--border); font-size: .8rem; }
