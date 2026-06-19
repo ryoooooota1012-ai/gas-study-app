@@ -767,6 +767,23 @@ function scheduleMidnightReset() {
   }, msUntil);
 }
 
+// 連続学習日数。今日がまだ未学習でも、昨日までの連続を維持して返す（朝に0表示で萎えないように）
+function computeStreak() {
+  const log = loadStudyLog();
+  const cur = new Date();
+  const todayStr = getLocalDateStr(cur);
+  if (!(log[todayStr] && log[todayStr].answered > 0)) {
+    cur.setDate(cur.getDate() - 1); // 今日まだなら昨日から数える
+  }
+  let streak = 0;
+  while (true) {
+    const ds = getLocalDateStr(cur);
+    if (log[ds] && log[ds].answered > 0) { streak++; cur.setDate(cur.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
 function updateHeaderStats() {
   const log          = loadStudyLog();
   const todayStr     = getLocalDateStr();
@@ -807,6 +824,14 @@ function updateHeaderStats() {
                     : todayChoices >=  50 ? 100 - todayChoices
                     :                       50  - todayChoices;
     nextMsg.textContent = remaining > 0 ? `次のステータスまで後${remaining}問` : '';
+  }
+
+  // ストリーク（連続学習日数）をヘッダーに常時表示
+  const streak   = computeStreak();
+  const streakEl = document.getElementById('hd-streak');
+  if (streakEl) {
+    if (streak >= 2) { streakEl.textContent = `🔥${streak}日連続`; streakEl.classList.remove('hidden'); }
+    else streakEl.classList.add('hidden');
   }
 
   updateStudyCardTier();
@@ -2510,13 +2535,7 @@ function renderCalendar() {
   const todayJP = `${toJpEraYear(today)}${today.getMonth()+1}月${today.getDate()}日（${DOW_JP[today.getDay()]}）`;
 
   // ── ストリーク ──
-  let streak = 0;
-  const cur = new Date(today);
-  while (true) {
-    const ds = cur.toISOString().slice(0, 10);
-    if (log[ds] && log[ds].answered > 0) { streak++; cur.setDate(cur.getDate() - 1); }
-    else break;
-  }
+  const streak = computeStreak();
   const streakBadge = document.getElementById('streak-badge');
   if (streakBadge) {
     if (streak >= 2) { streakBadge.textContent = `🔥 ${streak}日連続`; streakBadge.classList.remove('hidden'); }
