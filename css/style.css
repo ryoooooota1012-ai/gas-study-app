@@ -2544,9 +2544,10 @@ body.tier-border-diamond .card {
 }
 .top-filter-item {
   display: grid;
-  grid-template-columns: 7.5em minmax(0, 1fr) 3em;  /* 名前列を固定幅にしてバーの開始・長さを揃える */
+  /* 名前列は最長の名前に合わせた固定幅（JSが --tfi-name-w を設定）。バーの開始・終端を全行で揃える */
+  grid-template-columns: var(--tfi-name-w, max-content) minmax(0, 1fr) 3.6em;
   align-items: center;
-  column-gap: 6px;
+  column-gap: 8px;
   width: 100%;
   padding: 10px 14px;
   border-radius: 10px;
@@ -2575,7 +2576,7 @@ body.tier-border-diamond .card {
   justify-self: end;
   text-align: right;
 }
-.tfi-name { white-space: normal; word-break: break-word; line-height: 1.25; }
+.tfi-name { white-space: nowrap; }
 
 /* ===== フィルター中央の進捗表示（達成度別の積み上げバー1本） ===== */
 .tfi-progress {
@@ -2601,8 +2602,7 @@ body.tier-border-diamond .card {
   border-radius: 5px;
   background: rgba(255,255,255,.06);
   overflow: hidden;
-  filter: blur(.4px) saturate(.9);   /* セグメント境界をわずかにぼかして周囲になじませる */
-  opacity: .92;
+  filter: blur(.4px);   /* セグメント境界をわずかにぼかして周囲になじませる */
 }
 .tfi-seg {
   height: 100%;
@@ -2628,22 +2628,22 @@ body.tier-border-diamond .card {
   border-radius: 2px;
   margin-right: 3px;
 }
-/* 周囲の暗色UIになじむようトーンを落とした配色（凡例文字はやや明るめ／バーは半透明） */
-.tfi-l5 { color: #9ec27a; }                                          /* 5連続正解 明るい黄緑 */
-.tfi-l5-fill { background: rgba(150,192,110,.78); }
-.tfi-l4 { color: #a892d4; }                                          /* 4連続正解 紫 */
-.tfi-l4-fill { background: rgba(160,140,205,.78); }
-.tfi-l3 { color: #d2bd72; }                                          /* 3連続正解 黄色 */
-.tfi-l3-fill { background: rgba(205,180,100,.78); }
-.tfi-l2 { color: #7d9fcf; }                                          /* 2連続正解 青 */
-.tfi-l2-fill { background: rgba(100,140,200,.78); }
-.tfi-l1 { color: #aab6c8; }                                          /* 1回正解 白 */
-.tfi-l1-fill { background: rgba(168,180,200,.72); }
+/* 配色（前案から約10%トーンダウン・凡例文字は読みやすい明るさ／バーは軽くぼかして境界をなじませる） */
+.tfi-l5 { color: #97c156; }                                          /* 5連続正解 明るい黄緑 */
+.tfi-l5-fill { background: #90bd47; }
+.tfi-l4 { color: #a883cf; }                                          /* 4連続正解 紫 */
+.tfi-l4-fill { background: #a179ca; }
+.tfi-l3 { color: #dbb959; }                                          /* 3連続正解 黄色 */
+.tfi-l3-fill { background: #d8b247; }
+.tfi-l2 { color: #6899ca; }                                          /* 2連続正解 青 */
+.tfi-l2-fill { background: #528cc0; }
+.tfi-l1 { color: #b0b9ca; }                                          /* 1回正解 白 */
+.tfi-l1-fill { background: #bac2cf; }
 
 @media (max-width: 480px) {
   .tfi-legend { font-size: .56rem; gap: 2px 7px; }
   .tfi-progress { padding: 0 2px; }
-  .top-filter-item { grid-template-columns: 6em minmax(0, 1fr) 2.6em; }
+  .top-filter-item { grid-template-columns: var(--tfi-name-w, max-content) minmax(0, 1fr) 3.2em; }
 }
 
 /* ===== フィルター完全習得（全問3連続正解）＝ダイヤ輝きエフェクト ===== */
