@@ -872,7 +872,7 @@ function recordAnswer(choiceId, isCorrect) {
   if (isCorrect) p.correct++;
   if (!Array.isArray(p.history)) p.history = [];
   p.history.push(isCorrect);
-  if (p.history.length > 3) p.history.shift();
+  if (p.history.length > 5) p.history.shift();
   p.lastDate = new Date().toISOString().slice(0, 10);
   state.progress[choiceId] = p;
   saveProgress();
@@ -2014,19 +2014,17 @@ function isQuestionMastered(q) {
 
 /**
  * 指定問題群の選択肢ベース進捗統計を集計する。
- * 各選択肢の直近の連続正解数を見て階層的にカウントする。
- *  c1: 直近1回正解(以上)  c2: 直近2連続正解(以上)  c3: 直近3連続正解
- *  （c3 ⊆ c2 ⊆ c1 の入れ子関係）
+ * 各選択肢の直近の連続正解数（最大5）を見て、ちょうど1/2/3/4/5連続を排他カウントする。
  */
 function computeFilterProgress(questions) {
   let total = 0, attempted = 0;
-  let e1 = 0, e2 = 0, e3 = 0; // 排他: ちょうど1回 / ちょうど2連続 / 3連続(以上)
+  let e1 = 0, e2 = 0, e3 = 0, e4 = 0, e5 = 0; // ちょうど1/2/3/4/5連続(以上)
   for (const q of (questions || [])) {
     for (const c of (q.choices || [])) {
       if (!c.id) continue;
       total++;
       const hist = state.progress[c.id]?.history;
-      const h = Array.isArray(hist) ? hist.slice(-3) : [];
+      const h = Array.isArray(hist) ? hist.slice(-5) : [];
       if (h.length > 0) attempted++;
       // 末尾からの連続正解数
       let streak = 0;
@@ -2034,18 +2032,18 @@ function computeFilterProgress(questions) {
         if (h[i] === true) streak++;
         else break;
       }
-      if (streak >= 3)      e3++;
+      if (streak >= 5)      e5++;
+      else if (streak === 4) e4++;
+      else if (streak === 3) e3++;
       else if (streak === 2) e2++;
       else if (streak === 1) e1++;
     }
   }
   const pct = n => total > 0 ? Math.round((n / total) * 100) : 0;
-  // 累積（3連続 ⊆ 2連続 ⊆ 1回）
-  const c3 = e3, c2 = e3 + e2, c1 = e3 + e2 + e1;
   return {
     total, attempted,
-    e1, e2, e3, e1p: pct(e1), e2p: pct(e2), e3p: pct(e3),
-    c1, c2, c3, p1: pct(c1), p2: pct(c2), p3: pct(c3),
+    e1, e2, e3, e4, e5,
+    e1p: pct(e1), e2p: pct(e2), e3p: pct(e3), e4p: pct(e4), e5p: pct(e5),
     pAttempted: pct(attempted),
   };
 }
@@ -2061,11 +2059,15 @@ function filterProgressHTML(questions) {
     `<span class="tfi-lg ${cls}"><i class="${cls}-fill"></i>${label} ${pct}%</span>`;
   return `<span class="tfi-progress">
     <span class="tfi-bar">
+      <span class="tfi-seg tfi-l5-fill" style="width:${s.e5p}%"></span>
+      <span class="tfi-seg tfi-l4-fill" style="width:${s.e4p}%"></span>
       <span class="tfi-seg tfi-l3-fill" style="width:${s.e3p}%"></span>
       <span class="tfi-seg tfi-l2-fill" style="width:${s.e2p}%"></span>
       <span class="tfi-seg tfi-l1-fill" style="width:${s.e1p}%"></span>
     </span>
     <span class="tfi-legend">
+      ${lg('tfi-l5', '5連続', s.e5p)}
+      ${lg('tfi-l4', '4連続', s.e4p)}
       ${lg('tfi-l3', '3連続', s.e3p)}
       ${lg('tfi-l2', '2連続', s.e2p)}
       ${lg('tfi-l1', '1回',   s.e1p)}
@@ -5147,10 +5149,10 @@ function makeHistoryDots(p) {
       history = [p.lastResult]; // 旧フォーマットの互換
     }
   }
-  for (let slot = 0; slot < 3; slot++) {
+  for (let slot = 0; slot < 5; slot++) {
     const dot = document.createElement('span');
     dot.className = 'history-dot';
-    const idx = history.length - (3 - slot); // oldest→newest left→right
+    const idx = history.length - (5 - slot); // oldest→newest left→right
     if (idx >= 0) {
       dot.classList.add(history[idx] ? 'correct' : 'incorrect');
     } else {

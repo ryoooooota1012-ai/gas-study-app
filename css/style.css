@@ -2121,7 +2121,7 @@ body.tier-border-diamond .card {
   color: var(--text-3);
 }
 .drill-history-row::before {
-  content: '過去3回:';
+  content: '過去5回:';
   font-size: .75rem;
   color: var(--text-3);
 }
@@ -2625,12 +2625,16 @@ body.tier-border-diamond .card {
   border-radius: 2px;
   margin-right: 3px;
 }
-.tfi-l3 { color: #ffc94d; }                                          /* 3連続正解 */
-.tfi-l3-fill { background: linear-gradient(90deg, #ffd76a, #ffb347); }
-.tfi-l2 { color: #34d399; }                                          /* 2連続正解 */
-.tfi-l2-fill { background: #10b981; }
-.tfi-l1 { color: #8fb3e0; }                                          /* 1回正解 */
-.tfi-l1-fill { background: #5a7fb5; }
+.tfi-l5 { color: #a3e635; }                                          /* 5連続正解 明るい黄緑 */
+.tfi-l5-fill { background: #a3e635; }
+.tfi-l4 { color: #c084fc; }                                          /* 4連続正解 紫 */
+.tfi-l4-fill { background: #c084fc; }
+.tfi-l3 { color: #ffd43b; }                                          /* 3連続正解 黄色 */
+.tfi-l3-fill { background: #ffd43b; }
+.tfi-l2 { color: #4d9fff; }                                          /* 2連続正解 青 */
+.tfi-l2-fill { background: #4d9fff; }
+.tfi-l1 { color: #eef2f8; }                                          /* 1回正解 白 */
+.tfi-l1-fill { background: #dbe3ef; }
 
 @media (max-width: 480px) {
   .tfi-legend { font-size: .56rem; gap: 2px 7px; }
