@@ -2812,12 +2812,12 @@ function renderHome() {
   const bmCount = state.bookmarks.size;
   const bmDesc  = document.getElementById('bookmark-count-desc');
   if (bmDesc) bmDesc.textContent = bmCount > 0 ? `${bmCount}問 登録済み` : '登録した問題を出題';
-  // 最近間違えた問題ボタン（件数があるときだけ表示）
-  const rwCount = loadRecentWrong().length;
+  // 最近間違えた問題ボタン（セットがあるときだけ表示）
+  const rwSets  = loadRecentWrong();
   const rwBtn   = document.getElementById('btn-start-recent-wrong');
   const rwDesc  = document.getElementById('recent-wrong-desc');
-  if (rwBtn) rwBtn.classList.toggle('hidden', rwCount === 0);
-  if (rwDesc && rwCount) rwDesc.textContent = `直近で間違えた${rwCount}問を復習`;
+  if (rwBtn) rwBtn.classList.toggle('hidden', rwSets.length === 0);
+  if (rwDesc && rwSets.length) rwDesc.textContent = `直近${rwSets.length}セットから選んで復習`;
   // 模試結果セクションをリセット
   document.getElementById('exam-result-section')?.classList.add('hidden');
   showScreen('home');
@@ -3927,7 +3927,7 @@ function finishExam() {
     });
   }
 
-  saveRecentWrong();
+  saveRecentWrong({ mode: 'exam', total: totalQ, correct: correctQ });
   const wrongQ = state.sessionWrongQuestions.length;
   const wrongC = state.sessionWrongChoices.length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -3954,7 +3954,7 @@ function showSessionResult() {
   document.getElementById('result-pct').textContent =
     total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
 
-  saveRecentWrong();
+  saveRecentWrong({ mode: 'normal', total, correct });
   const wrongQ = (state.sessionWrongQuestions || []).length;
   const wrongC = (state.sessionWrongChoices   || []).length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -4814,7 +4814,7 @@ function endDrillSession() {
   document.getElementById('result-pct').textContent =
     total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
 
-  saveRecentWrong();
+  saveRecentWrong({ mode: 'drill', total, correct });
   const wrongC = (state.sessionWrongChoices   || []).length;
   const wrongQ = (state.sessionWrongQuestions || []).length;
   const btnRQ  = document.getElementById('btn-retry-wrong-q');
@@ -6453,20 +6453,103 @@ function resetProgress() {
 }
 
 // ========== Retry Wrong ==========
-// 直近セッションで間違えた問題IDを保存（ホームからいつでも復習できるように）
+// 直近の各セッションで間違えた問題を最大5セット保存（ホームからいつでも復習できるように）
 const RECENT_WRONG_KEY = 'gas_recent_wrong_v1';
+const RECENT_WRONG_MAX = 5;
+
+// 保存形式: [{ ts, mode, label, total, correct, ids:[qId,...] }, ...]（新しい順、最大5件）
 function loadRecentWrong() {
-  try { return JSON.parse(localStorage.getItem(RECENT_WRONG_KEY) || '[]'); }
+  let raw;
+  try { raw = JSON.parse(localStorage.getItem(RECENT_WRONG_KEY) || '[]'); }
   catch { return []; }
+  if (!Array.isArray(raw)) return [];
+  // 旧形式（IDのフラット配列）→ 1セットに変換
+  if (raw.length && typeof raw[0] === 'string') {
+    return [{ ts: 0, mode: '', label: '', total: null, correct: null, ids: raw }];
+  }
+  return raw.filter(s => s && Array.isArray(s.ids) && s.ids.length > 0);
 }
-function saveRecentWrong() {
-  const ids = [...new Set((state.sessionWrongQuestions || []).map(q => q.id))];
-  if (ids.length) localStorage.setItem(RECENT_WRONG_KEY, JSON.stringify(ids));
+
+function saveRecentWrong(meta = {}) {
+  const wrong = state.sessionWrongQuestions || [];
+  const ids = [...new Set(wrong.map(q => q.id))];
+  if (ids.length === 0) return;
+  const cats = [...new Set(wrong.map(q => q.category).filter(Boolean))];
+  const set = {
+    ts:      Date.now(),
+    mode:    meta.mode || '',
+    label:   cats.length === 1 ? cats[0] : (cats.length === 0 ? '' : '混合'),
+    total:   (typeof meta.total   === 'number') ? meta.total   : null,
+    correct: (typeof meta.correct === 'number') ? meta.correct : null,
+    ids,
+  };
+  const sets = [set, ...loadRecentWrong()].slice(0, RECENT_WRONG_MAX);
+  localStorage.setItem(RECENT_WRONG_KEY, JSON.stringify(sets));
 }
-function startRecentWrong() {
-  const ids = loadRecentWrong();
-  const qs  = ids.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
-  if (qs.length === 0) { alert('最近間違えた問題はありません。'); return; }
+
+function deleteRecentWrongSet(ts) {
+  const sets = loadRecentWrong().filter(s => s.ts !== ts);
+  localStorage.setItem(RECENT_WRONG_KEY, JSON.stringify(sets));
+}
+
+function recentWrongModeBadge(mode) {
+  if (mode === 'exam')  return '模試';
+  if (mode === 'drill') return '壁打ち';
+  return '学習';
+}
+
+// 直近の間違いセット一覧モーダルを開く
+function openRecentWrongModal() {
+  const sets   = loadRecentWrong();
+  const modal  = document.getElementById('modal-recent-wrong');
+  const listEl = document.getElementById('recent-wrong-list');
+  if (!modal || !listEl) return;
+  listEl.innerHTML = '';
+  if (sets.length === 0) {
+    listEl.innerHTML = '<div class="rw-empty">最近間違えた問題はありません。</div>';
+  } else {
+    sets.forEach(set => {
+      const validCount = set.ids.filter(id => state.questions.some(q => q.id === id)).length;
+      const scoreStr = (set.total != null && set.correct != null)
+        ? `${set.correct}/${set.total} 正解` : '';
+      const row = document.createElement('button');
+      row.className = 'rw-set-row' + (validCount === 0 ? ' rw-set-empty' : '');
+      row.innerHTML = `
+        <div class="rw-set-main">
+          <span class="rw-set-badge">${recentWrongModeBadge(set.mode)}</span>
+          <span class="rw-set-label">${set.label || '学習セット'}</span>
+          <span class="rw-set-count">❌ ${validCount}問</span>
+        </div>
+        <div class="rw-set-sub">
+          <span class="rw-set-date">${set.ts ? fmtTimestamp(set.ts) : '以前の記録'}</span>
+          ${scoreStr ? `<span class="rw-set-score">${scoreStr}</span>` : ''}
+        </div>`;
+      if (validCount === 0) {
+        row.disabled = true;
+      } else {
+        row.addEventListener('click', () => startRecentWrongSet(set.ts));
+      }
+      listEl.appendChild(row);
+    });
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeRecentWrongModal() {
+  document.getElementById('modal-recent-wrong')?.classList.add('hidden');
+}
+
+// セットを選択 → そのセットは履歴から削除し、間違えた問題で学習開始
+function startRecentWrongSet(ts) {
+  const set = loadRecentWrong().find(s => s.ts === ts);
+  deleteRecentWrongSet(ts);
+  closeRecentWrongModal();
+  const qs = set ? set.ids.map(id => state.questions.find(q => q.id === id)).filter(Boolean) : [];
+  if (qs.length === 0) {
+    alert('このセットの問題は見つかりませんでした（削除済みの可能性があります）。');
+    renderHome();
+    return;
+  }
   _startSession('sequential', qs);
 }
 
@@ -8490,7 +8573,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
 
   // ── 最近間違えた問題 ──
   const _rwBtn = document.getElementById('btn-start-recent-wrong');
-  if (_rwBtn) _rwBtn.addEventListener('click', startRecentWrong);
+  if (_rwBtn) _rwBtn.addEventListener('click', openRecentWrongModal);
+  document.getElementById('rw-modal-close')?.addEventListener('click', closeRecentWrongModal);
+  document.getElementById('modal-recent-wrong')?.addEventListener('click', e => {
+    if (e.target.id === 'modal-recent-wrong') closeRecentWrongModal();
+  });
 
   // ── ブックマーク ──
   const bookmarkPopup = document.getElementById('bookmark-start-popup');

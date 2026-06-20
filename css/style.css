@@ -1447,6 +1447,28 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .start-btn-card.recent-wrong-mode { background:linear-gradient(135deg,#2a0a0a,#1d0606); border-color:#a33b3b; }
 .start-btn-card.recent-wrong-mode:hover { background:linear-gradient(135deg,#3a0e0e,#2a0808); border-color:#d45050; }
 
+/* 最近間違えた問題：セット選択リスト */
+.rw-set-list { display:flex; flex-direction:column; gap:8px; }
+.rw-set-row {
+  display:flex; flex-direction:column; gap:4px;
+  width:100%; text-align:left; cursor:pointer;
+  background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+  padding:10px 12px; transition:all .15s;
+}
+.rw-set-row:hover:not(:disabled) { border-color:#d45050; background:linear-gradient(135deg,#2a0a0a,#1d0606); }
+.rw-set-row:disabled { opacity:.5; cursor:default; }
+.rw-set-main { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rw-set-badge {
+  font-size:.7rem; font-weight:700; color:#fca353;
+  background:rgba(252,163,83,.12); border:1px solid #a3622f;
+  border-radius:6px; padding:1px 7px; flex-shrink:0;
+}
+.rw-set-label { font-size:.92rem; font-weight:600; color:var(--text-1); }
+.rw-set-count { margin-left:auto; font-size:.82rem; font-weight:700; color:#e07b7b; }
+.rw-set-sub { display:flex; align-items:center; gap:10px; font-size:.74rem; color:var(--text-3); }
+.rw-set-score { margin-left:auto; }
+.rw-empty { font-size:.85rem; color:var(--text-3); text-align:center; padding:18px 0; }
+
 /* ===== Exam Mode ===== */
 .start-btn-card.exam-mode { background:linear-gradient(135deg,#3a0a18,#280612); border-color:#be185d; }
 .start-btn-card.exam-mode:hover { background:linear-gradient(135deg,#5a1228,#40091c); border-color:#f43f8e; }
