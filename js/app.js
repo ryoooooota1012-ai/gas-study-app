@@ -2299,6 +2299,19 @@ function renderTopFilterCard() {
 
   sub.appendChild(items);
   card.appendChild(sub);
+  alignTfiNames(items);
+}
+
+// 名前列の幅を、一覧中で最も長い名前に合わせて固定（バーの開始・終端を全行で揃える）
+function alignTfiNames(itemsEl) {
+  if (!itemsEl) return;
+  itemsEl.style.removeProperty('--tfi-name-w'); // 一旦 max-content に戻して各名前の自然幅を測る
+  let max = 0;
+  itemsEl.querySelectorAll('.tfi-name').forEach(n => {
+    const w = n.getBoundingClientRect().width;
+    if (w > max) max = w;
+  });
+  if (max > 0) itemsEl.style.setProperty('--tfi-name-w', Math.ceil(max) + 'px');
 }
 
 function onTopFilterCatClick(cat) {
