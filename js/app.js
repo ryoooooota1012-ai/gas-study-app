@@ -2954,24 +2954,31 @@ function _startSession(mode, filtered, opts = {}) {
   renderQuestion();
 }
 
-// 「とりあえず50」: 全問から計算問題・1択選択問題を除いて完全ランダムに最大50問
+// 「とりあえず50」: 全問から計算/1択選択を除き、壁打ち（1選択肢1答）形式で完全ランダム50択
 function startRandomFifty() {
   if (state.questions.length === 0) {
     alert('問題データがありません。JSONファイルを読み込んでください。');
     return;
   }
-  const pool = state.questions.filter(q => !isOnePickQuestion(q));
-  if (pool.length === 0) {
-    alert('出題できる問題がありません（計算問題・1択選択問題は除外されます）。');
+  const queue = [];
+  state.questions.forEach(q => {
+    if (q.drillExcluded) return;          // 壁打ち除外指定は出さない
+    if (isOnePickQuestion(q)) return;     // 計算・1択選択問題は除外
+    if (isFillBlankQuestion(q)) return;
+    (q.choices || []).forEach((c, i) => {
+      queue.push({ question: q, choice: c, choiceIndex: i });
+    });
+  });
+  if (queue.length === 0) {
+    alert('出題できる選択肢がありません（計算問題・1択選択問題は除外されます）。');
     return;
   }
-  const queue = buildQueue(pool, 'random').slice(0, 50);
-  if (loadInterruptedSession()) {
-    pendingStartMode = { mode: 'random', filtered: pool, queue, quickMode: true };
-    document.getElementById('modal-start-confirm').classList.remove('hidden');
-    return;
+  // シャッフルして先頭50択
+  for (let i = queue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [queue[i], queue[j]] = [queue[j], queue[i]];
   }
-  _startSession('random', pool, { queue, quickMode: true });
+  startDrillWithQueue(queue.slice(0, 50), 'quick50');
 }
 
 // 「とりあえず50」中に計算/1択として登録された問題をキューから除外してスキップ
