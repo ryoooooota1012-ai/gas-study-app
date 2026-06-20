@@ -6716,6 +6716,16 @@ function openRecentWrongModal() {
   if (sets.length === 0) {
     listEl.innerHTML = '<div class="rw-empty">最近間違えた問題はありません。</div>';
   } else {
+    // 全セットを結合した一括復習ボタン
+    const allIds = [...new Set(sets.flatMap(s => s.ids))]
+      .filter(id => state.questions.some(q => q.id === id));
+    if (allIds.length > 0) {
+      const allBtn = document.createElement('button');
+      allBtn.className = 'rw-all-btn';
+      allBtn.textContent = `📚 全問一括で復習（${allIds.length}問）`;
+      allBtn.addEventListener('click', startRecentWrongAll);
+      listEl.appendChild(allBtn);
+    }
     sets.forEach(set => {
       const validCount = set.ids.filter(id => state.questions.some(q => q.id === id)).length;
       const scoreStr = (set.total != null && set.correct != null)
@@ -6755,6 +6765,21 @@ function startRecentWrongSet(ts) {
   const qs = set ? set.ids.map(id => state.questions.find(q => q.id === id)).filter(Boolean) : [];
   if (qs.length === 0) {
     alert('このセットの問題は見つかりませんでした（削除済みの可能性があります）。');
+    renderHome();
+    return;
+  }
+  _startSession('sequential', qs);
+}
+
+// 全セットの間違い問題を結合して一括復習（全セットを履歴から削除）
+function startRecentWrongAll() {
+  const sets  = loadRecentWrong();
+  const allIds = [...new Set(sets.flatMap(s => s.ids))];
+  const qs = allIds.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
+  localStorage.setItem(RECENT_WRONG_KEY, JSON.stringify([])); // 全セットを消費＝削除
+  closeRecentWrongModal();
+  if (qs.length === 0) {
+    alert('復習できる問題がありません。');
     renderHome();
     return;
   }

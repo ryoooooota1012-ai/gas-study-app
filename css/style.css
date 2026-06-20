@@ -1468,6 +1468,13 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .rw-set-sub { display:flex; align-items:center; gap:10px; font-size:.74rem; color:var(--text-3); }
 .rw-set-score { margin-left:auto; }
 .rw-empty { font-size:.85rem; color:var(--text-3); text-align:center; padding:18px 0; }
+.rw-all-btn {
+  width:100%; cursor:pointer; text-align:center;
+  background:linear-gradient(135deg,#1a2a4a,#12203a); border:1px solid #3b6ea5;
+  color:#bcd6f5; border-radius:10px; padding:11px 12px; font-size:.92rem; font-weight:700;
+  margin-bottom:4px; transition:all .15s;
+}
+.rw-all-btn:hover { background:linear-gradient(135deg,#244070,#1a2a4a); border-color:#5b8fd0; }
 
 /* ===== Exam Mode ===== */
 .start-btn-card.exam-mode { background:linear-gradient(135deg,#3a0a18,#280612); border-color:#be185d; }
