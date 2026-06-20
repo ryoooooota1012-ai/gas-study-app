@@ -3450,7 +3450,11 @@ function checkAnswers() {
     if (!item) return;
 
     item.classList.add(isRight ? 'result-correct' : 'result-incorrect');
-    item.querySelectorAll('.choice-judge-btn').forEach(btn => { btn.disabled = true; });
+    item.querySelectorAll('.choice-judge-btn').forEach(btn => {
+      btn.disabled = true;
+      // ユーザーの回答(○/×)を表示。前の問題に戻った時も選択状態を復元する。
+      btn.classList.toggle('selected', !!state.answers[c.id] && btn.classList.contains(state.answers[c.id]));
+    });
 
     const resultRow = document.createElement('div');
     resultRow.className = 'choice-result-row';

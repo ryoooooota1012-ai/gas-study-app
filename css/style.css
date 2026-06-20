@@ -889,6 +889,8 @@ pre {
   opacity: .65;
   transform: none;
 }
+/* 答え合わせ後でも、ユーザーが選んだ○/×はグレーアウトせず明示する */
+.choice-judge-btn.selected:disabled { opacity: 1; }
 .choice-bm-btn {
   background: none;
   border: none;
