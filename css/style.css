@@ -1980,6 +1980,8 @@ body.tier-border-diamond .card {
 }
 .eg-cat-btn:hover { border-color: var(--primary); }
 .eg-cat-btn.active { background: var(--primary-bg); border-color: var(--primary); color: var(--primary-light); }
+.eg-shuffle-unit { display: flex; gap: 6px; }
+.eg-shuffle-unit .eg-weight-btn { padding: 8px 0; font-size: .84rem; }
 .eg-ratio-list { display: flex; flex-direction: column; gap: 8px; }
 .eg-ratio-row { display: flex; align-items: center; gap: 8px; }
 .eg-ratio-name { flex-shrink: 0; width: 84px; font-size: .84rem; color: var(--text-1); }

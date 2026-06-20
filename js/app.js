@@ -3002,12 +3002,12 @@ const EG_WEIGHT_OPTS = [
   { label: '少なめ', val: 1 },
   { label: '除外',   val: 0 },
 ];
-let egCategory = null;
+let egCategory   = null;
+let egShuffleUnit = 'choice'; // 'question'=問題単位 / 'choice'=選択肢単位
 let egWeights  = { recentWrong: 3, untried: 3, streak1: 2, streak2: 1, streak3: 0 };
 
-// 問題の習熟度バケットを判定（問題レベル history q.id+':q' を使用）
-function questionBucket(q) {
-  const hist = state.progress[q.id + ':q']?.history;
+// history 配列 → 習熟度バケット
+function bucketFromHistory(hist) {
   if (!Array.isArray(hist) || hist.length === 0) return 'untried';
   if (hist[hist.length - 1] === false) return 'recentWrong';
   let streak = 0;
@@ -3016,6 +3016,10 @@ function questionBucket(q) {
   if (streak === 2) return 'streak2';
   return 'streak1';
 }
+// 問題の習熟度バケット（問題レベル history q.id+':q'）
+function questionBucket(q) { return bucketFromHistory(state.progress[q.id + ':q']?.history); }
+// 選択肢の習熟度バケット（選択肢レベル history choice.id）
+function choiceBucket(c) { return bucketFromHistory(state.progress[c.id]?.history); }
 
 // 指定分野の年度別問題（問番号が取れるもの）
 function egYearQuestions(category) {
@@ -3028,6 +3032,7 @@ function openExamGenerator() {
   if (cats.length === 0) { alert('年度別の問題がありません。'); return; }
   if (!egCategory || !cats.includes(egCategory)) egCategory = cats[0];
   renderExamGeneratorCategories(cats);
+  renderExamGeneratorShuffleUnit();
   renderExamGeneratorRatios();
   updateExamGeneratorInfo();
   document.getElementById('modal-exam-generator').classList.remove('hidden');
@@ -3048,6 +3053,26 @@ function renderExamGeneratorCategories(cats) {
     btn.addEventListener('click', () => {
       egCategory = cat;
       renderExamGeneratorCategories(cats);
+      updateExamGeneratorInfo();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function renderExamGeneratorShuffleUnit() {
+  const el = document.getElementById('eg-shuffle-unit');
+  if (!el) return;
+  el.innerHTML = '';
+  [
+    { val: 'question', label: '問題単位' },
+    { val: 'choice',   label: '選択肢単位' },
+  ].forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'eg-weight-btn' + (egShuffleUnit === o.val ? ' active' : '');
+    btn.textContent = o.label;
+    btn.addEventListener('click', () => {
+      egShuffleUnit = o.val;
+      renderExamGeneratorShuffleUnit();
       updateExamGeneratorInfo();
     });
     el.appendChild(btn);
@@ -3088,11 +3113,20 @@ function updateExamGeneratorInfo() {
   const yqs   = egYearQuestions(egCategory);
   const nums  = [...new Set(yqs.map(getQNum))];
   const counts = { recentWrong: 0, untried: 0, streak1: 0, streak2: 0, streak3: 0 };
-  yqs.forEach(q => { counts[questionBucket(q)]++; });
+  let unitWord, methodNote;
+  if (egShuffleUnit === 'choice') {
+    yqs.forEach(q => (q.choices || []).forEach(c => { counts[choiceBucket(c)]++; }));
+    unitWord = '選択肢';
+    methodNote = '各問題番号の選択肢（イ・ロ・ハ…）を、それぞれ別の年度の同番号問題から組み合わせて出題';
+  } else {
+    yqs.forEach(q => { counts[questionBucket(q)]++; });
+    unitWord = '問題';
+    methodNote = '各問題番号を異なる年度から1問ずつ出題';
+  }
   const bucketStr = EG_BUCKETS.map(b => `${b.label} ${counts[b.key]}`).join(' ／ ');
   el.innerHTML =
-    `<div><strong>${displayCategoryName(egCategory)}</strong>：<strong>${nums.length}問</strong>を出題（各問題番号を異なる年度から1問ずつ）</div>
-     <div class="eg-info-sub">対象の習熟度内訳：${bucketStr}</div>`;
+    `<div><strong>${displayCategoryName(egCategory)}</strong>：<strong>${nums.length}問</strong>を出題（${methodNote}）</div>
+     <div class="eg-info-sub">対象${unitWord}の習熟度内訳：${bucketStr}</div>`;
 }
 
 // 出題セットを生成：問番号ごとに、割合に応じて年度を重み付き抽選（1問番号=1問）
@@ -3118,13 +3152,61 @@ function generateExamSet() {
   return picked; // 問番号順（同じ問番号は1問のみ＝重複なし）
 }
 
+// 重み付き抽選（pool が空なら候補からランダム）
+function egWeightedPick(cands, bucketFn) {
+  const pool = [];
+  cands.forEach(x => { const w = egWeights[bucketFn(x)] || 0; for (let k = 0; k < w; k++) pool.push(x); });
+  const src = pool.length > 0 ? pool : cands;
+  return src[Math.floor(Math.random() * src.length)];
+}
+
+// 選択肢単位で生成：問番号ごとに、各選択肢位置(イ/ロ/ハ…)を別年度の同番号問題から重み付き抽選で合成
+function generateExamSetByChoice() {
+  const yqs = egYearQuestions(egCategory);
+  const byNum = {};
+  yqs.forEach(q => { const n = getQNum(q); (byNum[n] = byNum[n] || []).push(q); });
+  const nums = Object.keys(byNum).map(Number).sort((a, b) => a - b);
+  const picked = [];
+  nums.forEach(n => {
+    const cands = byNum[n];
+    // 計算/1択問題が混じる問番号は、選択肢合成せず問題単位で1問選ぶ（その形式を保つ）
+    if (cands.some(isOnePickQuestion)) {
+      picked.push(egWeightedPick(cands, questionBucket));
+      return;
+    }
+    const basis = egWeightedPick(cands, questionBucket); // 問題文（stem）の代表
+    const maxChoices = Math.max(...cands.map(q => (q.choices || []).length));
+    const choices = [];
+    for (let i = 0; i < maxChoices; i++) {
+      const posCands = cands.map(q => (q.choices || [])[i]).filter(Boolean);
+      if (posCands.length === 0) continue;
+      const chosen = egWeightedPick(posCands, choiceBucket);
+      choices.push({ ...chosen }); // 元の選択肢id・isCorrect等を保持（進捗は実choice.idに紐づく）
+    }
+    picked.push({
+      id:             `gen-${egCategory}-q${n}`,   // 合成問題（番号ごとに安定id）
+      category:       egCategory,
+      subcategory:    basis.subcategory,
+      section:        basis.section,
+      year:           '出題ジェネレータ',
+      source:         `出題ジェネレータ ${displayCategoryName(egCategory)} 問${n}`,
+      questionText:   basis.questionText,
+      questionBlocks: basis.questionBlocks,
+      explanationImage: basis.explanationImage,
+      tags:           [],
+      choices,
+    });
+  });
+  return picked;
+}
+
 function startExamGenerator() {
   if (!egCategory) { alert('分野を選択してください。'); return; }
   if (EG_BUCKETS.every(b => (egWeights[b.key] || 0) === 0)) {
     alert('すべて「除外」になっています。少なくとも1つは出題対象に設定してください。');
     return;
   }
-  const picked = generateExamSet();
+  const picked = egShuffleUnit === 'choice' ? generateExamSetByChoice() : generateExamSet();
   if (picked.length === 0) { alert('出題できる問題がありません。'); return; }
   closeExamGenerator();
   if (loadInterruptedSession()) {
