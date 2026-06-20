@@ -120,6 +120,7 @@ window.DEFAULT_QUESTIONS = {
 |------|------|
 | 通常学習の開始 | `startSession(mode, opts)`（`opts.excludeMastered` で3連続正解済み問題を除外）/ `_startSession(mode, filtered, opts)`（`opts.queue` で事前構築キュー、`opts.quickMode` でとりあえず50） |
 | とりあえず50 | `startRandomFifty`（全問から計算/1択を除き完全ランダム50問。`state.quickMode=true`）/ `skipQuickQuestion`（出題中に計算・1択登録した問題をキューから除外） |
+| 出題ジェネレータ | `openExamGenerator`（`#modal-exam-generator`）/ `generateExamSet`（問番号ごとに習熟度バケット重みで年度を抽選し1問番号=1問、条件外はランダム）/ `questionBucket`（未挑戦/直近不正解/1〜3連続正解）/ `startExamGenerator`。分野選択+習熟度割合(多め/普通/少なめ/除外)→模試形式で出題。構成は保存せず、間違いは従来通り復習可能 |
 | マスター判定 | `isQuestionMastered`（全選択肢が直近3連続正解）/ `isFilterMastered`（問題群が全てマスター） |
 | 模試モード | `startExamMode` |
 | 壁打ち（カスタム設定） | `buildDrillQueueCustom` / `startDrillFromSetup` / `renderDrillChoice` |

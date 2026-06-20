@@ -1960,6 +1960,33 @@ body.tier-border-diamond .card {
 .start-btn-card.drill-weak:hover { background: linear-gradient(135deg,#3d2608,#2e1c08); border-color: #fbbf24; }
 .start-btn-card.quick50-mode { background: linear-gradient(135deg,#1a1230,#120d22); border-color: #7c3aed; }
 .start-btn-card.quick50-mode:hover { background: linear-gradient(135deg,#241845,#1a1230); border-color: #a78bfa; }
+.start-btn-card.generator-mode { background: linear-gradient(135deg,#0a2438,#071726); border-color: #0ea5e9; }
+.start-btn-card.generator-mode:hover { background: linear-gradient(135deg,#0e3350,#0a2438); border-color: #38bdf8; }
+
+/* ===== 出題ジェネレータ ===== */
+.eg-section-label { font-size: .82rem; font-weight: 700; color: var(--text-2); margin-bottom: 8px; }
+.eg-cat-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.eg-cat-btn {
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2);
+  border-radius: 8px; padding: 7px 12px; font-size: .85rem; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+}
+.eg-cat-btn:hover { border-color: var(--primary); }
+.eg-cat-btn.active { background: var(--primary-bg); border-color: var(--primary); color: var(--primary-light); }
+.eg-ratio-list { display: flex; flex-direction: column; gap: 8px; }
+.eg-ratio-row { display: flex; align-items: center; gap: 8px; }
+.eg-ratio-name { flex-shrink: 0; width: 84px; font-size: .84rem; color: var(--text-1); }
+.eg-ratio-opts { display: flex; gap: 4px; flex: 1; }
+.eg-weight-btn {
+  flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-3);
+  border-radius: 6px; padding: 6px 0; font-size: .76rem; font-weight: 600; cursor: pointer;
+  transition: all .12s;
+}
+.eg-weight-btn:hover { border-color: var(--primary); }
+.eg-weight-btn.active { background: var(--primary-bg); border-color: var(--primary); color: var(--primary-light); }
+.eg-weight-btn.eg-weight-exclude.active { background: rgba(127,29,29,.4); border-color: #b91c1c; color: #fca5a5; }
+.eg-info { font-size: .8rem; color: var(--text-2); background: var(--bg-input); border-radius: 8px; padding: 10px 12px; line-height: 1.6; }
+.eg-info-sub { font-size: .74rem; color: var(--text-3); margin-top: 4px; }
 
 /* ===== タグ出題エリア ===== */
 .tag-study-area {

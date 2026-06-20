@@ -2981,6 +2981,153 @@ function skipQuickQuestion() {
   renderQuestion();
 }
 
+// ========== 出題ジェネレータ ==========
+const EG_BUCKETS = [
+  { key: 'recentWrong', label: '直近不正解' },
+  { key: 'untried',     label: '未挑戦' },
+  { key: 'streak1',     label: '1回正解' },
+  { key: 'streak2',     label: '2連続正解' },
+  { key: 'streak3',     label: '3連続正解' },
+];
+const EG_WEIGHT_OPTS = [
+  { label: '多め',   val: 3 },
+  { label: '普通',   val: 2 },
+  { label: '少なめ', val: 1 },
+  { label: '除外',   val: 0 },
+];
+let egCategory = null;
+let egWeights  = { recentWrong: 3, untried: 3, streak1: 2, streak2: 1, streak3: 0 };
+
+// 問題の習熟度バケットを判定（問題レベル history q.id+':q' を使用）
+function questionBucket(q) {
+  const hist = state.progress[q.id + ':q']?.history;
+  if (!Array.isArray(hist) || hist.length === 0) return 'untried';
+  if (hist[hist.length - 1] === false) return 'recentWrong';
+  let streak = 0;
+  for (let i = hist.length - 1; i >= 0; i--) { if (hist[i] === true) streak++; else break; }
+  if (streak >= 3) return 'streak3';
+  if (streak === 2) return 'streak2';
+  return 'streak1';
+}
+
+// 指定分野の年度別問題（問番号が取れるもの）
+function egYearQuestions(category) {
+  return state.questions.filter(q => q.category === category && q.year && getQNum(q) !== 999);
+}
+
+function openExamGenerator() {
+  if (state.questions.length === 0) { alert('問題データがありません。JSONファイルを読み込んでください。'); return; }
+  const cats = sortCategories([...new Set(state.questions.filter(q => q.year && getQNum(q) !== 999).map(q => q.category))]);
+  if (cats.length === 0) { alert('年度別の問題がありません。'); return; }
+  if (!egCategory || !cats.includes(egCategory)) egCategory = cats[0];
+  renderExamGeneratorCategories(cats);
+  renderExamGeneratorRatios();
+  updateExamGeneratorInfo();
+  document.getElementById('modal-exam-generator').classList.remove('hidden');
+}
+
+function closeExamGenerator() {
+  document.getElementById('modal-exam-generator')?.classList.add('hidden');
+}
+
+function renderExamGeneratorCategories(cats) {
+  const el = document.getElementById('eg-category-list');
+  if (!el) return;
+  el.innerHTML = '';
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'eg-cat-btn' + (cat === egCategory ? ' active' : '');
+    btn.textContent = displayCategoryName(cat);
+    btn.addEventListener('click', () => {
+      egCategory = cat;
+      renderExamGeneratorCategories(cats);
+      updateExamGeneratorInfo();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function renderExamGeneratorRatios() {
+  const el = document.getElementById('eg-ratio-list');
+  if (!el) return;
+  el.innerHTML = '';
+  EG_BUCKETS.forEach(b => {
+    const row = document.createElement('div');
+    row.className = 'eg-ratio-row';
+    const name = document.createElement('div');
+    name.className = 'eg-ratio-name';
+    name.textContent = b.label;
+    const opts = document.createElement('div');
+    opts.className = 'eg-ratio-opts';
+    EG_WEIGHT_OPTS.forEach(o => {
+      const ob = document.createElement('button');
+      ob.className = 'eg-weight-btn' + (egWeights[b.key] === o.val ? ' active' : '') + (o.val === 0 ? ' eg-weight-exclude' : '');
+      ob.textContent = o.label;
+      ob.addEventListener('click', () => {
+        egWeights[b.key] = o.val;
+        renderExamGeneratorRatios();
+        updateExamGeneratorInfo();
+      });
+      opts.appendChild(ob);
+    });
+    row.append(name, opts);
+    el.appendChild(row);
+  });
+}
+
+function updateExamGeneratorInfo() {
+  const el = document.getElementById('eg-info');
+  if (!el) return;
+  const yqs   = egYearQuestions(egCategory);
+  const nums  = [...new Set(yqs.map(getQNum))];
+  const counts = { recentWrong: 0, untried: 0, streak1: 0, streak2: 0, streak3: 0 };
+  yqs.forEach(q => { counts[questionBucket(q)]++; });
+  const bucketStr = EG_BUCKETS.map(b => `${b.label} ${counts[b.key]}`).join(' ／ ');
+  el.innerHTML =
+    `<div><strong>${displayCategoryName(egCategory)}</strong>：<strong>${nums.length}問</strong>を出題（各問題番号を異なる年度から1問ずつ）</div>
+     <div class="eg-info-sub">対象の習熟度内訳：${bucketStr}</div>`;
+}
+
+// 出題セットを生成：問番号ごとに、割合に応じて年度を重み付き抽選（1問番号=1問）
+function generateExamSet() {
+  const yqs = egYearQuestions(egCategory);
+  const byNum = {};
+  yqs.forEach(q => { const n = getQNum(q); (byNum[n] = byNum[n] || []).push(q); });
+  const nums = Object.keys(byNum).map(Number).sort((a, b) => a - b);
+  const picked = [];
+  nums.forEach(n => {
+    const cands = byNum[n];
+    const pool = [];
+    cands.forEach(q => {
+      const w = egWeights[questionBucket(q)] || 0;
+      for (let k = 0; k < w; k++) pool.push(q);
+    });
+    // 割合条件に合致する候補がなければ、その問番号からランダムに選ぶ
+    const chosen = pool.length > 0
+      ? pool[Math.floor(Math.random() * pool.length)]
+      : cands[Math.floor(Math.random() * cands.length)];
+    picked.push(chosen);
+  });
+  return picked; // 問番号順（同じ問番号は1問のみ＝重複なし）
+}
+
+function startExamGenerator() {
+  if (!egCategory) { alert('分野を選択してください。'); return; }
+  if (EG_BUCKETS.every(b => (egWeights[b.key] || 0) === 0)) {
+    alert('すべて「除外」になっています。少なくとも1つは出題対象に設定してください。');
+    return;
+  }
+  const picked = generateExamSet();
+  if (picked.length === 0) { alert('出題できる問題がありません。'); return; }
+  closeExamGenerator();
+  if (loadInterruptedSession()) {
+    pendingStartMode = { mode: 'sequential', filtered: picked, queue: picked };
+    document.getElementById('modal-start-confirm').classList.remove('hidden');
+    return;
+  }
+  _startSession('sequential', picked, { queue: picked });
+}
+
 function isCountQuestion(q) {
   return !!(q.correctAnswer && q.correctAnswer.includes('つ'));
 }
@@ -8902,6 +9049,14 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('btn-start-drill-all').addEventListener('click',  e => openDrillSetupModal('all',  e.currentTarget));
   document.getElementById('btn-start-drill-weak').addEventListener('click', e => openDrillSetupModal('weak', e.currentTarget));
   document.getElementById('btn-start-quick50')?.addEventListener('click', startRandomFifty);
+  // ── 出題ジェネレータ ──
+  document.getElementById('btn-exam-generator')?.addEventListener('click', openExamGenerator);
+  document.getElementById('eg-close')?.addEventListener('click', closeExamGenerator);
+  document.getElementById('eg-close2')?.addEventListener('click', closeExamGenerator);
+  document.getElementById('eg-generate')?.addEventListener('click', startExamGenerator);
+  document.getElementById('modal-exam-generator')?.addEventListener('click', e => {
+    if (e.target.id === 'modal-exam-generator') closeExamGenerator();
+  });
   document.getElementById('btn-start-drill-search').addEventListener('click', () => {
     startKeywordDrill(document.getElementById('drill-search-input').value);
   });
