@@ -1958,6 +1958,8 @@ body.tier-border-diamond .card {
 .start-btn-card.drill-all:hover  { background: linear-gradient(135deg,#0f3d3a,#0d2e2c); border-color: #2dd4bf; }
 .start-btn-card.drill-weak { background: linear-gradient(135deg,#2a1a08,#1f1206); border-color: #d97706; }
 .start-btn-card.drill-weak:hover { background: linear-gradient(135deg,#3d2608,#2e1c08); border-color: #fbbf24; }
+.start-btn-card.quick50-mode { background: linear-gradient(135deg,#1a1230,#120d22); border-color: #7c3aed; }
+.start-btn-card.quick50-mode:hover { background: linear-gradient(135deg,#241845,#1a1230); border-color: #a78bfa; }
 
 /* ===== タグ出題エリア ===== */
 .tag-study-area {
@@ -2835,6 +2837,20 @@ body.tier-border-diamond .card {
   background: var(--primary-bg);
   color: var(--primary-light);
 }
+.top-filter-exclude-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 8px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem;
+  font-weight: 600;
+  color: #fca353;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.top-filter-exclude-row input { width: 15px; height: 15px; accent-color: #d97706; cursor: pointer; }
 
 /* ===== Bulk Edit Modal ===== */
 .bulk-edit-row {

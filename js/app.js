@@ -20,6 +20,7 @@ let createChoicesList   = []; // [{text, isCorrect}]
 let topFilterOpenCat    = null;  // 開いているカテゴリパネル（null=閉じ）
 let topFilterSubMode    = 'year'; // 'year' | 'sec'
 let topFilterStartOpen  = false;  // 出題開始ポップアップ表示フラグ
+let excludeMasteredChk  = false;  // 出題開始時「3連続正解を除く」チェック状態
 // 壁打ち設定モーダル用
 let drillSetupCats      = new Set();
 let drillSetupYears     = new Set();
@@ -149,6 +150,7 @@ const state = {
   activeSections: new Set(),
   activeTags: new Set(),
   calcFilter: false,   // 計算問題フィルターモード
+  quickMode: false,    // 「とりあえず50」モード（計算/1択登録で問題スキップ）
   sessionStats: { total: 0, correct: 0 },
   sessionWrongQuestions: [], // 1択以上間違えた問題
   sessionWrongChoices:   [], // 間違えた選択肢 [{question, choice, choiceIndex}]
@@ -2000,6 +2002,16 @@ function isFilterMastered(questions) {
   return hasAny;
 }
 
+// 1問の全選択肢が直近3連続正解済みか（= その問題はマスター済み）
+function isQuestionMastered(q) {
+  const choices = (q.choices || []).filter(c => c.id);
+  if (choices.length === 0) return false;
+  return choices.every(c => {
+    const hist = state.progress[c.id]?.history;
+    return Array.isArray(hist) && hist.length >= 3 && hist.slice(-3).every(v => v === true);
+  });
+}
+
 /**
  * 指定問題群の選択肢ベース進捗統計を集計する。
  * 各選択肢の直近の連続正解数を見て階層的にカウントする。
@@ -2176,6 +2188,20 @@ function renderTopFilterCard() {
     if (topFilterStartOpen) {
       const popup = document.createElement('div');
       popup.className = 'top-filter-start-popup';
+      // ポップアップ内クリックで閉じないように（チェックボックス操作のため）
+      popup.addEventListener('click', e => e.stopPropagation());
+
+      // 「3連続正解を除く」トグル
+      const exLabel = document.createElement('label');
+      exLabel.className = 'top-filter-exclude-row';
+      const exCb = document.createElement('input');
+      exCb.type = 'checkbox';
+      exCb.checked = excludeMasteredChk;
+      exCb.addEventListener('change', () => { excludeMasteredChk = exCb.checked; });
+      const exTxt = document.createElement('span');
+      exTxt.textContent = '🔥 3連続正解を除く';
+      exLabel.append(exCb, exTxt);
+      popup.appendChild(exLabel);
 
       [
         { mode: 'sequential', label: '📋 出題順'  },
@@ -2188,7 +2214,7 @@ function renderTopFilterCard() {
         modeBtn.textContent = label;
         modeBtn.addEventListener('click', () => {
           topFilterStartOpen = false;
-          startSession(mode);
+          startSession(mode, { excludeMastered: excludeMasteredChk });
         });
         popup.appendChild(modeBtn);
       });
@@ -2865,14 +2891,18 @@ function makeChip(label, onClick) {
 // ========== Study Screen ==========
 const CHOICE_LABELS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
-function startSession(mode) {
+function startSession(mode, opts = {}) {
   if (state.questions.length === 0) {
     alert('問題データがありません。JSONファイルを読み込んでください。');
     return;
   }
-  const filtered = getFilteredQuestions();
+  let filtered = getFilteredQuestions();
+  // 「3連続正解を除く」: 全選択肢が直近3連続正解済みの問題を除外
+  if (opts.excludeMastered) filtered = filtered.filter(q => !isQuestionMastered(q));
   if (filtered.length === 0) {
-    alert('フィルターに合致する問題がありません。カテゴリを選択してください。');
+    alert(opts.excludeMastered
+      ? '出題できる問題がありません。\n選択範囲はすべて3連続正解済みです。'
+      : 'フィルターに合致する問題がありません。カテゴリを選択してください。');
     return;
   }
   // 中断データがあれば確認モーダルを表示
@@ -2884,21 +2914,23 @@ function startSession(mode) {
   _startSession(mode, filtered);
 }
 
-function _startSession(mode, filtered) {
+function _startSession(mode, filtered, opts = {}) {
   flushSessionTime();
   startSessionTimer();
   // 模試モードのタイマーが残っていれば停止
   if (state.examTimerInterval) { clearInterval(state.examTimerInterval); state.examTimerInterval = null; }
   document.getElementById('exam-timer-wrap')?.classList.add('hidden');
   state.examMode             = false;
+  state.quickMode            = !!opts.quickMode;   // 「とりあえず50」モードか
   state.mode                 = mode;
   // 「もう一度」用に直前セッション情報を保存
   state.lastAgainType     = 'study';
   state.lastAgainMode     = mode;
   state.lastAgainFiltered = filtered.slice();
   state.lastAgainLimit    = null;
-  let queue = buildQueue(filtered, mode);
-  if (mode === 'random' && state.randomLimit) queue = queue.slice(0, state.randomLimit);
+  // opts.queue があればそれをそのまま使う（事前構築済みキュー）
+  let queue = opts.queue ? opts.queue : buildQueue(filtered, mode);
+  if (!opts.queue && mode === 'random' && state.randomLimit) queue = queue.slice(0, state.randomLimit);
   if (queue.length === 0) {
     if (mode === 'weak') {
       alert('苦手な問題がありません。\n選択範囲に「直近不正解あり」の問題が見つかりませんでした。');
@@ -2919,6 +2951,33 @@ function _startSession(mode, filtered) {
   state.checked              = false;
   markerDisplayOn             = false;   // 出題開始時はマーカー表示をリセット
   showScreen('study');
+  renderQuestion();
+}
+
+// 「とりあえず50」: 全問から計算問題・1択選択問題を除いて完全ランダムに最大50問
+function startRandomFifty() {
+  if (state.questions.length === 0) {
+    alert('問題データがありません。JSONファイルを読み込んでください。');
+    return;
+  }
+  const pool = state.questions.filter(q => !isOnePickQuestion(q));
+  if (pool.length === 0) {
+    alert('出題できる問題がありません（計算問題・1択選択問題は除外されます）。');
+    return;
+  }
+  const queue = buildQueue(pool, 'random').slice(0, 50);
+  if (loadInterruptedSession()) {
+    pendingStartMode = { mode: 'random', filtered: pool, queue, quickMode: true };
+    document.getElementById('modal-start-confirm').classList.remove('hidden');
+    return;
+  }
+  _startSession('random', pool, { queue, quickMode: true });
+}
+
+// 「とりあえず50」中に計算/1択として登録された問題をキューから除外してスキップ
+function skipQuickQuestion() {
+  state.queue.splice(state.queueIndex, 1);
+  // queueIndex はそのまま（次の問題が繰り上がる）。末尾を超えたら結果画面へ。
   renderQuestion();
 }
 
@@ -3557,6 +3616,7 @@ function startExamMode(filtered) {
   flushSessionTime();
   startSessionTimer();
   const limitMin = parseInt(document.getElementById('exam-time-limit').value || '0');
+  state.quickMode          = false;
   state.mode               = 'sequential';
   state.queue              = buildQueue(filtered, 'sequential');
   state.queueIndex         = 0;
@@ -4539,6 +4599,7 @@ function startDrill(drillMode) {
     }
     return;
   }
+  state.quickMode = false;
   // 「もう一度」用に保存
   state.lastAgainType     = 'drill';
   state.lastAgainMode     = drillMode;
@@ -8515,10 +8576,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('btn-start-confirm-yes').addEventListener('click', () => {
     document.getElementById('modal-start-confirm').classList.add('hidden');
     if (pendingStartMode) {
-      const { mode, filtered } = pendingStartMode;
+      const { mode, filtered, queue, quickMode } = pendingStartMode;
       pendingStartMode = null;
       clearInterruptedSession();
-      _startSession(mode, filtered);
+      _startSession(mode, filtered, { queue, quickMode });
     }
   });
   document.getElementById('btn-start-confirm-no').addEventListener('click', () => {
@@ -8840,6 +8901,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // Drill mode
   document.getElementById('btn-start-drill-all').addEventListener('click',  e => openDrillSetupModal('all',  e.currentTarget));
   document.getElementById('btn-start-drill-weak').addEventListener('click', e => openDrillSetupModal('weak', e.currentTarget));
+  document.getElementById('btn-start-quick50')?.addEventListener('click', startRandomFifty);
   document.getElementById('btn-start-drill-search').addEventListener('click', () => {
     startKeywordDrill(document.getElementById('drill-search-input').value);
   });
@@ -9700,6 +9762,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     state.queue[state.queueIndex] = updatedQ;
     saveQuestions();
 
+    // 「とりあえず50」中に計算/1択として登録したら、その問題は対象外なのでスキップ
+    if (state.quickMode && e.target.checked) { skipQuickQuestion(); return; }
+
     // 未回答なら選択肢UIを切り替え
     if (!state.checked) {
       const list = document.getElementById('choices-list');
@@ -9736,6 +9801,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     state.questions[qIdx] = updatedQ;
     state.queue[state.queueIndex] = updatedQ;
     saveQuestions();
+
+    // 「とりあえず50」中に計算/1択として登録したら、その問題は対象外なのでスキップ
+    if (state.quickMode && e.target.checked) { skipQuickQuestion(); return; }
 
     // 未回答なら選択肢UIを切り替え
     if (!state.checked) {
