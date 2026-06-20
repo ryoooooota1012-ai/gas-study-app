@@ -2606,7 +2606,6 @@ body.tier-border-diamond .card {
 }
 .tfi-seg {
   height: 100%;
-  transition: width .3s;
 }
 .tfi-legend {
   display: flex;
