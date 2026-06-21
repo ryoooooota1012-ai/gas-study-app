@@ -2649,7 +2649,10 @@ body.tier-border-diamond .card {
 /* 5連続=diamond / 4連続=platinum / 3連続=gold（連続正解ティアのみ） */
 .top-filter-item.tier-gold,
 .top-filter-item.tier-platinum,
-.top-filter-item.tier-diamond {
+.top-filter-item.tier-diamond,
+.calc-practice-item.tier-gold,
+.calc-practice-item.tier-platinum,
+.calc-practice-item.tier-diamond {
   background-size: 200% 100%;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0,0,0,.85);
@@ -2657,19 +2660,31 @@ body.tier-border-diamond .card {
 .top-filter-item.tier-gold .top-filter-item-cnt,
 .top-filter-item.tier-platinum .top-filter-item-cnt,
 .top-filter-item.tier-diamond .top-filter-item-cnt { color: #fff; opacity: .92; }
-.top-filter-item.tier-gold {
+.calc-practice-item.tier-gold .calc-practice-item-title,
+.calc-practice-item.tier-platinum .calc-practice-item-title,
+.calc-practice-item.tier-diamond .calc-practice-item-title,
+.calc-practice-item.tier-gold .calc-practice-item-meta,
+.calc-practice-item.tier-platinum .calc-practice-item-meta,
+.calc-practice-item.tier-diamond .calc-practice-item-meta,
+.calc-practice-item.tier-gold .calc-practice-item-num,
+.calc-practice-item.tier-platinum .calc-practice-item-num,
+.calc-practice-item.tier-diamond .calc-practice-item-num { color: #fff; }
+.top-filter-item.tier-gold,
+.calc-practice-item.tier-gold {
   background: linear-gradient(135deg,#0d0c01 0%,#3e3a04 20%,#706410 35%,#c8a818 50%,#706410 65%,#3e3a04 80%,#0d0c01 100%);
   border-color: #a89614;
   box-shadow: 0 2px 18px rgba(165,148,18,.5), inset 0 1px 0 rgba(250,225,60,.3);
   animation: tier-shimmer-mountain 7s linear infinite;
 }
-.top-filter-item.tier-platinum {
+.top-filter-item.tier-platinum,
+.calc-practice-item.tier-platinum {
   background: linear-gradient(135deg,#354562 0%,#5a86b1 20%,#96bfe3 35%,#c6e2f9 50%,#96bfe3 65%,#5a86b1 80%,#354562 100%);
   border-color: #c6e0f6;
   box-shadow: 0 2px 26px rgba(150,205,255,.6), inset 0 1px 0 rgba(220,245,255,.6);
   animation: tier-shimmer-mountain 6s linear infinite;
 }
-.top-filter-item.tier-diamond {
+.top-filter-item.tier-diamond,
+.calc-practice-item.tier-diamond {
   background: linear-gradient(135deg,#060d1e 0%,#0c1a40 20%,#163a96 35%,#4aaae0 44%,#d8f0ff 50%,#4aaae0 56%,#163a96 65%,#0c1a40 80%,#060d1e 100%);
   border-color: #90ccee;
   box-shadow: 0 2px 20px rgba(56,180,248,.5), 0 0 40px rgba(100,160,255,.2), inset 0 1px 0 rgba(255,255,255,.55);
@@ -3739,6 +3754,21 @@ body.tier-border-diamond .card {
   gap: 10px;
   margin-top: 16px;
 }
+.calc-detail-answer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.calc-detail-answer-left { display: flex; align-items: center; gap: 10px; }
+.calc-detail-answer-label { font-size: .82rem; color: var(--text-2); }
+.calc-detail-acc { font-size: .8rem; font-weight: 600; color: var(--text-2); }
+.calc-detail-answer-btns { display: flex; gap: 8px; }
+.calc-detail-answer-btns .drill-btn { min-width: 110px; padding: 9px 14px; }
 
 .kb-guide {
   display: flex;

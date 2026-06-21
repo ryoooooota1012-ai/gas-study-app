@@ -1999,6 +1999,16 @@ function isQuestionMasteredAt(q, n) {
   const cs = (q.choices || []).filter(c => c.id);
   return cs.length > 0 && cs.every(c => choiceStreak(c) >= n);
 }
+// 単一履歴の連続正解数 → ティア（5連続=diamond / 4=platinum / 3=gold / 未満=null）
+function streakTierFromHistory(hist) {
+  const h = Array.isArray(hist) ? hist : [];
+  let s = 0;
+  for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) s++; else break; }
+  if (s >= 5) return 'diamond';
+  if (s === 4) return 'platinum';
+  if (s >= 3) return 'gold';
+  return null;
+}
 
 // フィルター(年度/分野)の達成ティアを判定：全選択肢の直近連続正解数の最小値で決定。
 // 5連続=diamond / 4連続=platinum / 3連続=gold / それ未満=null（連続正解ティアのみ）
@@ -8318,6 +8328,17 @@ async function saveCalcProblems() {
   }
 }
 
+// 計算問題一覧の全グループ（タイトル・サブカテゴリ）を折りたたむ
+function collapseAllCalcGroups() {
+  collapsedCalcTitles.clear();
+  collapsedCalcSubcats.clear();
+  calcProblems.forEach(p => {
+    const tk = p.title || '';
+    collapsedCalcTitles.add(tk);
+    collapsedCalcSubcats.add(tk + '::' + (p.subcategory || ''));
+  });
+}
+
 function renderCalcPracticeScreen() {
   const listEl  = document.getElementById('calc-practice-list');
   const emptyEl = document.getElementById('calc-practice-empty');
@@ -8482,8 +8503,9 @@ function renderCalcPracticeScreen() {
         const metaHtml  = metaParts.length
           ? `<div class="calc-practice-item-meta">${metaParts.join(' ／ ')}</div>` : '';
 
+        const calcTier = streakTierFromHistory(state.progress[p.id]?.history);
         const itemEl = document.createElement('div');
-        itemEl.className = 'calc-practice-item';
+        itemEl.className = 'calc-practice-item' + (calcTier ? ' tier-' + calcTier : '');
         itemEl.dataset.index = origIndex;
         itemEl.innerHTML =
           thumbHtml +
@@ -8565,11 +8587,28 @@ function renderCalcDetailScreen() {
       : `<div style="text-align:center;color:var(--text-3);padding:30px;">画像なし</div>`;
   }
 
+  // 正誤履歴ドット（直近5回）
+  const dotsEl = document.getElementById('calc-detail-dots');
+  if (dotsEl) dotsEl.replaceChildren(makeHistoryDots(state.progress[p.id]));
+  const accEl0 = document.getElementById('calc-detail-acc');
+  if (accEl0) accEl0.textContent = '';
+
   // 前後ボタン制御
   const prevBtn = document.getElementById('btn-calc-prev');
   const nextBtn = document.getElementById('btn-calc-next');
   if (prevBtn) prevBtn.disabled = calcDetailIndex <= 0;
   if (nextBtn) nextBtn.disabled = calcDetailIndex >= calcProblems.length - 1;
+}
+
+// 計算問題の正誤を記録（直近5回まで履歴・ティアに反映）。解説の開閉状態は維持する。
+function recordCalcAnswer(isRight) {
+  const p = calcProblems[calcDetailIndex];
+  if (!p) return;
+  recordAnswer(p.id, isRight);
+  const dotsEl = document.getElementById('calc-detail-dots');
+  if (dotsEl) dotsEl.replaceChildren(makeHistoryDots(state.progress[p.id]));
+  const accEl = document.getElementById('calc-detail-acc');
+  if (accEl) accEl.textContent = isRight ? '✓ 正解を記録しました' : '✗ 不正解を記録しました';
 }
 
 /** datalistを登録済みデータで更新する */
@@ -9524,8 +9563,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   });
 
   // ========== 計算問題練習 ==========
-  // ホーム→一覧
+  // ホーム→一覧（全トグルを閉じた状態で開く）
   document.getElementById('btn-start-calc-practice').addEventListener('click', () => {
+    collapseAllCalcGroups();
     renderCalcPracticeScreen();
     showScreen('calc-practice');
   });
@@ -9724,6 +9764,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       renderCalcDetailScreen();
     }
   });
+
+  // 詳細画面：正誤を記録（○ / ✕）
+  document.getElementById('btn-calc-correct')?.addEventListener('click', () => recordCalcAnswer(true));
+  document.getElementById('btn-calc-wrong')?.addEventListener('click', () => recordCalcAnswer(false));
 
   // Result
   document.getElementById('btn-retry-wrong-q').addEventListener('click', retryWrongQuestions);
