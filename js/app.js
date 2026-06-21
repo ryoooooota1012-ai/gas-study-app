@@ -2282,10 +2282,10 @@ function renderTopFilterCard() {
   const items = document.createElement('div');
   items.className = 'top-filter-items';
 
-  // 対象問題：計算問題モードなら計算問題のみ、通常は選択カテゴリ
+  // 対象問題：計算問題モードなら計算問題のみ、通常は選択カテゴリ（計算問題は集計・出題から除外）
   const srcQs = state.calcFilter
     ? state.questions.filter(q => q.questionType === 'calculation')
-    : state.questions.filter(q => q.category === topFilterOpenCat);
+    : state.questions.filter(q => q.category === topFilterOpenCat && !isCalcQuestion(q));
 
   // 名前列の幅を「全カテゴリの年度名・分野名」の中で最も長いものに固定する。
   // カテゴリ・年度別/分野別タブのいずれでもバーの開始位置・長さを統一し、描画前に確定させてちらつきを防ぐ。
