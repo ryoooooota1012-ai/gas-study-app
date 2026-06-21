@@ -20,14 +20,14 @@ let createChoicesList   = []; // [{text, isCorrect}]
 let topFilterOpenCat    = null;  // 開いているカテゴリパネル（null=閉じ）
 let topFilterSubMode    = 'year'; // 'year' | 'sec'
 let topFilterStartOpen  = false;  // 出題開始ポップアップ表示フラグ
-let excludeMasteredChk  = false;  // 出題開始時「3連続正解を除く」チェック状態
+let excludeMasteredStreak = 0;  // 出題開始時の連続正解除外しきい値（0=除外なし / 3 / 4 / 5）
 // 壁打ち設定モーダル用
 let drillSetupCats      = new Set();
 let drillSetupYears     = new Set();
 let drillSetupSections  = new Set();
 let drillSetupLimit          = null;
 let drillSetupMode           = 'all'; // 'all' | 'weak'
-let drillSetupExcludeStrong  = false; // 3連続正解済みを除外
+let drillSetupExcludeStreak  = 0; // 壁打ちの連続正解除外しきい値（0=除外なし / 3 / 4 / 5）
 let drillSetupPrioritizeNew  = false; // 未出題の問題を優先
 let drillPresets             = [null, null, null]; // フィルタープリセット（アセット）
 let drillPresetActiveSlot    = null; // 現在適用中のスロット番号 (0-2 or null)
@@ -1987,7 +1987,19 @@ function getTopCatLayout() {
   return result;
 }
 
-/** 指定問題群の全選択肢が3連続正解済みなら true */
+// 選択肢の直近連続正解数（末尾から、履歴は最大5）
+function choiceStreak(c) {
+  const h = Array.isArray(state.progress[c?.id]?.history) ? state.progress[c.id].history : [];
+  let s = 0;
+  for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) s++; else break; }
+  return s;
+}
+// 1問の全選択肢が直近 n 連続正解済みか
+function isQuestionMasteredAt(q, n) {
+  const cs = (q.choices || []).filter(c => c.id);
+  return cs.length > 0 && cs.every(c => choiceStreak(c) >= n);
+}
+
 // フィルター(年度/分野)の達成ティアを判定：全選択肢の直近連続正解数の最小値で決定。
 // 5連続=diamond / 4連続=platinum / 3連続=gold / それ未満=null（連続正解ティアのみ）
 function filterTier(questions) {
@@ -2214,17 +2226,25 @@ function renderTopFilterCard() {
       // ポップアップ内クリックで閉じないように（チェックボックス操作のため）
       popup.addEventListener('click', e => e.stopPropagation());
 
-      // 「3連続正解を除く」トグル
-      const exLabel = document.createElement('label');
-      exLabel.className = 'top-filter-exclude-row';
-      const exCb = document.createElement('input');
-      exCb.type = 'checkbox';
-      exCb.checked = excludeMasteredChk;
-      exCb.addEventListener('change', () => { excludeMasteredChk = exCb.checked; });
-      const exTxt = document.createElement('span');
-      exTxt.textContent = '🔥 3連続正解を除く';
-      exLabel.append(exCb, exTxt);
-      popup.appendChild(exLabel);
+      // 連続正解を除外（3/4/5連続。同じものを再クリックで解除）
+      const exRow = document.createElement('div');
+      exRow.className = 'top-filter-exclude-row';
+      const exLbl = document.createElement('span');
+      exLbl.textContent = '🔥 連続正解を除外';
+      const exBtns = document.createElement('div');
+      exBtns.className = 'tfx-btns';
+      [3, 4, 5].forEach(n => {
+        const b = document.createElement('button');
+        b.className = 'tfx-btn' + (excludeMasteredStreak === n ? ' active' : '');
+        b.textContent = n + '連続';
+        b.addEventListener('click', () => {
+          excludeMasteredStreak = (excludeMasteredStreak === n) ? 0 : n;
+          exBtns.querySelectorAll('.tfx-btn').forEach((bb, i) => bb.classList.toggle('active', [3, 4, 5][i] === excludeMasteredStreak));
+        });
+        exBtns.appendChild(b);
+      });
+      exRow.append(exLbl, exBtns);
+      popup.appendChild(exRow);
 
       [
         { mode: 'sequential', label: '📋 出題順'  },
@@ -2237,7 +2257,7 @@ function renderTopFilterCard() {
         modeBtn.textContent = label;
         modeBtn.addEventListener('click', () => {
           topFilterStartOpen = false;
-          startSession(mode, { excludeMastered: excludeMasteredChk });
+          startSession(mode, { excludeStreak: excludeMasteredStreak });
         });
         popup.appendChild(modeBtn);
       });
@@ -2954,11 +2974,11 @@ function startSession(mode, opts = {}) {
     return;
   }
   let filtered = getFilteredQuestions();
-  // 「3連続正解を除く」: 全選択肢が直近3連続正解済みの問題を除外
-  if (opts.excludeMastered) filtered = filtered.filter(q => !isQuestionMastered(q));
+  // 「N連続正解を除外」: 全選択肢が直近N連続正解済みの問題を除外（N=3/4/5）
+  if (opts.excludeStreak) filtered = filtered.filter(q => !isQuestionMasteredAt(q, opts.excludeStreak));
   if (filtered.length === 0) {
-    alert(opts.excludeMastered
-      ? '出題できる問題がありません。\n選択範囲はすべて3連続正解済みです。'
+    alert(opts.excludeStreak
+      ? `出題できる問題がありません。\n選択範囲はすべて${opts.excludeStreak}連続正解済みです。`
       : 'フィルターに合致する問題がありません。カテゴリを選択してください。');
     return;
   }
@@ -4583,10 +4603,9 @@ function applyDrillPreset(slot) {
     drillSetupCats.clear();
     drillSetupYears.clear();
     drillSetupSections.clear();
-    drillSetupExcludeStrong = false;
+    drillSetupExcludeStreak = 0;
     drillSetupPrioritizeNew = false;
-    const exChk = document.getElementById('drill-setup-exclude-strong');
-    if (exChk) exChk.checked = false;
+    setDrillExStreakBtns();
     const newChk = document.getElementById('drill-setup-prioritize-new');
     if (newChk) newChk.checked = false;
     renderDrillSetupFilters();
@@ -4599,10 +4618,9 @@ function applyDrillPreset(slot) {
   (preset.years || []).forEach(y => drillSetupYears.add(y));
   drillSetupSections.clear();
   (preset.sections || []).forEach(s => drillSetupSections.add(s));
-  drillSetupExcludeStrong = preset.excludeStrong || false;
+  drillSetupExcludeStreak = (preset.excludeStreak != null) ? preset.excludeStreak : (preset.excludeStrong ? 3 : 0);
   drillSetupPrioritizeNew = preset.prioritizeNew || false;
-  const exChk = document.getElementById('drill-setup-exclude-strong');
-  if (exChk) exChk.checked = drillSetupExcludeStrong;
+  setDrillExStreakBtns();
   const newChk = document.getElementById('drill-setup-prioritize-new');
   if (newChk) newChk.checked = drillSetupPrioritizeNew;
   renderDrillSetupFilters();
@@ -4613,7 +4631,7 @@ function registerDrillPreset(slot) {
     cats:          [...drillSetupCats],
     years:         [...drillSetupYears],
     sections:      [...drillSetupSections],
-    excludeStrong: drillSetupExcludeStrong,
+    excludeStreak: drillSetupExcludeStreak,
     prioritizeNew: drillSetupPrioritizeNew,
   };
   drillPresetActiveSlot = slot;
@@ -4627,14 +4645,19 @@ function releaseDrillPreset(slot) {
   drillSetupCats.clear();
   drillSetupYears.clear();
   drillSetupSections.clear();
-  drillSetupExcludeStrong = false;
+  drillSetupExcludeStreak = 0;
   drillSetupPrioritizeNew = false;
-  const exChk = document.getElementById('drill-setup-exclude-strong');
-  if (exChk) exChk.checked = false;
+  setDrillExStreakBtns();
   const newChk = document.getElementById('drill-setup-prioritize-new');
   if (newChk) newChk.checked = false;
   saveDrillPresetsStorage();
   renderDrillSetupFilters();
+}
+
+// 壁打ち設定の「連続正解を除外」ボタン群の選択状態を現在の drillSetupExcludeStreak に同期
+function setDrillExStreakBtns() {
+  document.querySelectorAll('#drill-exstreak-btns .tfx-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.streak) === drillSetupExcludeStreak));
 }
 
 function openDrillSetupModal(mode = 'all', triggerEl = null) {
@@ -4644,11 +4667,10 @@ function openDrillSetupModal(mode = 'all', triggerEl = null) {
   drillSetupYears.clear();
   drillSetupSections.clear();
   drillSetupLimit          = null;
-  drillSetupExcludeStrong  = false;
+  drillSetupExcludeStreak  = (mode === 'weak') ? 3 : 0;  // 苦手集中は既定で3連続正解を除外
   drillSetupPrioritizeNew  = false;
   drillPresetActiveSlot    = null;
-  const exChk = document.getElementById('drill-setup-exclude-strong');
-  if (exChk) exChk.checked = false;
+  setDrillExStreakBtns();
   const newChk = document.getElementById('drill-setup-prioritize-new');
   if (newChk) newChk.checked = false;
   // タイトルをモードに応じて変更
@@ -4782,11 +4804,8 @@ function buildDrillQueueCustom() {
   const queue = [];
   filtered.forEach(q => {
     (q.choices || []).forEach((c, i) => {
-      if (drillSetupMode === 'weak' || drillSetupExcludeStrong) {
-        const p    = state.progress[c.id];
-        const hist = (p && Array.isArray(p.history)) ? p.history : [];
-        if (hist.length >= 3 && hist.slice(-3).every(v => v === true)) return;
-      }
+      // N連続正解を除外（苦手集中は既定で3、ユーザーが3/4/5を選択可）
+      if (drillSetupExcludeStreak && choiceStreak(c) >= drillSetupExcludeStreak) return;
       queue.push({ question: q, choice: c, choiceIndex: i });
     });
   });
@@ -4807,8 +4826,8 @@ function buildDrillQueueCustom() {
 function showDrillCountStep() {
   const total = buildDrillQueueCustom().length;
   if (total === 0) {
-    const msg = drillSetupMode === 'weak'
-      ? '苦手な選択肢がありません。\n選択した範囲の全選択肢が3連続正解済みです！'
+    const msg = drillSetupExcludeStreak
+      ? `出題できる選択肢がありません。\n選択した範囲の選択肢はすべて${drillSetupExcludeStreak}連続正解済みです。`
       : '条件に合う選択肢がありません。フィルターを見直してください。';
     alert(msg);
     return;
@@ -9150,8 +9169,13 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // ランダム問題数ボタンは削除済み（フィルター出題開始で代替）
 
   // ── 壁打ち設定モーダル ──
-  document.getElementById('drill-setup-exclude-strong').addEventListener('change', e => {
-    drillSetupExcludeStrong = e.target.checked;
+  // 連続正解を除外（3/4/5、同じものを再クリックで解除）
+  document.querySelectorAll('#drill-exstreak-btns .tfx-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const n = parseInt(b.dataset.streak);
+      drillSetupExcludeStreak = (drillSetupExcludeStreak === n) ? 0 : n;
+      setDrillExStreakBtns();
+    });
   });
   document.getElementById('drill-setup-prioritize-new').addEventListener('change', e => {
     drillSetupPrioritizeNew = e.target.checked;
@@ -9172,10 +9196,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
         drillSetupCats.clear();
         drillSetupYears.clear();
         drillSetupSections.clear();
-        drillSetupExcludeStrong = false;
+        drillSetupExcludeStreak = 0;
         drillSetupPrioritizeNew = false;
-        const exChk = document.getElementById('drill-setup-exclude-strong');
-        if (exChk) exChk.checked = false;
+        setDrillExStreakBtns();
         const newChk = document.getElementById('drill-setup-prioritize-new');
         if (newChk) newChk.checked = false;
         renderDrillSetupFilters();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260620m">
+  <link rel="stylesheet" href="css/style.css?v=20260620n">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -928,11 +928,15 @@
           <div id="drill-setup-sections" class="drill-setup-chips"></div>
         </div>
       </div>
-      <div style="padding:10px 18px 0;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px 20px;">
-        <label class="study-calc-mode-label">
-          <input type="checkbox" id="drill-setup-exclude-strong">
-          <span>3連続正解済みを除外</span>
-        </label>
+      <div style="padding:10px 18px 0;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;">
+        <div class="drill-exstreak-row">
+          <span>🔥 連続正解を除外</span>
+          <div class="tfx-btns" id="drill-exstreak-btns">
+            <button type="button" class="tfx-btn" data-streak="3">3連続</button>
+            <button type="button" class="tfx-btn" data-streak="4">4連続</button>
+            <button type="button" class="tfx-btn" data-streak="5">5連続</button>
+          </div>
+        </div>
         <label class="study-calc-mode-label">
           <input type="checkbox" id="drill-setup-prioritize-new">
           <span>未出題を優先する</span>
@@ -1471,7 +1475,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260620m"></script>
+<script src="js/app.js?v=20260620n"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
