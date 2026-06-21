@@ -3072,6 +3072,8 @@ const EG_BUCKETS = [
   { key: 'streak1',     label: '1回正解' },
   { key: 'streak2',     label: '2連続正解' },
   { key: 'streak3',     label: '3連続正解' },
+  { key: 'streak4',     label: '4連続正解' },
+  { key: 'streak5',     label: '5連続正解' },
 ];
 const EG_WEIGHT_OPTS = [
   { label: '多め',   val: 3 },
@@ -3080,8 +3082,8 @@ const EG_WEIGHT_OPTS = [
   { label: '除外',   val: 0 },
 ];
 let egCategory   = null;
-let egShuffleUnit = 'choice'; // 'question'=問題単位 / 'choice'=選択肢単位
-let egWeights  = { recentWrong: 3, untried: 3, streak1: 2, streak2: 1, streak3: 0 };
+let egShuffleUnit = 'question'; // 'question'=問題単位（既定） / 'choice'=選択肢単位
+let egWeights  = { recentWrong: 3, untried: 3, streak1: 2, streak2: 1, streak3: 0, streak4: 0, streak5: 0 };
 
 // history 配列 → 習熟度バケット
 function bucketFromHistory(hist) {
@@ -3089,7 +3091,9 @@ function bucketFromHistory(hist) {
   if (hist[hist.length - 1] === false) return 'recentWrong';
   let streak = 0;
   for (let i = hist.length - 1; i >= 0; i--) { if (hist[i] === true) streak++; else break; }
-  if (streak >= 3) return 'streak3';
+  if (streak >= 5) return 'streak5';
+  if (streak === 4) return 'streak4';
+  if (streak === 3) return 'streak3';
   if (streak === 2) return 'streak2';
   return 'streak1';
 }
@@ -3189,7 +3193,8 @@ function updateExamGeneratorInfo() {
   if (!el) return;
   const yqs   = egYearQuestions(egCategory);
   const nums  = [...new Set(yqs.map(getQNum))];
-  const counts = { recentWrong: 0, untried: 0, streak1: 0, streak2: 0, streak3: 0 };
+  const counts = {};
+  EG_BUCKETS.forEach(b => { counts[b.key] = 0; });
   let unitWord, methodNote;
   if (egShuffleUnit === 'choice') {
     yqs.forEach(q => (q.choices || []).forEach(c => { counts[choiceBucket(c)]++; }));
