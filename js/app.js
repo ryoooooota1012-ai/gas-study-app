@@ -8611,18 +8611,31 @@ function recordCalcAnswer(isRight) {
   if (accEl) accEl.textContent = isRight ? '✓ 正解を記録しました' : '✗ 不正解を記録しました';
 }
 
+/** 日本語元号年度文字列を西暦数値に変換（ソート用） */
+function jaYearToNum(yr) {
+  if (!yr) return 0;
+  const toN = s => s === '元' ? 1 : parseInt(s, 10);
+  const r = yr.match(/令和(\d+|元)/);  if (r) return 2018 + toN(r[1]);
+  const h = yr.match(/平成(\d+|元)/);  if (h) return 1988 + toN(h[1]);
+  const s = yr.match(/昭和(\d+|元)/);  if (s) return 1925 + toN(s[1]);
+  const y = yr.match(/(\d{4})/);        if (y) return parseInt(y[1], 10);
+  return 0;
+}
+
 /** datalistを登録済みデータで更新する */
 function refreshCalcDatalistOptions() {
-  const fillList = (id, values) => {
+  const fillList = (id, values, sortFn) => {
     const dl = document.getElementById(id);
     if (!dl) return;
-    const unique = [...new Set(values.filter(Boolean))];
+    let unique = [...new Set(values.filter(Boolean))];
+    if (sortFn) unique = unique.sort(sortFn);
     dl.innerHTML = unique.map(v => `<option value="${escapeHtml(v)}">`).join('');
   };
   fillList('calc-title-list',       calcProblems.map(p => p.title).filter(Boolean));
   fillList('calc-subcategory-list', calcProblems.map(p => p.subcategory).filter(Boolean));
   fillList('calc-category-list',    calcProblems.map(p => p.category).filter(Boolean));
-  fillList('calc-year-list',        calcProblems.map(p => p.year).filter(Boolean));
+  fillList('calc-year-list',        calcProblems.map(p => p.year).filter(Boolean),
+    (a, b) => jaYearToNum(b) - jaYearToNum(a));
 }
 
 /**
