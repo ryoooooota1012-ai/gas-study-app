@@ -2645,48 +2645,42 @@ body.tier-border-diamond .card {
   .top-filter-item { grid-template-columns: var(--tfi-name-w, max-content) minmax(0, 1fr) 3.2em; }
 }
 
-/* ===== フィルター完全習得（全問3連続正解）＝ダイヤ輝きエフェクト ===== */
-.top-filter-item.mastered {
-  background: linear-gradient(135deg,
-    #080e20 0%, #0e2050 10%, #1848b0 21%,
-    #58bcf8 30%, #ddf4ff 37%, #b060f8 43%, #ddf4ff 49%,
-    #58bcf8 56%, #1848b0 68%, #0e2050 82%, #080e20 100%
-  );
-  background-size: 200% 200%;
-  border-color: #90eeff;
-  color: #e8f8ff;
-  text-shadow: 0 0 6px rgba(56,200,248,.7);
-  animation: fmi-bg 4s linear infinite, fmi-pulse 2s ease-in-out alternate infinite;
-}
-.top-filter-item.mastered:hover {
+/* ===== フィルターの達成ティア（全選択肢の連続正解数で判定）＝ヘッダーと同等の金属シマー ===== */
+/* 5連続=diamond / 4連続=platinum / 3連続=gold（連続正解ティアのみ） */
+.top-filter-item.tier-gold,
+.top-filter-item.tier-platinum,
+.top-filter-item.tier-diamond {
+  background-size: 200% 100%;
   color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.85);
 }
-.top-filter-item.mastered.active {
-  border-color: #c0f0ff;
-  animation: fmi-bg 3s linear infinite, fmi-pulse-bright 1.5s ease-in-out alternate infinite;
+.top-filter-item.tier-gold .top-filter-item-cnt,
+.top-filter-item.tier-platinum .top-filter-item-cnt,
+.top-filter-item.tier-diamond .top-filter-item-cnt { color: #fff; opacity: .92; }
+.top-filter-item.tier-gold {
+  background: linear-gradient(135deg,#0d0c01 0%,#3e3a04 20%,#706410 35%,#c8a818 50%,#706410 65%,#3e3a04 80%,#0d0c01 100%);
+  border-color: #a89614;
+  box-shadow: 0 2px 18px rgba(165,148,18,.5), inset 0 1px 0 rgba(250,225,60,.3);
+  animation: tier-shimmer-mountain 7s linear infinite;
 }
-.top-filter-item.mastered .top-filter-item-cnt {
-  background: linear-gradient(160deg, #ffccdd 0%, #ffdd88 25%, #aaf0ff 50%, #88ccff 75%, #e0aaff 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  opacity: 1;
-  animation: fmi-hue 3s linear infinite;
+.top-filter-item.tier-platinum {
+  background: linear-gradient(135deg,#354562 0%,#5a86b1 20%,#96bfe3 35%,#c6e2f9 50%,#96bfe3 65%,#5a86b1 80%,#354562 100%);
+  border-color: #c6e0f6;
+  box-shadow: 0 2px 26px rgba(150,205,255,.6), inset 0 1px 0 rgba(220,245,255,.6);
+  animation: tier-shimmer-mountain 6s linear infinite;
 }
-@keyframes fmi-bg {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+.top-filter-item.tier-diamond {
+  background: linear-gradient(135deg,#060d1e 0%,#0c1a40 20%,#163a96 35%,#4aaae0 44%,#d8f0ff 50%,#4aaae0 56%,#163a96 65%,#0c1a40 80%,#060d1e 100%);
+  border-color: #90ccee;
+  box-shadow: 0 2px 20px rgba(56,180,248,.5), 0 0 40px rgba(100,160,255,.2), inset 0 1px 0 rgba(255,255,255,.55);
+  animation: tier-diamond-mountain 4s linear infinite, diamond-hue-drift 8s ease-in-out infinite;
 }
-@keyframes fmi-pulse {
-  from { box-shadow: 0 0 6px rgba(56,200,248,.45), 0 0 14px rgba(176,64,248,.25); }
-  to   { box-shadow: 0 0 12px rgba(56,200,248,.85), 0 0 26px rgba(176,64,248,.55), 0 0 40px rgba(56,200,248,.2); }
-}
-@keyframes fmi-pulse-bright {
-  from { box-shadow: 0 0 10px rgba(56,200,248,.7), 0 0 22px rgba(176,64,248,.45); }
-  to   { box-shadow: 0 0 18px rgba(56,200,248,1),  0 0 38px rgba(176,64,248,.75), 0 0 55px rgba(56,200,248,.3); }
-}
-@keyframes fmi-hue {
-  0%   { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
+.top-filter-item.tier-gold:hover,
+.top-filter-item.tier-platinum:hover,
+.top-filter-item.tier-diamond:hover { color: #fff; }
+.top-filter-item.tier-gold.active,
+.top-filter-item.tier-platinum.active,
+.top-filter-item.tier-diamond.active { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
 
 /* ===== Question List Select Mode ===== */
 .qlist-select-bar {

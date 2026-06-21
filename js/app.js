@@ -1988,6 +1988,27 @@ function getTopCatLayout() {
 }
 
 /** 指定問題群の全選択肢が3連続正解済みなら true */
+// フィルター(年度/分野)の達成ティアを判定：全選択肢の直近連続正解数の最小値で決定。
+// 5連続=diamond / 4連続=platinum / 3連続=gold / それ未満=null（連続正解ティアのみ）
+function filterTier(questions) {
+  let any = false, minStreak = Infinity;
+  for (const q of (questions || [])) {
+    for (const c of (q.choices || [])) {
+      if (!c.id) continue;
+      any = true;
+      const h = Array.isArray(state.progress[c.id]?.history) ? state.progress[c.id].history : [];
+      let streak = 0;
+      for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) streak++; else break; }
+      if (streak < minStreak) minStreak = streak;
+      if (minStreak < 3) return null;
+    }
+  }
+  if (!any) return null;
+  if (minStreak >= 5) return 'diamond';
+  if (minStreak >= 4) return 'platinum';
+  return 'gold';
+}
+
 function isFilterMastered(questions) {
   if (!questions || questions.length === 0) return false;
   let hasAny = false;
@@ -2262,10 +2283,10 @@ function renderTopFilterCard() {
       years.forEach(year => {
         const yearQs = srcQs.filter(q => q.year === year);
         const qcnt = yearQs.length;
-        const mastered = isFilterMastered(yearQs);
+        const tier = filterTier(yearQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (mastered ? ' mastered' : '');
-        btn.innerHTML = `<span class="tfi-name">${year}${mastered ? ' 💎' : ''}</span>${filterProgressHTML(yearQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (tier ? ' tier-' + tier : '');
+        btn.innerHTML = `<span class="tfi-name">${year}</span>${filterProgressHTML(yearQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeYears.has(year)) state.activeYears.delete(year);
           else state.activeYears.add(year);
@@ -2289,10 +2310,10 @@ function renderTopFilterCard() {
       secs.forEach(sec => {
         const secQs = srcQs.filter(q => q.section === sec);
         const qcnt = secQs.length;
-        const mastered = isFilterMastered(secQs);
+        const tier = filterTier(secQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (mastered ? ' mastered' : '');
-        btn.innerHTML = `<span class="tfi-name">${sec}${mastered ? ' 💎' : ''}</span>${filterProgressHTML(secQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
+        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (tier ? ' tier-' + tier : '');
+        btn.innerHTML = `<span class="tfi-name">${sec}</span>${filterProgressHTML(secQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeSections.has(sec)) state.activeSections.delete(sec);
           else state.activeSections.add(sec);
@@ -2313,10 +2334,8 @@ function computeGlobalFilterNameWidth(card) {
   const names = [];
   [...new Set(state.questions.map(q => q.category))].forEach(cat => {
     const cq = state.questions.filter(q => q.category === cat);
-    [...new Set(cq.filter(q => q.year).map(q => q.year))].forEach(y =>
-      names.push(y + (isFilterMastered(cq.filter(q => q.year === y)) ? ' 💎' : '')));
-    [...new Set(cq.filter(q => q.section).map(q => q.section))].forEach(s =>
-      names.push(s + (isFilterMastered(cq.filter(q => q.section === s)) ? ' 💎' : '')));
+    [...new Set(cq.filter(q => q.year).map(q => q.year))].forEach(y => names.push(y));
+    [...new Set(cq.filter(q => q.section).map(q => q.section))].forEach(s => names.push(s));
   });
   return measureMaxFilterNameWidth(card, names);
 }
