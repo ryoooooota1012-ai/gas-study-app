@@ -2246,15 +2246,10 @@ function renderTopFilterCard() {
     ? state.questions.filter(q => q.questionType === 'calculation')
     : state.questions.filter(q => q.category === topFilterOpenCat);
 
-  // 名前列の幅を「年度名・分野名すべて」の中で最も長いものに固定する。
-  // 年度別/分野別どちらのタブでも同じ位置・長さでバーを表示し、描画前に確定させてちらつきを防ぐ。
+  // 名前列の幅を「全カテゴリの年度名・分野名」の中で最も長いものに固定する。
+  // カテゴリ・年度別/分野別タブのいずれでもバーの開始位置・長さを統一し、描画前に確定させてちらつきを防ぐ。
   {
-    const dispNames = [];
-    [...new Set(srcQs.filter(q => q.year).map(q => q.year))].forEach(y =>
-      dispNames.push(y + (isFilterMastered(srcQs.filter(q => q.year === y)) ? ' 💎' : '')));
-    [...new Set(srcQs.filter(q => q.section).map(q => q.section))].forEach(s =>
-      dispNames.push(s + (isFilterMastered(srcQs.filter(q => q.section === s)) ? ' 💎' : '')));
-    const w = measureMaxFilterNameWidth(card, dispNames);
+    const w = computeGlobalFilterNameWidth(card);
     if (w > 0) items.style.setProperty('--tfi-name-w', (Math.ceil(w) + 2) + 'px');
   }
 
@@ -2311,6 +2306,19 @@ function renderTopFilterCard() {
 
   sub.appendChild(items);
   card.appendChild(sub);
+}
+
+// 全カテゴリの年度名・分野名（💎込み）から最長の表示幅(px)を求める（カテゴリ間でバー位置を統一するため）
+function computeGlobalFilterNameWidth(card) {
+  const names = [];
+  [...new Set(state.questions.map(q => q.category))].forEach(cat => {
+    const cq = state.questions.filter(q => q.category === cat);
+    [...new Set(cq.filter(q => q.year).map(q => q.year))].forEach(y =>
+      names.push(y + (isFilterMastered(cq.filter(q => q.year === y)) ? ' 💎' : '')));
+    [...new Set(cq.filter(q => q.section).map(q => q.section))].forEach(s =>
+      names.push(s + (isFilterMastered(cq.filter(q => q.section === s)) ? ' 💎' : '')));
+  });
+  return measureMaxFilterNameWidth(card, names);
 }
 
 // 与えられた名前群の中で最大の表示幅(px)を、.tfi-name と同じフォントで実測する（非表示で測定）
