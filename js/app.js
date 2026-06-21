@@ -2246,6 +2246,18 @@ function renderTopFilterCard() {
     ? state.questions.filter(q => q.questionType === 'calculation')
     : state.questions.filter(q => q.category === topFilterOpenCat);
 
+  // 名前列の幅を「年度名・分野名すべて」の中で最も長いものに固定する。
+  // 年度別/分野別どちらのタブでも同じ位置・長さでバーを表示し、描画前に確定させてちらつきを防ぐ。
+  {
+    const dispNames = [];
+    [...new Set(srcQs.filter(q => q.year).map(q => q.year))].forEach(y =>
+      dispNames.push(y + (isFilterMastered(srcQs.filter(q => q.year === y)) ? ' 💎' : '')));
+    [...new Set(srcQs.filter(q => q.section).map(q => q.section))].forEach(s =>
+      dispNames.push(s + (isFilterMastered(srcQs.filter(q => q.section === s)) ? ' 💎' : '')));
+    const w = measureMaxFilterNameWidth(card, dispNames);
+    if (w > 0) items.style.setProperty('--tfi-name-w', (Math.ceil(w) + 2) + 'px');
+  }
+
   if (topFilterSubMode === 'year') {
     const years = sortYearsDesc([...new Set(srcQs.filter(q => q.year).map(q => q.year))]);
 
@@ -2299,19 +2311,22 @@ function renderTopFilterCard() {
 
   sub.appendChild(items);
   card.appendChild(sub);
-  alignTfiNames(items);
 }
 
-// 名前列の幅を、一覧中で最も長い名前に合わせて固定（バーの開始・終端を全行で揃える）
-function alignTfiNames(itemsEl) {
-  if (!itemsEl) return;
-  itemsEl.style.removeProperty('--tfi-name-w'); // 一旦 max-content に戻して各名前の自然幅を測る
+// 与えられた名前群の中で最大の表示幅(px)を、.tfi-name と同じフォントで実測する（非表示で測定）
+function measureMaxFilterNameWidth(card, names) {
+  if (!card || !names || names.length === 0) return 0;
+  const meas = document.createElement('span');
+  meas.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:.88rem;font-weight:600;';
+  card.appendChild(meas);
   let max = 0;
-  itemsEl.querySelectorAll('.tfi-name').forEach(n => {
-    const w = n.getBoundingClientRect().width;
+  names.forEach(n => {
+    meas.textContent = n;
+    const w = meas.getBoundingClientRect().width;
     if (w > max) max = w;
   });
-  if (max > 0) itemsEl.style.setProperty('--tfi-name-w', Math.ceil(max) + 'px');
+  card.removeChild(meas);
+  return max;
 }
 
 function onTopFilterCatClick(cat) {
