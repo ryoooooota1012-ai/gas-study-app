@@ -2867,7 +2867,7 @@ function renderTagStudyArea() {
 function startTagDrill(selectedTags) {
   const queue = [];
   state.questions
-    .filter(q => !q.drillExcluded && !isFillBlankQuestion(q) && q.choices?.length)
+    .filter(q => !q.drillExcluded && !isFillBlankQuestion(q) && !isCalcQuestion(q) && q.choices?.length)
     .forEach(q => {
       (q.choices || []).forEach((c, i) => {
         if ((c.tags || []).some(t => selectedTags.has(t))) {
@@ -2884,6 +2884,7 @@ function startTagDrill(selectedTags) {
 }
 
 function startTagSession(mode, tagQs) {
+  tagQs = (tagQs || []).filter(q => !isCalcQuestion(q)); // 計算問題は通常出題から除外
   if (tagQs.length === 0) { alert('対象問題がありません'); return; }
   if (hasInterruptedSession()) {
     pendingStartMode = { mode, filtered: tagQs };
@@ -2974,6 +2975,8 @@ function startSession(mode, opts = {}) {
     return;
   }
   let filtered = getFilteredQuestions();
+  // 計算問題は通常出題から除外（計算問題練習でのみ出題。計算問題フィルター選択時は除外しない）
+  if (!state.calcFilter) filtered = filtered.filter(q => !isCalcQuestion(q));
   // 「N連続正解を除外」: 全選択肢が直近N連続正解済みの問題を除外（N=3/4/5）
   if (opts.excludeStreak) filtered = filtered.filter(q => !isQuestionMasteredAt(q, opts.excludeStreak));
   if (filtered.length === 0) {
@@ -4784,7 +4787,7 @@ function renderDrillSetupFilters() {
 function buildDrillQueueCustom() {
   // 選択カテゴリ内の問題を抽出して、利用可能な年度・分野を把握する
   const relevantQs = state.questions.filter(q =>
-    !q.drillExcluded && !isFillBlankQuestion(q) && q.choices?.length && drillSetupCats.has(q.category)
+    !q.drillExcluded && !isFillBlankQuestion(q) && !isCalcQuestion(q) && q.choices?.length && drillSetupCats.has(q.category)
   );
   const availableYears    = new Set(relevantQs.filter(q => q.year).map(q => q.year));
   const availableSections = new Set(relevantQs.filter(q => q.section).map(q => q.section));
@@ -6978,7 +6981,7 @@ function startKeywordDrill(keyword) {
   const lq = kw.toLowerCase();
   const queue = [];
   state.questions.forEach(q => {
-    if (isFillBlankQuestion(q)) return;
+    if (isFillBlankQuestion(q) || isCalcQuestion(q)) return;
     (q.choices || []).forEach((c, i) => {
       if ((c.text || '').toLowerCase().includes(lq)) {
         queue.push({ question: q, choice: c, choiceIndex: i });
