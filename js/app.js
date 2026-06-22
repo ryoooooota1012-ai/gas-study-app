@@ -8639,14 +8639,24 @@ function recordCalcAnswer(isRight) {
   if (accEl) accEl.textContent = isRight ? '✓ 正解を記録しました' : '✗ 不正解を記録しました';
 }
 
-/** 日本語元号年度文字列を西暦数値に変換（ソート用） */
+/**
+ * 年度文字列を西暦数値に変換（ソート用）。
+ * 対応形式の例：「令和5年度」「平成30年度」「甲R5」「甲30」「乙H28」「2023」。
+ *  - 令和: 令和N / 令N / RN（甲R5 等）
+ *  - 平成: 平成N / 平N / HN
+ *  - 昭和: 昭和N / 昭N / SN
+ *  - 「甲/乙/丙」+数字（元号略字なし）は平成として扱う（甲20→平成20）
+ */
 function jaYearToNum(yr) {
   if (!yr) return 0;
   const toN = s => s === '元' ? 1 : parseInt(s, 10);
-  const r = yr.match(/令和(\d+|元)/);  if (r) return 2018 + toN(r[1]);
-  const h = yr.match(/平成(\d+|元)/);  if (h) return 1988 + toN(h[1]);
-  const s = yr.match(/昭和(\d+|元)/);  if (s) return 1925 + toN(s[1]);
-  const y = yr.match(/(\d{4})/);        if (y) return parseInt(y[1], 10);
+  let m;
+  if ((m = yr.match(/(?:令和|令|[RＲ])\s*(\d+|元)/i))) return 2018 + toN(m[1]);
+  if ((m = yr.match(/(?:平成|平|[HＨ])\s*(\d+|元)/i))) return 1988 + toN(m[1]);
+  if ((m = yr.match(/(?:昭和|昭|[SＳ])\s*(\d+|元)/i))) return 1925 + toN(m[1]);
+  if ((m = yr.match(/(\d{4})/)))                       return parseInt(m[1], 10);
+  if ((m = yr.match(/[甲乙丙]\s*(\d+)/)))              return 1988 + toN(m[1]); // 甲20→平成20
+  if ((m = yr.match(/(\d+)/)))                         return parseInt(m[1], 10);
   return 0;
 }
 
