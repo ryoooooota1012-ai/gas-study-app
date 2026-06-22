@@ -248,13 +248,41 @@ function _clearMarkElements(container) {
   });
 }
 
-/** root 配下の text node を TreeWalker で辿り、targetNode の targetOffset が全体の何文字目かを返す */
+/**
+ * root 配下で (targetNode, targetOffset) が全体の何文字目かを返す。
+ * targetNode はテキストノードだけでなく、要素ノードのこともある
+ * （改行 <br> や [r]赤字[/r] のスパン境界で選択を終えた場合など）。
+ * 適用側 _applyHighlightRange と同じ「テキストノードのみを数える」基準に揃える。
+ */
 function _getTextOffset(root, targetNode, targetOffset) {
+  // テキストノード境界：従来どおり前方のテキスト長を積算
+  if (targetNode.nodeType === Node.TEXT_NODE) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let count = 0, node;
+    while ((node = walker.nextNode()) !== null) {
+      if (node === targetNode) return count + targetOffset;
+      count += node.textContent.length;
+    }
+    return count;
+  }
+
+  // 要素ノード境界：root先頭〜境界点の range を作り、そこに含まれるテキスト長を数える
+  const r = document.createRange();
+  r.setStart(root, 0);
+  try { r.setEnd(targetNode, targetOffset); }
+  catch { return 0; }
+
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let count = 0, node;
   while ((node = walker.nextNode()) !== null) {
-    if (node === targetNode) return count + targetOffset;
-    count += node.textContent.length;
+    const len = node.textContent.length;
+    // node末尾が境界以前 → 全長を加算
+    if (r.comparePoint(node, len) <= 0) { count += len; continue; }
+    // node末尾は境界より後。node先頭が境界以前なら、境界はこのnode内
+    if (r.comparePoint(node, 0) <= 0) {
+      count += (r.endContainer === node) ? r.endOffset : 0;
+    }
+    break;
   }
   return count;
 }
