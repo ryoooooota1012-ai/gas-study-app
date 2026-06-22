@@ -8532,10 +8532,14 @@ function renderCalcPracticeScreen() {
           ? `<div class="calc-practice-item-meta">${metaParts.join(' ／ ')}</div>` : '';
 
         const calcTier = streakTierFromHistory(state.progress[p.id]?.history);
+        const markHtml = p.mark
+          ? `<div class="calc-practice-item-mark mark-${p.mark === '◎' ? 'double' : 'single'}">${p.mark}</div>`
+          : '';
         const itemEl = document.createElement('div');
         itemEl.className = 'calc-practice-item' + (calcTier ? ' tier-' + calcTier : '');
         itemEl.dataset.index = origIndex;
         itemEl.innerHTML =
+          markHtml +
           thumbHtml +
           `<div class="calc-practice-item-info">` +
             `<div class="calc-practice-item-title">${escapeHtml(p.title || `計算問題 ${displayNum}`)}</div>` +
@@ -8695,6 +8699,15 @@ function openCalcModal(editIndex) {
   _setVal('calc-add-subcategory', p?.subcategory);
   _setVal('calc-add-category',    p?.category);
   _setVal('calc-add-year',        p?.year);
+
+  // マーク（◎/〇）の初期状態
+  const markWrap = document.getElementById('calc-mark-btns');
+  if (markWrap) {
+    const cur = p?.mark || '';
+    markWrap.dataset.mark = cur;
+    markWrap.querySelectorAll('.calc-mark-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.mark === cur));
+  }
 
   // 画像プレビュー
   const probPrev = document.getElementById('calc-add-problem-preview');
@@ -9708,6 +9721,17 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     reader.readAsDataURL(file);
   });
 
+  // マーク（◎/〇）選択トグル
+  document.getElementById('calc-mark-btns')?.addEventListener('click', e => {
+    const btn = e.target.closest('.calc-mark-btn');
+    if (!btn) return;
+    const wrap = document.getElementById('calc-mark-btns');
+    const next = (wrap.dataset.mark === btn.dataset.mark) ? '' : btn.dataset.mark; // 再クリックで解除
+    wrap.dataset.mark = next;
+    wrap.querySelectorAll('.calc-mark-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.mark === next));
+  });
+
   // 追加 / 編集 保存
   document.getElementById('calc-add-save').addEventListener('click', async () => {
     const errorEl  = document.getElementById('calc-add-error');
@@ -9729,6 +9753,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       subcategory:      (document.getElementById('calc-add-subcategory')?.value || '').trim(),
       category:         (document.getElementById('calc-add-category')?.value    || '').trim(),
       year:             (document.getElementById('calc-add-year')?.value        || '').trim(),
+      mark:             document.getElementById('calc-mark-btns')?.dataset.mark || '',
       problemImage:     probImg,
       explanationImage: expImg,
     };

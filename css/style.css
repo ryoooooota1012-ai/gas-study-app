@@ -3583,6 +3583,61 @@ body.tier-border-diamond .card {
   min-width: 24px;
   text-align: right;
 }
+/* 計算問題のマーク（◎/〇）バッジ — 一覧で目立たせる */
+.calc-practice-item-mark {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  color: #fff;
+}
+.calc-practice-item-mark.mark-double {
+  background: #e0483d;
+  box-shadow: 0 0 0 1px #ff8b82 inset, 0 1px 4px rgba(224,72,61,.5);
+}
+.calc-practice-item-mark.mark-single {
+  background: #d8932f;
+  box-shadow: 0 0 0 1px #f3bd6d inset, 0 1px 4px rgba(216,147,47,.5);
+}
+/* tier背景の上でもバッジを視認できるよう白縁を足す */
+.calc-practice-item.tier-gold .calc-practice-item-mark,
+.calc-practice-item.tier-platinum .calc-practice-item-mark,
+.calc-practice-item.tier-diamond .calc-practice-item-mark {
+  box-shadow: 0 0 0 2px rgba(255,255,255,.85) inset, 0 1px 4px rgba(0,0,0,.45);
+}
+
+/* 追加モーダルのマーク選択ボタン */
+.calc-mark-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+.calc-mark-btn {
+  width: 56px;
+  height: 44px;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.calc-mark-btn:hover { border-color: #3b82f6; }
+.calc-mark-btn.active[data-mark="◎"] {
+  background: #e0483d; color: #fff; border-color: #ff8b82;
+}
+.calc-mark-btn.active[data-mark="〇"] {
+  background: #d8932f; color: #fff; border-color: #f3bd6d;
+}
 .calc-empty-msg {
   text-align: center;
   color: var(--text-3);

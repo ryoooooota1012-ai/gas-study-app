@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260620o">
+  <link rel="stylesheet" href="css/style.css?v=20260621d">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -1461,6 +1461,14 @@
       </div>
 
       <div style="margin-bottom:12px;">
+        <label class="edit-label">マーク（任意）<span style="font-size:.75rem;color:var(--text-3);font-weight:400;">— もう一度押すと解除</span></label>
+        <div id="calc-mark-btns" class="calc-mark-btns" data-mark="">
+          <button type="button" class="calc-mark-btn" data-mark="◎">◎</button>
+          <button type="button" class="calc-mark-btn" data-mark="〇">〇</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
         <label class="edit-label">問題画像 * <span style="font-size:.75rem;color:var(--text-3);font-weight:400;">— クリックしてCtrl+Vで貼り付け可</span></label>
         <div id="calc-add-problem-preview" class="calc-img-preview-wrap" style="margin:6px 0;cursor:pointer;">
           <span class="calc-img-empty">画像が選択されていません</span>
@@ -1487,7 +1495,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260621c"></script>
+<script src="js/app.js?v=20260621d"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
