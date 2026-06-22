@@ -37,7 +37,7 @@ let calcAddPasteTarget       = 'problem'; // 'problem' | 'explanation'
 let editingCalcIndex         = null;     // null=追加モード, number=編集対象インデックス
 let collapsedCalcTitles      = new Set(); // 折りたたんでいるタイトルグループ
 let collapsedCalcSubcats     = new Set(); // 折りたたんでいるサブカテゴリグループ（キー: "title::subcat"）
-let calcSortMode             = 'title';  // 'title' | 'registered-asc' | 'registered-desc'
+let calcSortMode             = 'registered-asc';  // 'title' | 'registered-asc' | 'registered-desc'（既定=登録順）
 let resultFocusIndex         = -1; // リザルト画面キーボードフォーカス位置
 let pendingStartMode        = null;
 let _checkNoRecord          = false;  // true のとき checkAnswers() が記録処理をスキップ
