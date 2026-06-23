@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260621f">
+  <link rel="stylesheet" href="css/style.css?v=20260621g">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -1497,6 +1497,11 @@
     </div>
     <div id="calc-add-error" class="hidden" style="color:#f87171;font-size:.83rem;padding:0 18px 6px;"></div>
     <div class="modal-footer">
+      <div id="calc-edit-nav" class="calc-edit-nav hidden">
+        <button id="calc-edit-prev" class="btn btn-ghost btn-sm" title="前の登録問題へ">←</button>
+        <span id="calc-edit-nav-pos"></span>
+        <button id="calc-edit-next" class="btn btn-ghost btn-sm" title="次の登録問題へ">→</button>
+      </div>
       <button id="calc-add-cancel" class="btn btn-ghost">キャンセル</button>
       <button id="calc-add-save" class="btn btn-primary">追加する</button>
       <!-- テキストはJS側でモードに応じて変更 -->
@@ -1504,7 +1509,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260621i"></script>
+<script src="js/app.js?v=20260621j"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

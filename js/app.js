@@ -8784,6 +8784,57 @@ function refreshCalcDatalistOptions() {
     (a, b) => jaYearToNum(b) - jaYearToNum(a));
 }
 
+// 計算問題モーダルの入力内容をデータオブジェクトに集約（保存・サイレント保存で共用）
+function collectCalcModalData() {
+  const probPrev = document.getElementById('calc-add-problem-preview');
+  const expPrev  = document.getElementById('calc-add-exp-preview');
+  const isEdit   = editingCalcIndex !== null;
+  return {
+    id:               isEdit ? calcProblems[editingCalcIndex].id : 'calc_' + Date.now(),
+    title:            (document.getElementById('calc-add-title')?.value       || '').trim(),
+    subcategory:      (document.getElementById('calc-add-subcategory')?.value || '').trim(),
+    category:         (document.getElementById('calc-add-category')?.value    || '').trim(),
+    year:             (document.getElementById('calc-add-year')?.value        || '').trim(),
+    mark:             document.getElementById('calc-mark-btns')?.dataset.mark || '',
+    problemImage:     probPrev?._imgData || null,
+    explanationImage: expPrev?._imgData  || null,
+  };
+}
+
+// 編集中の計算問題を閉じずに保存（前後ナビ用）。画像が揃っていれば true
+async function saveCalcEditSilent() {
+  if (editingCalcIndex === null) return false;
+  const data = collectCalcModalData();
+  if (!data.problemImage || !data.explanationImage) return false;
+  calcProblems[editingCalcIndex] = data;
+  await saveCalcProblems();
+  return true;
+}
+
+// 前後ナビ行（編集モード時のみ表示）の状態を更新
+function updateCalcEditNav() {
+  const nav = document.getElementById('calc-edit-nav');
+  if (!nav) return;
+  const isEdit = editingCalcIndex !== null;
+  nav.classList.toggle('hidden', !isEdit);
+  if (!isEdit) return;
+  const pos = document.getElementById('calc-edit-nav-pos');
+  if (pos) pos.textContent = `${editingCalcIndex + 1} / ${calcProblems.length}`;
+  const prev = document.getElementById('calc-edit-prev');
+  const next = document.getElementById('calc-edit-next');
+  if (prev) prev.disabled = editingCalcIndex <= 0;
+  if (next) next.disabled = editingCalcIndex >= calcProblems.length - 1;
+}
+
+// 編集画面のまま前/次の登録問題へ移動（現在の編集内容はサイレント保存）
+async function navigateCalcEdit(direction) {
+  if (editingCalcIndex === null) return;
+  const newIndex = editingCalcIndex + direction;
+  if (newIndex < 0 || newIndex >= calcProblems.length) return;
+  await saveCalcEditSilent();
+  openCalcModal(newIndex);
+}
+
 /**
  * 計算問題追加/編集モーダルを開く
  * @param {number|null} editIndex - null=追加, number=編集対象インデックス
@@ -8839,7 +8890,12 @@ function openCalcModal(editIndex) {
   // datalistを最新データで更新
   refreshCalcDatalistOptions();
 
+  // 前後ナビ（編集モード時のみ）
+  updateCalcEditNav();
+
   document.getElementById('modal-calc-add').classList.remove('hidden');
+  // ナビで開き直しても多重登録しないよう、いったん解除してから登録
+  document.removeEventListener('paste', handleCalcAddImagePaste);
   document.addEventListener('paste', handleCalcAddImagePaste);
 }
 
@@ -9838,6 +9894,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       b.classList.toggle('active', b.dataset.mark === next));
   });
 
+  // 編集画面のまま前/次の登録問題へ
+  document.getElementById('calc-edit-prev')?.addEventListener('click', () => navigateCalcEdit(-1));
+  document.getElementById('calc-edit-next')?.addEventListener('click', () => navigateCalcEdit(1));
+
   // 追加 / 編集 保存
   document.getElementById('calc-add-save').addEventListener('click', async () => {
     const errorEl  = document.getElementById('calc-add-error');
@@ -9853,16 +9913,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     errorEl.classList.add('hidden');
 
     const isEdit = editingCalcIndex !== null;
-    const data = {
-      id:               isEdit ? calcProblems[editingCalcIndex].id : 'calc_' + Date.now(),
-      title:            (document.getElementById('calc-add-title')?.value       || '').trim(),
-      subcategory:      (document.getElementById('calc-add-subcategory')?.value || '').trim(),
-      category:         (document.getElementById('calc-add-category')?.value    || '').trim(),
-      year:             (document.getElementById('calc-add-year')?.value        || '').trim(),
-      mark:             document.getElementById('calc-mark-btns')?.dataset.mark || '',
-      problemImage:     probImg,
-      explanationImage: expImg,
-    };
+    const data = collectCalcModalData();
 
     if (isEdit) {
       calcProblems[editingCalcIndex] = data;
