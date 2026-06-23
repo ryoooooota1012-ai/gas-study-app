@@ -927,6 +927,7 @@ pre {
 }
 .choice-result-label.is-correct   { color: var(--success-txt); }
 .choice-result-label.is-incorrect { color: var(--danger-txt); }
+.choice-result-label.is-other     { color: var(--text-3); }
 .choice-explanation {
   font-size: .88rem;
   line-height: 1.7;

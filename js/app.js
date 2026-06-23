@@ -3781,6 +3781,29 @@ function checkAnswers() {
         });
         resultRow.append(lbl, exp, aiBtn);
         item.appendChild(resultRow);
+      } else if (isSingleSelectQuestion(q)) {
+        // 1択問題：選ばなかった（誤りの）選択肢にも解説を表示
+        const resultRow = document.createElement('div');
+        resultRow.className = 'choice-result-row';
+        const lbl = document.createElement('div');
+        lbl.className = 'choice-result-label is-other';
+        const lblText = document.createElement('span');
+        lblText.textContent = '解説（誤り）';
+        lbl.appendChild(lblText);
+        const exp = document.createElement('div');
+        exp.className = 'choice-explanation';
+        exp.innerHTML = renderText(c.explanation || '');
+        const aiBtn = document.createElement('button');
+        aiBtn.className = 'btn-ai-explain';
+        aiBtn.textContent = '📋 AI解説プロンプト';
+        aiBtn.addEventListener('click', () => {
+          openExplainOnClaude(q, c, false, 'maru');
+          const orig = aiBtn.textContent;
+          aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
+          setTimeout(() => { aiBtn.textContent = orig; }, 3000);
+        });
+        resultRow.append(lbl, exp, aiBtn);
+        item.appendChild(resultRow);
       }
     });
 
