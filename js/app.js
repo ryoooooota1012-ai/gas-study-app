@@ -2015,17 +2015,34 @@ function getTopCatLayout() {
   return result;
 }
 
-// 選択肢の直近連続正解数（末尾から、履歴は最大5）
-function choiceStreak(c) {
-  const h = Array.isArray(state.progress[c?.id]?.history) ? state.progress[c.id].history : [];
+// 履歴配列の末尾からの連続正解数（履歴は最大5）
+function histStreak(h) {
+  const a = Array.isArray(h) ? h : [];
   let s = 0;
-  for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) s++; else break; }
+  for (let i = a.length - 1; i >= 0; i--) { if (a[i] === true) s++; else break; }
   return s;
 }
-// 1問の全選択肢が直近 n 連続正解済みか
+// 選択肢の直近連続正解数（末尾から、履歴は最大5）
+function choiceStreak(c) {
+  return histStreak(state.progress[c?.id]?.history);
+}
+/**
+ * フィルター集計・マスター判定で使う「採点単位」ごとの履歴配列を返す。
+ * 1択問題・計算問題 → 問題単位（記録キー q.id+':q'）で1単位。
+ * 通常の○✕問題 → 各選択肢（記録キー c.id）で複数単位。
+ * （1択問題は選択肢単位ではなく問題単位で正誤が記録されるため、
+ *   選択肢idを見ると常に未学習に見えてしまうのを防ぐ）
+ */
+function questionProgressHistories(q) {
+  if (isOnePickQuestion(q)) {
+    return [state.progress[q.id + ':q']?.history];
+  }
+  return (q.choices || []).filter(c => c.id).map(c => state.progress[c.id]?.history);
+}
+// 1問が直近 n 連続正解済みか（採点単位すべてが n 連続以上）
 function isQuestionMasteredAt(q, n) {
-  const cs = (q.choices || []).filter(c => c.id);
-  return cs.length > 0 && cs.every(c => choiceStreak(c) >= n);
+  const hs = questionProgressHistories(q);
+  return hs.length > 0 && hs.every(h => histStreak(h) >= n);
 }
 // 単一履歴の連続正解数 → ティア（5連続=diamond / 4=platinum / 3=gold / 未満=null）
 function streakTierFromHistory(hist) {
@@ -2043,12 +2060,9 @@ function streakTierFromHistory(hist) {
 function filterTier(questions) {
   let any = false, minStreak = Infinity;
   for (const q of (questions || [])) {
-    for (const c of (q.choices || [])) {
-      if (!c.id) continue;
+    for (const hist of questionProgressHistories(q)) {
       any = true;
-      const h = Array.isArray(state.progress[c.id]?.history) ? state.progress[c.id].history : [];
-      let streak = 0;
-      for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) streak++; else break; }
+      const streak = histStreak(hist);
       if (streak < minStreak) minStreak = streak;
       if (minStreak < 3) return null;
     }
@@ -2063,24 +2077,21 @@ function isFilterMastered(questions) {
   if (!questions || questions.length === 0) return false;
   let hasAny = false;
   for (const q of questions) {
-    for (const c of (q.choices || [])) {
-      if (!c.id) continue;
+    for (const hist of questionProgressHistories(q)) {
       hasAny = true;
-      const hist = state.progress[c.id]?.history;
       if (!Array.isArray(hist) || hist.length < 3 || !hist.slice(-3).every(v => v === true)) return false;
     }
   }
   return hasAny;
 }
 
-// 1問の全選択肢が直近3連続正解済みか（= その問題はマスター済み）
+// 1問が直近3連続正解済みか（= その問題はマスター済み）
 function isQuestionMastered(q) {
-  const choices = (q.choices || []).filter(c => c.id);
-  if (choices.length === 0) return false;
-  return choices.every(c => {
-    const hist = state.progress[c.id]?.history;
-    return Array.isArray(hist) && hist.length >= 3 && hist.slice(-3).every(v => v === true);
-  });
+  const hs = questionProgressHistories(q);
+  if (hs.length === 0) return false;
+  return hs.every(hist =>
+    Array.isArray(hist) && hist.length >= 3 && hist.slice(-3).every(v => v === true)
+  );
 }
 
 /**
@@ -2091,18 +2102,11 @@ function computeFilterProgress(questions) {
   let total = 0, attempted = 0;
   let e1 = 0, e2 = 0, e3 = 0, e4 = 0, e5 = 0; // ちょうど1/2/3/4/5連続(以上)
   for (const q of (questions || [])) {
-    for (const c of (q.choices || [])) {
-      if (!c.id) continue;
+    for (const hist of questionProgressHistories(q)) {
       total++;
-      const hist = state.progress[c.id]?.history;
       const h = Array.isArray(hist) ? hist.slice(-5) : [];
       if (h.length > 0) attempted++;
-      // 末尾からの連続正解数
-      let streak = 0;
-      for (let i = h.length - 1; i >= 0; i--) {
-        if (h[i] === true) streak++;
-        else break;
-      }
+      const streak = histStreak(h);
       if (streak >= 5)      e5++;
       else if (streak === 4) e4++;
       else if (streak === 3) e3++;
