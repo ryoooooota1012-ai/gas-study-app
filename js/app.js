@@ -3359,6 +3359,34 @@ function isOnePickQuestion(q) {
   return isCalcQuestion(q) || isSingleSelectQuestion(q);
 }
 
+// 問題文から設問の極性を自動判定：誤答型（誤っているものを選ぶ）か正答型か
+function detectPolarityFromText(text) {
+  const t = String(text || '');
+  // 「誤っている／適切でない／正しくない／不適切／妥当でない／当てはまらない」等 → 誤答型
+  // （「誤差」等の誤検出を避けるため、誤は っ/り/ら が続く場合のみ）
+  if (/誤(っ|り|ら)|適切でない|適切ではない|正しくない|不適切|不適当|妥当でない|妥当ではない|当てはまらない/.test(t)) {
+    return 'incorrect';
+  }
+  return 'correct';
+}
+/**
+ * 1択問題の設問極性を返す。'correct'=正しいものを選ぶ / 'incorrect'=誤っているものを選ぶ。
+ * 明示設定 q.answerPolarity を優先し、なければ問題文から自動判定。
+ */
+function getQuestionPolarity(q) {
+  if (q?.answerPolarity === 'correct' || q?.answerPolarity === 'incorrect') return q.answerPolarity;
+  return detectPolarityFromText(q?.questionText || '');
+}
+/**
+ * 1択問題における、その選択肢の「記述としての事実上の正誤」を返す。
+ * 正答型：答えの選択肢(isCorrect)が正しい記述。
+ * 誤答型：答えの選択肢(isCorrect)が誤った記述、残りは正しい記述。
+ */
+function singleSelectStatementTrue(q, c) {
+  const findsWrong = getQuestionPolarity(q) === 'incorrect';
+  return findsWrong ? !c.isCorrect : !!c.isCorrect;
+}
+
 // 計算問題用：クリックして1択選ぶ選択肢アイテム
 function createChoiceItemCalc(choice, label) {
   const item = document.createElement('div');
@@ -5129,7 +5157,11 @@ function answerDrill(userSaysCorrect) {
   state.drillAnswered = true;
 
   const { question: q, choice: c } = state.drillQueue[state.drillIndex];
-  const actuallyCorrect = c.isCorrect;
+  // 1択問題は「設問の答えか」ではなく「選択肢の記述が正しいか」で判定する
+  // （誤答型の設問では答えの選択肢=誤った記述なので、極性に応じて反転させる）
+  const actuallyCorrect = isSingleSelectQuestion(q)
+    ? singleSelectStatementTrue(q, c)
+    : c.isCorrect;
   const isRight = (userSaysCorrect === actuallyCorrect);
 
   // 回答状態を保存（前後ナビゲーション時の復元用）
@@ -7462,6 +7494,15 @@ function saveEditSilent() {
     } else {
       delete q.questionType;
     }
+    // 設問タイプ（1択問題の極性）：auto は自動判定に任せるので保存しない
+    {
+      const polV = document.getElementById('edit-single-polarity')?.value;
+      if (singleCheckS && singleCheckS.checked && (polV === 'correct' || polV === 'incorrect')) {
+        q.answerPolarity = polV;
+      } else {
+        delete q.answerPolarity;
+      }
+    }
     // 解説画像
     if (editingExplanationImage) {
       q.explanationImage = editingExplanationImage;
@@ -7950,6 +7991,28 @@ function handleEditImagePaste(e) {
   }
 }
 
+// 編集モーダルの「設問タイプ」行の表示/ヒントを現在の状態に合わせて更新
+function updateEditPolarityRow() {
+  const row    = document.getElementById('edit-single-polarity-row');
+  const single = document.getElementById('edit-single-select-check');
+  const sel    = document.getElementById('edit-single-polarity');
+  const hint   = document.getElementById('edit-single-polarity-hint');
+  if (!row || !single || !sel) return;
+  // 1択選択問題のときだけ表示
+  row.style.display = single.checked ? '' : 'none';
+  if (!single.checked) return;
+  if (hint) {
+    if (sel.value === 'auto') {
+      const qText = document.querySelector('#edit-blocks-container .edit-block-textarea')?.value
+                 || (state.questions.find(q => q.id === editingQId)?.questionText) || '';
+      const detected = detectPolarityFromText(qText);
+      hint.textContent = `自動判定の結果：「${detected === 'incorrect' ? '誤っているものを選ぶ' : '正しいものを選ぶ'}」設問`;
+    } else {
+      hint.textContent = '';
+    }
+  }
+}
+
 // ========== Edit Modal ==========
 function openEditModal(qId, choiceIndex, fromList) {
   const q = state.questions.find(q => q.id === qId);
@@ -7995,6 +8058,11 @@ function openEditModal(qId, choiceIndex, fromList) {
   if (singleCheck) singleCheck.checked = q.questionType === 'single_select';
   const calcRow = document.getElementById('edit-calc-mode-row');
   if (calcRow) calcRow.style.display = singleMode ? 'none' : '';
+
+  // 設問タイプ（1択問題の極性）初期化
+  const polSel = document.getElementById('edit-single-polarity');
+  if (polSel) polSel.value = (q.answerPolarity === 'correct' || q.answerPolarity === 'incorrect') ? q.answerPolarity : 'auto';
+  updateEditPolarityRow();
 
   // 解説画像初期化
   editingExplanationImage = q.explanationImage || null;
@@ -8169,6 +8237,15 @@ function saveEditModal() {
       q.questionType = 'single_select';
     } else {
       delete q.questionType;
+    }
+    // 設問タイプ（1択問題の極性）：auto は自動判定に任せるので保存しない
+    {
+      const polV = document.getElementById('edit-single-polarity')?.value;
+      if (singleCheck2 && singleCheck2.checked && (polV === 'correct' || polV === 'incorrect')) {
+        q.answerPolarity = polV;
+      } else {
+        delete q.answerPolarity;
+      }
     }
     // 解説画像
     if (editingExplanationImage) {
@@ -10120,6 +10197,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('edit-tag-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-add-tag').click(); }
   });
+
+  // ── 設問タイプ（1択問題の極性）行の表示・ヒント更新 ──
+  document.getElementById('edit-single-select-check')?.addEventListener('change', updateEditPolarityRow);
+  document.getElementById('edit-single-polarity')?.addEventListener('change', updateEditPolarityRow);
 
   // ── ハッシュタグフィルター 折りたたみ ──
   document.getElementById('filter-tag-toggle-row').addEventListener('click', (e) => {

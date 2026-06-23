@@ -788,6 +788,20 @@ pre {
   cursor: pointer;
   accent-color: var(--accent);
 }
+/* 設問タイプ（1択問題の極性）行 */
+.edit-single-polarity-row {
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.edit-single-polarity-row select.edit-input {
+  max-width: 320px;
+}
+.edit-single-polarity-hint {
+  font-size: .76rem;
+  color: var(--text-3);
+  margin-top: 4px;
+}
 
 /* 出題画面：計算問題登録チェックボックス */
 .study-nav-row {
