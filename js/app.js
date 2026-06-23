@@ -9162,8 +9162,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
 
   // ── 選択肢テキスト・解説のドラッグでマーカー作成（答え合わせ後のみ）──
   // 選択肢テキスト → 黄色マーカー、解説テキスト → 赤文字マーカー
+  // 作成は markerDisplayOn の状態に依存しない（マーカー表示OFFでもドラッグで作成可。
+  // 作成時に表示をONにするので、「－」でOFFにした後でも追加マーカーを引ける）
   document.addEventListener('mouseup', e => {
-    if (!markerDisplayOn) return;
     const inStudy = state.checked;
     const inDrill = state.drillAnswered;
     if (!inStudy && !inDrill) return;
@@ -9230,6 +9231,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (overlaps) return;
 
     highlightsData[q.id].push({ id: crypto.randomUUID(), choiceId, area, start, end });
+    markerDisplayOn = true;   // 作成したマーカー（黄色含む）が必ず見えるよう表示ON
     saveHighlights();
     if (inDrill) {
       _applyDrillHighlights(q, state.drillQueue[state.drillIndex].choice);
