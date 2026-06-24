@@ -38,6 +38,7 @@ let editingCalcIndex         = null;     // null=追加モード, number=編集�
 let collapsedCalcTitles      = new Set(); // 折りたたんでいるタイトルグループ
 let collapsedCalcSubcats     = new Set(); // 折りたたんでいるサブカテゴリグループ（キー: "title::subcat"）
 let calcSortMode             = 'registered-asc';  // 'title' | 'registered-asc' | 'registered-desc'（既定=登録順）
+let calcMarkFilter           = new Set();          // 計算問題一覧の◎/〇フィルター（空=全件）
 let resultFocusIndex         = -1; // リザルト画面キーボードフォーカス位置
 let pendingStartMode        = null;
 let _checkNoRecord          = false;  // true のとき checkAnswers() が記録処理をスキップ
@@ -8487,13 +8488,20 @@ function renderCalcPracticeScreen() {
   const isRegistered = calcSortMode === 'registered-asc' || calcSortMode === 'registered-desc';
   const descending   = calcSortMode === 'registered-desc';
 
-  // ── タイトルでグループ化（全モード共通）──
+  // ── タイトルでグループ化（全モード共通。マークフィルター適用）──
   const groups = new Map(); // titleKey → { title, items: [{p, origIndex}] }
   calcProblems.forEach((p, i) => {
+    if (calcMarkFilter.size > 0 && !calcMarkFilter.has(p.mark)) return; // ◎/〇フィルター
     const key = p.title || '';
     if (!groups.has(key)) groups.set(key, { title: p.title || '', items: [] });
     groups.get(key).items.push({ p, origIndex: i });
   });
+
+  // マークフィルターで該当0件
+  if (groups.size === 0) {
+    listEl.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;text-align:center;padding:20px 0;">該当する計算問題がありません</p>';
+    return;
+  }
 
   // ── グループのソートキー配列を生成 ──
   let sortedKeys;
@@ -8519,7 +8527,6 @@ function renderCalcPracticeScreen() {
   }
 
   // ── 各グループをレンダリング ──
-  let displayNum = 0;
   sortedKeys.forEach(key => {
     const group = groups.get(key);
 
@@ -8563,102 +8570,39 @@ function renderCalcPracticeScreen() {
     });
     groupEl.appendChild(headerEl);
 
-    // ── タイトルグループ内でさらにサブカテゴリごとにグループ化 ──
-    const subcatMap = new Map(); // subcatKey → [{p, origIndex}]
-    group.items.forEach(item => {
-      const sk = item.p.subcategory || '';
-      if (!subcatMap.has(sk)) subcatMap.set(sk, []);
-      subcatMap.get(sk).push(item);
+    // ── タイトルグループ内のアイテムを平坦に表示（サブカテゴリの仕切りなし）──
+    // 並び：登録順=origIndex / タイトル順=サブカテゴリ→origIndex
+    const flatItems = group.items.slice().sort((a, b) => {
+      if (isRegistered) return descending ? b.origIndex - a.origIndex : a.origIndex - b.origIndex;
+      const sa = a.p.subcategory || '', sb = b.p.subcategory || '';
+      if (sa !== sb) {
+        if (sa === '') return 1;
+        if (sb === '') return -1;
+        return sa.localeCompare(sb, 'ja');
+      }
+      return a.origIndex - b.origIndex;
     });
 
-    // サブカテゴリキーのソート
-    let sortedSubcatKeys;
-    if (isRegistered) {
-      sortedSubcatKeys = [...subcatMap.keys()].sort((a, b) => {
-        const idxA = descending
-          ? Math.max(...subcatMap.get(a).map(x => x.origIndex))
-          : Math.min(...subcatMap.get(a).map(x => x.origIndex));
-        const idxB = descending
-          ? Math.max(...subcatMap.get(b).map(x => x.origIndex))
-          : Math.min(...subcatMap.get(b).map(x => x.origIndex));
-        return descending ? idxB - idxA : idxA - idxB;
-      });
-    } else {
-      sortedSubcatKeys = [...subcatMap.keys()].sort((a, b) => {
-        if (a === '' && b === '') return 0;
-        if (a === '') return 1;
-        if (b === '') return -1;
-        return a.localeCompare(b, 'ja');
-      });
-    }
-
-    // アイテムコンテナ（サブカテゴリグループを格納）
     const itemsEl = document.createElement('div');
     itemsEl.className = 'calc-title-group-items';
 
-    sortedSubcatKeys.forEach(sk => {
-      const subcatItems = subcatMap.get(sk);
-      const subcatCollapseKey = key + '::' + sk;
-      const isSubcatCollapsed = collapsedCalcSubcats.has(subcatCollapseKey);
-
-      const subcatGroupEl = document.createElement('div');
-      subcatGroupEl.className = 'calc-subcat-group' + (isSubcatCollapsed ? ' collapsed' : '');
-
-      // サブカテゴリヘッダー
-      const subcatHeaderEl = document.createElement('div');
-      subcatHeaderEl.className = 'calc-subcat-group-header';
-      subcatHeaderEl.innerHTML =
-        `<span class="calc-subcat-toggle-icon">▼</span>` +
-        `<span class="calc-subcat-group-name">${escapeHtml(sk || '（サブカテゴリなし）')}</span>` +
-        `<span class="calc-subcat-group-count">${subcatItems.length}問</span>`;
-      subcatHeaderEl.addEventListener('click', e => {
-        e.stopPropagation(); // タイトルヘッダーへの伝播を防ぐ
-        subcatGroupEl.classList.toggle('collapsed');
-        if (subcatGroupEl.classList.contains('collapsed')) {
-          collapsedCalcSubcats.add(subcatCollapseKey);
-        } else {
-          collapsedCalcSubcats.delete(subcatCollapseKey);
-        }
+    flatItems.forEach(({ p, origIndex }) => {
+      // 表示順：◎/〇 ／ 年度 ／ カテゴリ ／ サブカテゴリ
+      const metaParts = [p.year, p.category, p.subcategory].filter(Boolean);
+      const metaHtml = `<span class="calc-practice-item-meta">${escapeHtml(metaParts.join('　／　'))}</span>`;
+      const calcTier = streakTierFromHistory(state.progress[p.id]?.history);
+      const markHtml = p.mark
+        ? `<span class="calc-practice-item-mark mark-${p.mark === '◎' ? 'double' : 'single'}">${p.mark}</span>`
+        : '';
+      const itemEl = document.createElement('div');
+      itemEl.className = 'calc-practice-item' + (calcTier ? ' tier-' + calcTier : '');
+      itemEl.dataset.index = origIndex;
+      itemEl.innerHTML = markHtml + metaHtml;
+      itemEl.addEventListener('click', () => {
+        calcDetailIndex = parseInt(itemEl.dataset.index);
+        openCalcDetail();
       });
-      subcatGroupEl.appendChild(subcatHeaderEl);
-
-      // サブカテゴリ内アイテム
-      const subcatItemsEl = document.createElement('div');
-      subcatItemsEl.className = 'calc-subcat-group-items';
-
-      subcatItems.forEach(({ p, origIndex }) => {
-        displayNum++;
-        const thumbHtml = p.problemImage
-          ? `<img class="calc-practice-item-thumb" src="${p.problemImage}" alt="">`
-          : `<div class="calc-practice-item-thumb" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:1.4rem;">🔢</span></div>`;
-        const metaParts = [p.year, p.category].filter(Boolean);
-        const metaHtml  = metaParts.length
-          ? `<div class="calc-practice-item-meta">${metaParts.join(' ／ ')}</div>` : '';
-
-        const calcTier = streakTierFromHistory(state.progress[p.id]?.history);
-        const markHtml = p.mark
-          ? `<div class="calc-practice-item-mark mark-${p.mark === '◎' ? 'double' : 'single'}">${p.mark}</div>`
-          : '';
-        const itemEl = document.createElement('div');
-        itemEl.className = 'calc-practice-item' + (calcTier ? ' tier-' + calcTier : '');
-        itemEl.dataset.index = origIndex;
-        itemEl.innerHTML =
-          markHtml +
-          thumbHtml +
-          `<div class="calc-practice-item-info">` +
-            `<div class="calc-practice-item-title">${escapeHtml(p.title || `計算問題 ${displayNum}`)}</div>` +
-            metaHtml +
-          `</div>` +
-          `<div class="calc-practice-item-num">${displayNum}</div>`;
-        itemEl.addEventListener('click', () => {
-          calcDetailIndex = parseInt(itemEl.dataset.index);
-          openCalcDetail();
-        });
-        subcatItemsEl.appendChild(itemEl);
-      });
-
-      subcatGroupEl.appendChild(subcatItemsEl);
-      itemsEl.appendChild(subcatGroupEl);
+      itemsEl.appendChild(itemEl);
     });
 
     groupEl.appendChild(itemsEl);
@@ -9798,6 +9742,17 @@ document.addEventListener('DOMContentLoaded', async () => { try {
 
   // 一覧→ホーム
   document.getElementById('btn-calc-back-home').addEventListener('click', renderHome);
+
+  // ◎/〇 マークフィルター（押すたびにON/OFF。両方ONで◎と〇の両方表示）
+  document.querySelectorAll('.calc-mark-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = btn.dataset.mark;
+      if (calcMarkFilter.has(m)) calcMarkFilter.delete(m);
+      else calcMarkFilter.add(m);
+      btn.classList.toggle('active', calcMarkFilter.has(m));
+      renderCalcPracticeScreen();
+    });
+  });
 
   // ソートボタン
   const registeredBtn = document.querySelector('.calc-sort-btn[data-sort="registered"]');

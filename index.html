@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260621g">
+  <link rel="stylesheet" href="css/style.css?v=20260621i">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -1385,6 +1385,10 @@
       <h2 style="font-size:1rem;font-weight:700;">🔢 計算問題練習</h2>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <div id="calc-mark-filter-btns" style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm calc-mark-filter-btn" data-mark="◎" title="◎の問題だけ表示">◎</button>
+        <button class="btn btn-ghost btn-sm calc-mark-filter-btn" data-mark="〇" title="〇の問題だけ表示">〇</button>
+      </div>
       <div id="calc-sort-btns" style="display:flex;gap:4px;">
         <button class="btn btn-ghost btn-sm calc-sort-btn"        data-sort="title">タイトル順</button>
         <button class="btn btn-ghost btn-sm calc-sort-btn active" data-sort="registered">登録順 ↑</button>
@@ -1509,7 +1513,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260621k"></script>
+<script src="js/app.js?v=20260621m"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

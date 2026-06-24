@@ -3590,22 +3590,14 @@ body.tier-border-diamond .card {
   background: var(--bg-input);
   border: 1px solid var(--border);
 }
-.calc-practice-item-info {
+.calc-practice-item-meta {
   flex: 1;
   min-width: 0;
-}
-.calc-practice-item-title {
-  font-size: .92rem;
-  font-weight: 600;
+  font-size: .9rem;
   color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.calc-practice-item-meta {
-  font-size: .76rem;
-  color: var(--text-3);
-  margin-top: 2px;
 }
 .calc-practice-item-num {
   font-size: .75rem;
@@ -3614,34 +3606,27 @@ body.tier-border-diamond .card {
   min-width: 24px;
   text-align: right;
 }
-/* 計算問題のマーク（◎/〇）バッジ — 一覧で目立たせる */
+/* 計算問題のマーク（◎/〇）— 文字サイズと同じインライン表示 */
 .calc-practice-item-mark {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
+  font-size: .9rem;   /* meta と同じ文字サイズ */
   font-weight: 700;
   line-height: 1;
-  border-radius: 8px;
-  color: #fff;
 }
-.calc-practice-item-mark.mark-double {
-  background: #e0483d;
-  box-shadow: 0 0 0 1px #ff8b82 inset, 0 1px 4px rgba(224,72,61,.5);
-}
-.calc-practice-item-mark.mark-single {
-  background: #d8932f;
-  box-shadow: 0 0 0 1px #f3bd6d inset, 0 1px 4px rgba(216,147,47,.5);
-}
-/* tier背景の上でもバッジを視認できるよう白縁を足す */
+.calc-practice-item-mark.mark-double { color: #ef5a4f; } /* ◎ 赤系 */
+.calc-practice-item-mark.mark-single { color: #e0a23a; } /* 〇 橙系 */
+/* tier背景の上でもマークを視認できるよう白縁を足す（旧バッジ用・無害なため残置） */
 .calc-practice-item.tier-gold .calc-practice-item-mark,
 .calc-practice-item.tier-platinum .calc-practice-item-mark,
 .calc-practice-item.tier-diamond .calc-practice-item-mark {
-  box-shadow: 0 0 0 2px rgba(255,255,255,.85) inset, 0 1px 4px rgba(0,0,0,.45);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
 }
+
+/* 一覧の◎/〇フィルターボタン */
+.calc-mark-filter-btn { font-weight: 700; min-width: 34px; }
+.calc-mark-filter-btn[data-mark="◎"].active { background: #ef5a4f; color: #fff; border-color: #ef5a4f; }
+.calc-mark-filter-btn[data-mark="〇"].active { background: #e0a23a; color: #fff; border-color: #e0a23a; }
 
 /* 追加モーダルのマーク選択ボタン */
 .calc-mark-btns {
