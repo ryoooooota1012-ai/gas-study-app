@@ -8438,7 +8438,7 @@ async function saveCalcProblems() {
   try {
     // 画像をIDBに保存し、LocalStorageには参照のみ格納
     const metadata = await Promise.all(calcProblems.map(async p => {
-      const m = { id: p.id, title: p.title, subcategory: p.subcategory, category: p.category, year: p.year };
+      const m = { id: p.id, title: p.title, subcategory: p.subcategory, category: p.category, year: p.year, mark: p.mark || '' };
       if (p.problemImage?.startsWith('data:')) {
         await idbSet('calc_' + p.id + '_prob', p.problemImage);
         m.problemImage = IDB_REF + 'calc_' + p.id + '_prob';
