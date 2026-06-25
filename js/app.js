@@ -39,6 +39,7 @@ let collapsedCalcTitles      = new Set(); // 折りたたんでいるタイト�
 let collapsedCalcSubcats     = new Set(); // 折りたたんでいるサブカテゴリグループ（キー: "title::subcat"）
 let calcSortMode             = 'registered-asc';  // 'title' | 'registered-asc' | 'registered-desc'（既定=登録順）
 let calcMarkFilter           = new Set();          // 計算問題一覧の◎/〇フィルター（空=全件）
+let recentWrongFormat        = 'normal';           // 最近間違えた問題の出題形式 'normal'|'drill'
 let resultFocusIndex         = -1; // リザルト画面キーボードフォーカス位置
 let pendingStartMode        = null;
 let _checkNoRecord          = false;  // true のとき checkAnswers() が記録処理をスキップ
@@ -6987,6 +6988,25 @@ function openRecentWrongModal() {
   if (sets.length === 0) {
     listEl.innerHTML = '<div class="rw-empty">最近間違えた問題はありません。</div>';
   } else {
+    // 出題形式トグル（通常 / 壁打ち）
+    const fmtRow = document.createElement('div');
+    fmtRow.className = 'rw-format-row';
+    const fmtLabel = document.createElement('span');
+    fmtLabel.className = 'rw-format-label';
+    fmtLabel.textContent = '出題形式';
+    fmtRow.appendChild(fmtLabel);
+    [['normal', '📄 通常'], ['drill', '🥊 壁打ち']].forEach(([f, label]) => {
+      const b = document.createElement('button');
+      b.className = 'rw-format-btn' + (recentWrongFormat === f ? ' active' : '');
+      b.textContent = label;
+      b.addEventListener('click', () => {
+        recentWrongFormat = f;
+        fmtRow.querySelectorAll('.rw-format-btn').forEach(x => x.classList.toggle('active', x === b));
+      });
+      fmtRow.appendChild(b);
+    });
+    listEl.appendChild(fmtRow);
+
     // 全セットを結合した一括復習ボタン
     const allIds = [...new Set(sets.flatMap(s => s.ids))]
       .filter(id => state.questions.some(q => q.id === id));
@@ -7028,6 +7048,25 @@ function closeRecentWrongModal() {
   document.getElementById('modal-recent-wrong')?.classList.add('hidden');
 }
 
+// 選択した形式（通常 / 壁打ち）で復習を開始
+function _startRecentWrongQuestions(qs) {
+  if (recentWrongFormat === 'drill') {
+    const queue = [];
+    qs.forEach(q => {
+      if (isFillBlankQuestion(q) || isCalcQuestion(q)) return;
+      (q.choices || []).forEach((c, i) => queue.push({ question: q, choice: c, choiceIndex: i }));
+    });
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [queue[i], queue[j]] = [queue[j], queue[i]];
+    }
+    if (queue.length === 0) { alert('壁打ちで出題できる選択肢がありません。'); renderHome(); return; }
+    startDrillWithQueue(queue, 'recent-wrong');
+  } else {
+    _startSession('sequential', qs);
+  }
+}
+
 // セットを選択 → そのセットは履歴から削除し、間違えた問題で学習開始
 function startRecentWrongSet(ts) {
   const set = loadRecentWrong().find(s => s.ts === ts);
@@ -7039,7 +7078,7 @@ function startRecentWrongSet(ts) {
     renderHome();
     return;
   }
-  _startSession('sequential', qs);
+  _startRecentWrongQuestions(qs);
 }
 
 // 全セットの間違い問題を結合して一括復習（全セットを履歴から削除）
@@ -7054,7 +7093,7 @@ function startRecentWrongAll() {
     renderHome();
     return;
   }
-  _startSession('sequential', qs);
+  _startRecentWrongQuestions(qs);
 }
 
 // ブックマークした選択肢の出題アイテム（{question, choice, choiceIndex}）を集める

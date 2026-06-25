@@ -1478,6 +1478,17 @@ mark.q-highlight-red:hover { color: #ef4444; }
 .start-btn-card.recent-wrong-mode { background:linear-gradient(135deg,#2a0a0a,#1d0606); border-color:#a33b3b; }
 .start-btn-card.recent-wrong-mode:hover { background:linear-gradient(135deg,#3a0e0e,#2a0808); border-color:#d45050; }
 
+/* 最近間違えた問題：出題形式トグル */
+.rw-format-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.rw-format-label { font-size:.78rem; color:var(--text-3); margin-right:2px; }
+.rw-format-btn {
+  padding:5px 12px; border-radius:7px; border:1px solid var(--border);
+  background:var(--bg-input); color:var(--text-2); font-size:.82rem; font-weight:700; cursor:pointer;
+  transition:all .12s;
+}
+.rw-format-btn:hover { border-color:var(--primary-light); }
+.rw-format-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
 /* 最近間違えた問題：セット選択リスト */
 .rw-set-list { display:flex; flex-direction:column; gap:8px; }
 .rw-set-row {
