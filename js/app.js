@@ -7057,14 +7057,33 @@ function startRecentWrongAll() {
   _startSession('sequential', qs);
 }
 
+// ブックマークした選択肢の出題アイテム（{question, choice, choiceIndex}）を集める
+function bookmarkedChoiceItems() {
+  const items = [];
+  state.questions.forEach(q => {
+    if (isFillBlankQuestion(q) || isCalcQuestion(q)) return;
+    (q.choices || []).forEach((c, i) => {
+      if (c.id && state.choiceBookmarks.has(c.id)) items.push({ question: q, choice: c, choiceIndex: i });
+    });
+  });
+  return items;
+}
+
 function retryWrongQuestions() {
-  const qs = state.sessionWrongQuestions || [];
+  // 出題中に編集された問題も最新内容で出題されるよう、id で現行版に解決する
+  const qs = (state.sessionWrongQuestions || [])
+    .map(q => state.questions.find(x => x.id === q.id) || q);
   if (qs.length === 0) return;
   _startSession(state.mode, qs);
 }
 
 function retryWrongChoices() {
-  const queue = [...(state.sessionWrongChoices || [])];
+  // 同上：選択肢も現行の問題・選択肢に解決してから出題
+  const queue = (state.sessionWrongChoices || []).map(item => {
+    const lq = state.questions.find(x => x.id === item.question.id) || item.question;
+    const lc = lq.choices?.[item.choiceIndex] || item.choice;
+    return { question: lq, choice: lc, choiceIndex: item.choiceIndex };
+  });
   if (queue.length === 0) return;
   for (let i = queue.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -8175,6 +8194,79 @@ function openEditModal(qId, choiceIndex, fromList) {
 }
 
 // 出題画面で問題を編集・保存した後、答え合わせ済みの状態を保ったまま表示を更新する
+// 記録済み progress の「最後の履歴エントリ」を編集後の正誤で訂正する（連続正解の補正）
+function _fixLastProgressEntry(key, newRight) {
+  const p = state.progress[key];
+  if (!p || !Array.isArray(p.history) || p.history.length === 0) return;
+  const last = p.history.length - 1;
+  if (p.history[last] === newRight) return;
+  p.history[last] = newRight;
+  p.correct = newRight ? (p.correct || 0) + 1 : Math.max(0, (p.correct || 0) - 1);
+}
+
+// 出題中に問題を編集した際、答え合わせ済みなら記録済みの判定（連続正解・正答数・間違いリスト・振り返り）を
+// 編集後の内容で訂正する。
+function _recorrectStudyProgressAfterEdit(q, savedAnswers) {
+  const lastHist = key => {
+    const h = state.progress[key]?.history;
+    return (Array.isArray(h) && h.length) ? h[h.length - 1] : null;
+  };
+  const statDelta = (oldR, newR) => {
+    if (oldR === null || oldR === newR) return;
+    if (newR) state.sessionStats.correct = Math.min(state.sessionStats.total, (state.sessionStats.correct || 0) + 1);
+    else      state.sessionStats.correct = Math.max(0, (state.sessionStats.correct || 0) - 1);
+  };
+  const setQWrong = isWrong => {
+    const a = state.sessionWrongQuestions || (state.sessionWrongQuestions = []);
+    const i = a.findIndex(x => x.id === q.id);
+    if (isWrong && i === -1) a.push(q);
+    else if (!isWrong && i !== -1) a.splice(i, 1);
+  };
+  const setCWrong = (c, idx, isWrong) => {
+    const a = state.sessionWrongChoices || (state.sessionWrongChoices = []);
+    const i = a.findIndex(it => it.question.id === q.id && it.choice?.id === c.id);
+    if (isWrong && i === -1) a.push({ question: q, choice: c, choiceIndex: idx });
+    else if (!isWrong && i !== -1) a.splice(i, 1);
+  };
+
+  if (isOnePickQuestion(q)) {
+    const correct = q.choices.find(c => c.isCorrect);
+    const picked  = savedAnswers.__calc__;
+    const newR = !!correct && picked === correct.id;
+    statDelta(lastHist(q.id + ':q'), newR);
+    _fixLastProgressEntry(q.id + ':q', newR);
+    if (isCalcQuestion(q)) _fixLastProgressEntry(q.id + ':calc', newR);
+    setQWrong(!newR);
+    if (correct) setCWrong(correct, q.choices.indexOf(correct), !newR);
+  } else {
+    let allRight = true;
+    (q.choices || []).forEach((c, i) => {
+      const newR = (savedAnswers[c.id] === 'maru') === c.isCorrect;
+      statDelta(lastHist(c.id), newR);
+      _fixLastProgressEntry(c.id, newR);
+      setCWrong(c, i, !newR);
+      if (!newR) allRight = false;
+    });
+    _fixLastProgressEntry(q.id + ':q', allRight);
+    setQWrong(!allRight);
+  }
+
+  // リザルトの振り返り（sessionHistory）も最新の正誤に更新
+  const he = (state.sessionHistory || []).find(h => h.question?.id === q.id);
+  if (he) {
+    if (isOnePickQuestion(q)) {
+      const correct = q.choices.find(c => c.isCorrect);
+      if (he.choiceResults?.[0]) he.choiceResults[0].isRight = !!correct && savedAnswers.__calc__ === correct.id;
+    } else {
+      (he.choiceResults || []).forEach(cr => {
+        const c = q.choices.find(x => x.id === cr.choice?.id) || cr.choice;
+        if (c) cr.isRight = (savedAnswers[c.id] === 'maru') === c.isCorrect;
+      });
+    }
+  }
+  saveProgress();
+}
+
 function _refreshStudyAfterEdit(updatedQ) {
   const wasChecked   = state.checked;
   const savedAnswers = { ...state.answers };
@@ -8183,7 +8275,9 @@ function _refreshStudyAfterEdit(updatedQ) {
   renderQuestion();
 
   if (wasChecked) {
-    // 回答を復元して再度答え合わせ → 表示のみ更新（state.progress・sessionStats・sessionHistory は変えない）
+    // 記録済みの判定（連続正解・正答数・間違いリスト）を編集後の内容で訂正
+    _recorrectStudyProgressAfterEdit(updatedQ, savedAnswers);
+    // 回答を復元して再度答え合わせ → 表示のみ更新（progress 等は上で訂正済み）
     state.answers = savedAnswers;
     _checkNoRecord = true;
     try { checkAnswers(); } finally { _checkNoRecord = false; }
@@ -8314,6 +8408,23 @@ function saveEditModal() {
   state.questions[idx] = q;
   saveQuestions();
   buildFilters();
+
+  // 保存済み問題の管理画面からの編集は、画面を切り替えず（モーダルを閉じず）保存だけ行う
+  const inManagement = !document.getElementById('screen-questions').classList.contains('hidden');
+  if (inManagement) {
+    renderQuestionList(_savedQlistOpenState);  // 背後のリストを最新化
+    _savedQlistOpenState = null;
+    const sb = document.getElementById('modal-edit-save');
+    if (sb && !sb.dataset.saving) {
+      sb.dataset.saving = '1';
+      const orig = sb.textContent;
+      sb.textContent = '✓ 保存しました';
+      sb.disabled = true;
+      setTimeout(() => { sb.textContent = orig; sb.disabled = false; delete sb.dataset.saving; }, 1200);
+    }
+    return; // 編集状態は維持（続けて編集・←→移動が可能）
+  }
+
   document.getElementById('modal-edit-q').classList.add('hidden');
   document.removeEventListener('paste', handleEditImagePaste);
   editingQId         = null;
@@ -8321,12 +8432,6 @@ function saveEditModal() {
   editingChoiceImages = {};
   editingChoiceWidths = {};
   _editChoiceImgFocus = null;
-
-  // 現在表示中の画面を再描画
-  if (!document.getElementById('screen-questions').classList.contains('hidden')) {
-    renderQuestionList(_savedQlistOpenState);
-    _savedQlistOpenState = null;
-  }
   if (!document.getElementById('screen-stats').classList.contains('hidden')) {
     _renderStatsImpl();
   }
@@ -8370,12 +8475,21 @@ function saveEditModal() {
       // 答え合わせ済みの場合、保存された正誤を最新の isCorrect で再計算
       const savedAns = state.drillAnswers[state.drillIndex];
       if (savedAns) {
-        const newActuallyCorrect = curDi.choice.isCorrect;
+        // 1択問題は「記述の正誤」（設問の極性を考慮）で判定
+        const newActuallyCorrect = isSingleSelectQuestion(q)
+          ? singleSelectStatementTrue(q, curDi.choice)
+          : curDi.choice.isCorrect;
         const newIsRight = (savedAns.userSaysCorrect === newActuallyCorrect);
-        // 正誤が変わったら drillStats も補正
+        // 正誤が変わったら drillStats・連続正解(progress)・間違いリストも補正
         if (newIsRight !== savedAns.isRight) {
           if (newIsRight) state.drillStats.correct = Math.min(state.drillStats.total, state.drillStats.correct + 1);
           else            state.drillStats.correct = Math.max(0, state.drillStats.correct - 1);
+          _fixLastProgressEntry(curDi.choice.id, newIsRight);
+          const wa = state.sessionWrongChoices || (state.sessionWrongChoices = []);
+          const wi = wa.findIndex(it => it.question.id === q.id && it.choice?.id === curDi.choice.id);
+          if (!newIsRight && wi === -1) wa.push({ question: q, choice: curDi.choice, choiceIndex: curDi.choiceIndex });
+          else if (newIsRight && wi !== -1) wa.splice(wi, 1);
+          saveProgress();
         }
         state.drillAnswers[state.drillIndex] = {
           ...savedAns,
@@ -9196,24 +9310,52 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   const bookmarkPopup = document.getElementById('bookmark-start-popup');
   document.getElementById('btn-start-bookmark').addEventListener('click', e => {
     e.stopPropagation();
-    const bqs = state.questions.filter(q => state.bookmarks.has(q.id));
-    if (bqs.length === 0) { alert('ブックマークした問題がありません。\n出題画面の ☆ ボタンで登録できます。'); return; }
+    const bqs    = state.questions.filter(q => state.bookmarks.has(q.id));
+    const cItems = bookmarkedChoiceItems();
+    if (bqs.length === 0 && cItems.length === 0) {
+      alert('ブックマークした問題・選択肢がありません。\n出題画面の ☆ ボタンで登録できます。');
+      return;
+    }
     // ポップアップを構築
     bookmarkPopup.innerHTML = '';
-    [
-      { mode: 'sequential', label: '📋 出題順'  },
-      { mode: 'weak',       label: '⚡ 苦手優先' },
-      { mode: 'random',     label: '🔀 ランダム' },
-    ].forEach(({ mode, label }) => {
+    const addLabel = text => {
+      const l = document.createElement('div');
+      l.className = 'bookmark-popup-label';
+      l.textContent = text;
+      bookmarkPopup.appendChild(l);
+    };
+    const addBtn = (label, onClick) => {
       const btn = document.createElement('button');
       btn.className = 'top-filter-start-mode-btn';
       btn.textContent = label;
-      btn.addEventListener('click', () => {
-        bookmarkPopup.classList.add('hidden');
-        _startSession(mode, bqs);
-      });
+      btn.addEventListener('click', () => { bookmarkPopup.classList.add('hidden'); onClick(); });
       bookmarkPopup.appendChild(btn);
-    });
+    };
+
+    // 問題ブックマーク → 通常出題
+    if (bqs.length > 0) {
+      addLabel(`📑 ブックマークした問題（${bqs.length}問）`);
+      [['sequential','📋 出題順'], ['weak','⚡ 苦手優先'], ['random','🔀 ランダム']]
+        .forEach(([mode, label]) => addBtn(label, () => _startSession(mode, bqs)));
+    }
+    // 選択肢ブックマーク → 壁打ち形式 / 通常問題形式 を選べる
+    if (cItems.length > 0) {
+      addLabel(`🔖 ブックマークした選択肢（${cItems.length}個）`);
+      addBtn('🥊 壁打ち形式で出題', () => {
+        const queue = cItems.map(it => ({ ...it }));
+        for (let i = queue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [queue[i], queue[j]] = [queue[j], queue[i]];
+        }
+        startDrillWithQueue(queue, 'bookmark');
+      });
+      addBtn('📄 通常問題形式で出題', () => {
+        const seen = new Set(); const qs = [];
+        cItems.forEach(it => { if (!seen.has(it.question.id)) { seen.add(it.question.id); qs.push(it.question); } });
+        _startSession('sequential', qs);
+      });
+    }
+
     bookmarkPopup.classList.toggle('hidden');
     // クリック外で閉じる
     setTimeout(() => {

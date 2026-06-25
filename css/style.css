@@ -2934,6 +2934,19 @@ body.tier-border-diamond .card {
   background: var(--primary-bg);
   color: var(--primary-light);
 }
+/* ブックマークポップアップのセクション見出し */
+.bookmark-popup-label {
+  padding: 8px 12px 3px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.bookmark-popup-label:not(:first-child) {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 8px;
+}
 .top-filter-exclude-row {
   display: flex;
   align-items: center;
