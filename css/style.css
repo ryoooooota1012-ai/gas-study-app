@@ -2671,9 +2671,22 @@ body.tier-border-diamond .card {
 .tfi-l1-fill { background: #bac2cf; }
 
 @media (max-width: 480px) {
-  .tfi-legend { font-size: .56rem; gap: 2px 7px; }
-  .tfi-progress { padding: 0 2px; }
-  .top-filter-item { grid-template-columns: var(--tfi-name-w, max-content) minmax(0, 1fr) 3.2em; }
+  /* スマホ：名前＋問題数を上段、バー＋凡例を全幅で下段に縦積み（中央列の潰れ・凡例の重なりを解消） */
+  .top-filter-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name cnt"
+      "prog prog";
+    column-gap: 8px;
+    row-gap: 8px;
+    align-items: start;
+    padding: 10px 12px;
+  }
+  .tfi-name        { grid-area: name; white-space: normal; line-height: 1.3; }
+  .tfi-progress    { grid-area: prog; padding: 0; }
+  .top-filter-item-cnt { grid-area: cnt; align-self: start; }
+  .tfi-legend { font-size: .66rem; gap: 4px 12px; }
+  .tfi-bar    { height: 10px; }
 }
 
 /* ===== フィルターの達成ティア（全選択肢の連続正解数で判定）＝ヘッダーと同等の金属シマー ===== */
