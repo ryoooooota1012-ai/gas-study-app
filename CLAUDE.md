@@ -2,6 +2,16 @@
 
 このファイルは Claude Code（および他のAIエージェント）が **記憶ゼロの状態から** このアプリを安全に編集・デプロイできるようにするための引き継ぎ資料です。作業を始める前に必ず最初に読んでください。
 
+## 🔄 このファイルの更新ルール
+
+**実装・修正を完了するたびに、確認なしでこのファイルを更新すること。**
+
+更新すべきタイミング：
+- 新機能を実装したとき → 主要関数マップ・規約に追記
+- データ構造を変えたとき → データモデルに追記
+- 落とし穴・ハマりどころを発見したとき → 規約・注意点に追記
+- 既存の記述が実態と乖離していたとき → 修正
+
 ---
 
 ## ⚠️ 最重要：二重リポジトリ構成
@@ -129,12 +139,20 @@ window.DEFAULT_QUESTIONS = {
 | 永続化 | `saveQuestions(skipImageWrite)` / `loadStoredQuestions` / `saveProgress` |
 | 問題編集モーダル | `openEditModal` / `saveEditModal` |
 | リッチテキスト描画 | `renderText`（HTMLエスケープ + `[r]..[/r]`→赤字 + `\n`→`<br>`） |
-| マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示） |
+| マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示）/ `_clearMarkElements`（永続mark除去）/ `_clearTempMarks`（一時mark除去） |
 | フィルター進捗バー | `computeFilterProgress` / `filterProgressHTML` |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
 | タグ並び替え | `sortTagsJa`（数字→50音順） |
 | 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |
 | 直近の間違い復習 | `saveRecentWrong(meta)`（結果画面で最大5セット保存）/ `loadRecentWrong`（旧フラット配列形式も自動移行）/ `openRecentWrongModal`（`#modal-recent-wrong` でセット一覧表示）/ `startRecentWrongSet(ts)`（選択セットを削除して復習開始）/ `deleteRecentWrongSet` |
+| 直近間違い出題形式 | `recentWrongFormat`（グローバル変数 `'normal'\|'drill'`）/ `_startRecentWrongQuestions(qs)`（形式に応じて通常 or 壁打ちで開始） |
+| ブックマーク選択肢 | `bookmarkedChoiceItems()`（ブックマーク済み選択肢を `{question,choice,choiceIndex}` 配列で返す）/ ブックマークポップアップで壁打ち or 通常形式を選択可 |
+| 一時マーカー（薄黄緑） | `tempMarkers`（グローバルオブジェクト `{[qId]: [{id,area,choiceId,start,end}]}`）/ `applyTempMarkers(q)`（renderQuestion後に呼ぶ）/ `clearAllTempMarkers()`（ホーム遷移・新規セッション開始時）。保存しない・リザルト画面まで保持 |
+| 採点モード | `state.examScoring`（カテゴリフィルター出題時true）/ `computeExamScore()`（1問5点・全選択肢正解で5点・単一選択/計算は1択正解で5点）/ `examScoreTier(pct)`（満点=diamond/80%=platinum/70%=gold/60%=silver/50%=bronze）/ リザルト画面は `result-score` に点数・`result-sub` に選択肢正解数・`bigEl.classList.add('tier-'+tier)` でティア演出 |
+| 単一選択極性判定 | `detectPolarityFromText(text)`（問題文から自動判定 `'correct'\|'incorrect'`）/ `getQuestionPolarity(q)`（`q.answerPolarity` 優先→自動判定）/ `singleSelectStatementTrue(q,c)`（選択肢の文章が正しいか返す）/ `q.answerPolarity`で手動上書き可 |
+| 編集後の進捗修正 | `_recorrectStudyProgressAfterEdit(q, savedAnswers)`（通常学習中に問題編集→最後の進捗エントリを修正）/ `_fixLastProgressEntry(key, newRight)`（進捗キーの最新履歴を書き換え）。壁打ち中の編集も同様に修正あり |
+| Drive保存中メッセージ | `showSyncStatus(msg, persistent=false)`（`persistent=true` で完了/失敗メッセージが出るまで表示し続ける）/ 「保存中」は `persistent:true`・「保存完了/失敗」は `persistent:false`（タイマー自動消去） |
+| 計算問題管理 | `calcProblems`（グローバル配列・stateとは独立）/ `saveCalcProblems()`（`gas_calc_problems_v1` に保存・`mark`フィールドも必ず含める）/ `calcMarkFilter`（Set・◎/〇フィルター・空=全件）/ `calcSortMode`（`'registered-asc'`がデフォルト） |
 | Drive 自動バックアップ・案内 | `gdriveCheckRemote`（Drive無し→初回UP／ローカルが3日以上未保存→自動UP）・`checkLocalBackupReminder`（未接続ユーザーへ7日毎に案内） |
 
 ---
@@ -145,5 +163,11 @@ window.DEFAULT_QUESTIONS = {
 - **選択肢の機能は学習・壁打ちの両画面に実装する**（上記2系統を参照）。
 - `checkAnswers` は編集後の再描画・前の問題への移動時に `_checkNoRecord = true` で呼ばれ、その間は統計記録をスキップする（表示だけ更新）。新たに記録処理を足すときは必ず `if (!_checkNoRecord)` ガード内に置く。
 - マーカーは **描画後のDOMの文字オフセット** で保持。`renderText` の出力（`<br>` 等）を作成時・適用時の両方が見るため整合する。`renderText` の出力規則を変えると過去マーカーがずれ得る点に留意。
+- **`_applyHighlights(q)` を呼ぶ際は必ず直後に `applyTempMarkers(q)` も呼ぶこと**。`_applyHighlights` 内部で一時マーカー（`temp-hl`）を除去してから永続マーカーを適用するため、呼び出し後に一時マーカーが消えた状態になる。`applyTempMarkers` で再描画しないと一時マーカーが失われる。（`renderQuestion` 内は元から `applyTempMarkers` を後続で呼んでいるので問題なし）
 - `state` と関数はグローバル。デバッグ時はコンソール/`preview_eval` から直接叩ける。
 - 文字コードは UTF-8。日本語UIなのでユーザー向け文言・コミットメッセージは日本語可。
+- **`〇` は U+3007（〇）を使うこと。`○`（U+25CB）は見た目が似ているが別文字でフィルター・バッジが効かない。**
+- **`calcProblems` は `state.questions` とは完全に別管理**。`saveCalcProblems()` の metadata オブジェクトに `mark: p.mark || ''` を必ず含めること（省略するとリロード後にmarkが消える）。
+- **スクリーンショットはシマー/ティアアニメーション中にタイムアウトする**。視覚確認は `preview_inspect`・`preview_eval` を使うこと。
+- **単一選択問題の進捗キーは `q.id + ':q'`**（選択肢単位ではなく問題単位で記録）。`questionProgressHistories(q)` でまとめて取得可能。
+- **マーカー作成は `markerDisplayOn` フラグとは独立**（表示ON/OFFと作成を分離済み）。マーカー表示を切っていても新規作成は可能。
