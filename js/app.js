@@ -405,6 +405,38 @@ function _updateDrillMarkerBtn(q, c) {
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
 }
 
+// ===== 一時マーカー（薄黄緑）— 回答検討用。保存しない／セッション中のみ保持 =====
+// 構造: { [qId]: [ {id, area:'q'|'c', choiceId|null, start, end} ] }
+let tempMarkers = {};
+
+function _tempMarkerRoot(area, choiceId) {
+  if (area === 'q') return document.getElementById('question-blocks');
+  return document.querySelector(`#choices-list [data-cid="${choiceId}"] .choice-item-text`);
+}
+
+function _clearTempMarks(container) {
+  if (!container) return;
+  container.querySelectorAll('mark.temp-hl').forEach(m => {
+    const p = m.parentNode;
+    while (m.firstChild) p.insertBefore(m.firstChild, m);
+    p.removeChild(m); p.normalize();
+  });
+}
+
+// 現在の問題の一時マーカーを描画（問題文＋各選択肢テキスト）
+function applyTempMarkers(q) {
+  _clearTempMarks(document.getElementById('question-blocks'));
+  document.querySelectorAll('#choices-list .choice-item-text').forEach(_clearTempMarks);
+  if (!q) return;
+  (tempMarkers[q.id] || []).forEach(h => {
+    const root = _tempMarkerRoot(h.area, h.choiceId);
+    if (root) _applyHighlightRange(root, h.start, h.end, h.id, 'temp-hl');
+  });
+}
+
+// 一時マーカーを全消去（ホーム遷移・新規セッション開始時）
+function clearAllTempMarkers() { tempMarkers = {}; }
+
 // ========== Storage ==========
 const PROGRESS_KEY  = 'gas_study_progress_v1';
 const QUESTIONS_KEY = 'gas_questions_v1';
@@ -2941,6 +2973,7 @@ function startTagSession(mode, tagQs) {
 
 function renderHome() {
   flushSessionTime();
+  clearAllTempMarkers();   // ホームに戻ったら一時マーカーを消す
   gdriveCheckRemote().catch(() => {}); // Drive に新しいデータがあれば通知のみ（自動上書きはしない）
   updateHeaderStats();
   // フィルター選択（カテゴリ・年度・分野・タグ）はホームに戻っても維持する。
@@ -3031,21 +3064,23 @@ function startSession(mode, opts = {}) {
   }
   // 中断データがあれば確認モーダルを表示
   if (loadInterruptedSession()) {
-    pendingStartMode = { mode, filtered };
+    pendingStartMode = { mode, filtered, examScoring: true };
     document.getElementById('modal-start-confirm').classList.remove('hidden');
     return;
   }
-  _startSession(mode, filtered);
+  _startSession(mode, filtered, { examScoring: true }); // カテゴリフィルター出題＝1問5点採点
 }
 
 function _startSession(mode, filtered, opts = {}) {
   flushSessionTime();
+  clearAllTempMarkers();   // 新しい出題に進んだら一時マーカーを消す
   startSessionTimer();
   // 模試モードのタイマーが残っていれば停止
   if (state.examTimerInterval) { clearInterval(state.examTimerInterval); state.examTimerInterval = null; }
   document.getElementById('exam-timer-wrap')?.classList.add('hidden');
   state.examMode             = false;
   state.quickMode            = !!opts.quickMode;   // 「とりあえず50」モードか
+  state.examScoring          = !!opts.examScoring; // カテゴリフィルター出題＝1問5点採点
   state.mode                 = mode;
   // 「もう一度」用に直前セッション情報を保存
   state.lastAgainType     = 'study';
@@ -3549,6 +3584,7 @@ function renderQuestion() {
   // マーカー適用
   _applyHighlights(q);
   _updateMarkerBtn();
+  applyTempMarkers(q);   // 一時マーカー（薄黄緑）を再描画
 
   // メモセクション
   const memoSection = document.getElementById('memo-section');
@@ -4421,14 +4457,62 @@ function nextQuestion() {
   _navigateToIndex(state.queueIndex + 1);
 }
 
+// 1問5点採点：全選択肢正解で5点（1択・計算は選んだ選択肢が正解で5点）、部分点なし
+function computeExamScore() {
+  const hist = state.sessionHistory || [];
+  let points = 0;
+  hist.forEach(e => {
+    const ok = (e.isOnePickMode || e.isCalcMode)
+      ? !!(e.choiceResults?.[0]?.isRight)
+      : (e.choiceResults || []).length > 0 && e.choiceResults.every(cr => cr.isRight);
+    if (ok) points += 5;
+  });
+  return { points, maxPoints: hist.length * 5 };
+}
+
+// 採点率 → ティア（満点=ダイヤ / 80%↑=プラチナ / 70%↑=ゴールド / 60%↑=シルバー / 50%↑=ブロンズ）
+function examScoreTier(pct) {
+  if (pct >= 100) return 'diamond';
+  if (pct >= 80)  return 'platinum';
+  if (pct >= 70)  return 'gold';
+  if (pct >= 60)  return 'silver';
+  if (pct >= 50)  return 'bronze';
+  return null;
+}
+const EXAM_TIER_NAMES = { diamond:'💎 ダイヤ', platinum:'プラチナ', gold:'ゴールド', silver:'シルバー', bronze:'ブロンズ' };
+
 function showSessionResult() {
   flushSessionTime();
   saveSessionRecord(); // 成績履歴に記録
   gdriveUpload(true).catch(() => {}); // Drive 自動保存（サイレント）
   const { total, correct } = state.sessionStats;
-  document.getElementById('result-score').textContent = `${correct} / ${total}`;
-  document.getElementById('result-pct').textContent =
-    total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
+  const subEl   = document.getElementById('result-sub');
+  const bigEl   = document.querySelector('#screen-result .result-big');
+  const badgeEl = document.getElementById('result-tier-badge');
+  const TIERCLS = ['tier-diamond','tier-platinum','tier-gold','tier-silver','tier-bronze'];
+  if (bigEl) bigEl.classList.remove(...TIERCLS);
+
+  if (state.examScoring) {
+    // カテゴリフィルター出題：1問5点の採点で表示
+    const { points, maxPoints } = computeExamScore();
+    const pct = maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0;
+    document.getElementById('result-score').textContent = `${points}／${maxPoints} 点`;
+    document.getElementById('result-pct').textContent   = `${pct}%`;
+    if (subEl) { subEl.textContent = `${correct}／${total} 選択肢`; subEl.classList.remove('hidden'); }
+    const tier = examScoreTier(pct);
+    if (tier && bigEl) bigEl.classList.add('tier-' + tier);
+    if (badgeEl) {
+      badgeEl.classList.remove(...TIERCLS);
+      if (tier) { badgeEl.textContent = EXAM_TIER_NAMES[tier]; badgeEl.classList.add('tier-' + tier); badgeEl.classList.remove('hidden'); }
+      else badgeEl.classList.add('hidden');
+    }
+  } else {
+    document.getElementById('result-score').textContent = `${correct} / ${total}`;
+    document.getElementById('result-pct').textContent =
+      total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
+    if (subEl)   subEl.classList.add('hidden');
+    if (badgeEl) badgeEl.classList.add('hidden');
+  }
 
   saveRecentWrong({ mode: 'normal', total, correct });
   const wrongQ = (state.sessionWrongQuestions || []).length;
@@ -6585,13 +6669,14 @@ function _updateDriveBtnUI(connected = false) {
 
 /** 同期ステータス表示（ヘッダー右端の固定枠内で opacity トグル） */
 let _syncTimer = null;
-function showSyncStatus(msg) {
+function showSyncStatus(msg, persistent = false) {
   const el = document.getElementById('sync-status');
   if (!el) return;
   el.innerHTML = `<span class="sync-badge">${msg}</span>`;
   el.classList.add('sync-active');
   clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => el.classList.remove('sync-active'), 5000);
+  // persistent=true（保存中など）は自動で消さず、次のステータス表示まで出し続ける
+  if (!persistent) _syncTimer = setTimeout(() => el.classList.remove('sync-active'), 5000);
 }
 
 /** 全データを Drive にアップロード（silent=true なら未サインインは無視） */
@@ -6607,7 +6692,7 @@ async function gdriveUpload(silent = false) {
       _gdriveToken = await _gdriveRequestToken(false);
       _updateDriveBtnUI();
     }
-    showSyncStatus('☁️ Drive に保存中…');
+    showSyncStatus('☁️ Drive に保存中…', true);  // 完了/失敗メッセージが出るまで表示し続ける
 
     // データ収集
     const lsData = {};
@@ -7157,6 +7242,7 @@ function startKeywordDrill(keyword) {
 
 function startDrillWithQueue(queue, mode) {
   flushSessionTime();
+  clearAllTempMarkers();
   startSessionTimer();
   state.drillQueue            = queue;
   state.drillIndex            = 0;
@@ -9281,10 +9367,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('btn-start-confirm-yes').addEventListener('click', () => {
     document.getElementById('modal-start-confirm').classList.add('hidden');
     if (pendingStartMode) {
-      const { mode, filtered, queue, quickMode } = pendingStartMode;
+      const { mode, filtered, queue, quickMode, examScoring } = pendingStartMode;
       pendingStartMode = null;
       clearInterruptedSession();
-      _startSession(mode, filtered, { queue, quickMode });
+      _startSession(mode, filtered, { queue, quickMode, examScoring });
     }
   });
   document.getElementById('btn-start-confirm-no').addEventListener('click', () => {
@@ -9527,6 +9613,66 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       _applyHighlights(q);
       _updateMarkerBtn();
     }
+  });
+
+  // ── 一時マーカー（薄黄緑）：答え合わせ前のドラッグで問題文・選択肢文に引く（保存しない）──
+  document.addEventListener('mouseup', e => {
+    const studyScreen = document.getElementById('screen-study');
+    if (!studyScreen || studyScreen.classList.contains('hidden')) return;
+    if (state.checked) return;  // 答え合わせ後は保存マーカー側が担当
+    const q = state.queue[state.queueIndex];
+    if (!q) return;
+
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    if (range.collapsed) return;
+
+    const startEl = range.startContainer.nodeType === Node.TEXT_NODE
+      ? range.startContainer.parentElement : range.startContainer;
+    if (startEl.closest('mark.temp-hl')) { sel.removeAllRanges(); return; } // 既存内で開始はスキップ
+
+    let area, choiceId = null, root;
+    const choiceTextEl = startEl.closest('#choices-list .choice-item-text');
+    const qBlocksEl    = startEl.closest('#question-blocks');
+    if (choiceTextEl) {
+      const ci = choiceTextEl.closest('[data-cid]');
+      if (!ci) return;
+      area = 'c'; choiceId = ci.dataset.cid; root = choiceTextEl;
+    } else if (qBlocksEl) {
+      area = 'q'; root = qBlocksEl;
+    } else return;
+
+    const start = _getTextOffset(root, range.startContainer, range.startOffset);
+    const end   = _getTextOffset(root, range.endContainer,   range.endOffset);
+    if (start >= end) { sel.removeAllRanges(); return; }
+
+    const arr = tempMarkers[q.id] || (tempMarkers[q.id] = []);
+    // 重なる既存マーカーがあれば消す（再度範囲指定で消える＝トグル）
+    const overlap = arr.filter(h => h.area === area && (h.choiceId || null) === choiceId && h.start < end && h.end > start);
+    sel.removeAllRanges();
+    if (overlap.length > 0) {
+      tempMarkers[q.id] = arr.filter(h => !overlap.includes(h));
+    } else {
+      arr.push({ id: crypto.randomUUID(), area, choiceId, start, end });
+    }
+    applyTempMarkers(q);
+  });
+
+  // ── 一時マーカーのダブルクリック削除 ──
+  document.addEventListener('dblclick', e => {
+    const mark = e.target.closest('mark.temp-hl');
+    if (!mark) return;
+    const studyScreen = document.getElementById('screen-study');
+    if (!studyScreen || studyScreen.classList.contains('hidden')) return;
+    const q = state.queue[state.queueIndex];
+    if (!q) return;
+    const hid = mark.dataset.hid;
+    if (tempMarkers[q.id]) {
+      tempMarkers[q.id] = tempMarkers[q.id].filter(h => h.id !== hid);
+      if (tempMarkers[q.id].length === 0) delete tempMarkers[q.id];
+    }
+    applyTempMarkers(q);
   });
 
   // ── ヘッダーポップアップ ──
