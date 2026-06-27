@@ -341,7 +341,14 @@ function _applyHighlightRange(el, start, end, hid, markClass = 'q-highlight') {
  */
 function _applyHighlights(q) {
   const choicesList = document.getElementById('choices-list');
-  if (choicesList) _clearMarkElements(choicesList);
+  if (choicesList) {
+    _clearMarkElements(choicesList);
+    // 一時マーカー（temp-hl）も除去しておく。
+    // そのままにすると永続マーカー適用時に surroundContents が失敗して
+    // 黄色マーカーが temp-hl の内側にネストされ視覚的に隠れるバグを防ぐ。
+    // 一時マーカーは呼び出し元が applyTempMarkers(q) で再描画する。
+    choicesList.querySelectorAll('.choice-item-text').forEach(_clearTempMarks);
+  }
   if (!q) return;
 
   (highlightsData[q.id] || []).forEach(h => {
@@ -372,6 +379,7 @@ function _autoRevealMarkersOnCheck(q) {
   const hasMarks = (highlightsData[q.id] || []).length > 0;
   if (hasMarks) markerDisplayOn = true;
   _applyHighlights(q);   // 解説の赤マーカーは常時、選択肢の黄色マーカーは markerDisplayOn 時に反映
+  applyTempMarkers(q);   // 永続マーカー適用後に一時マーカーを再描画（重ね順: 永続→一時）
   _updateMarkerBtn();
 }
 
@@ -9346,6 +9354,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       e.preventDefault();
       markerDisplayOn = !markerDisplayOn;
       _applyHighlights(q);
+      applyTempMarkers(q);
       _updateMarkerBtn();
       return;
     }
@@ -9497,6 +9506,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     markerDisplayOn = !markerDisplayOn;
     const q = state.queueIndex < state.queue.length ? state.queue[state.queueIndex] : null;
     _applyHighlights(q);
+    applyTempMarkers(q);
     _updateMarkerBtn();
   });
 
@@ -9578,6 +9588,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       _updateDrillMarkerBtn(q, state.drillQueue[state.drillIndex].choice);
     } else {
       _applyHighlights(q);
+      applyTempMarkers(q);
       _updateMarkerBtn();
     }
   });
@@ -9603,6 +9614,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       _updateDrillMarkerBtn(q, state.drillQueue[state.drillIndex].choice);
     } else {
       _applyHighlights(q);
+      applyTempMarkers(q);
       _updateMarkerBtn();
     }
   });
