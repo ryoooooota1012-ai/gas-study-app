@@ -2174,8 +2174,8 @@ function filterProgressHTML(questions) {
   if (s.attempted === 0) {
     return `<span class="tfi-progress tfi-progress-empty">未学習</span>`;
   }
-  const lg = (cls, label, pct) =>
-    `<span class="tfi-lg ${cls}"><i class="${cls}-fill"></i>${label} ${pct}%</span>`;
+  const lg = (cls, label, cnt) =>
+    `<span class="tfi-lg ${cls}"><i class="${cls}-fill"></i>${label} ${cnt}問</span>`;
   return `<span class="tfi-progress">
     <span class="tfi-bar">
       <span class="tfi-seg tfi-l5-fill" style="width:${s.e5p}%"></span>
@@ -2185,11 +2185,11 @@ function filterProgressHTML(questions) {
       <span class="tfi-seg tfi-l1-fill" style="width:${s.e1p}%"></span>
     </span>
     <span class="tfi-legend">
-      ${lg('tfi-l5', '5連続', s.e5p)}
-      ${lg('tfi-l4', '4連続', s.e4p)}
-      ${lg('tfi-l3', '3連続', s.e3p)}
-      ${lg('tfi-l2', '2連続', s.e2p)}
-      ${lg('tfi-l1', '1回',   s.e1p)}
+      ${lg('tfi-l5', '5連続', s.e5)}
+      ${lg('tfi-l4', '4連続', s.e4)}
+      ${lg('tfi-l3', '3連続', s.e3)}
+      ${lg('tfi-l2', '2連続', s.e2)}
+      ${lg('tfi-l1', '1回',   s.e1)}
     </span>
   </span>`;
 }
