@@ -981,28 +981,94 @@ pre {
 .result-score { font-size: 3.5rem; font-weight: 900; color: var(--primary-light); }
 .result-sub   { font-size: 1.15rem; color: var(--text-3); margin-top: 2px; font-weight: 700; }
 .result-pct   { font-size: 1.5rem; color: var(--text-2); margin-top: 4px; }
-/* 採点ティアバッジ（リザルト） */
-.result-tier-badge {
-  display: inline-block;
-  margin-bottom: 6px;
-  padding: 4px 16px;
-  border-radius: 999px;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: .04em;
-  border: 1.5px solid currentColor;
+
+/* ===== 採点ティア演出（ヘッダーの実績ティアに準拠：金属シマー枠＋金属グラデ数字） ===== */
+.result-big.tier-bronze,
+.result-big.tier-silver,
+.result-big.tier-gold,
+.result-big.tier-platinum,
+.result-big.tier-diamond {
+  background-size: 200% 100%;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  margin: 2px 0 6px;
 }
-.result-tier-badge.tier-diamond  { color:#5fd0ee; background:rgba(95,208,238,.12); }
-.result-tier-badge.tier-platinum { color:#bcd2ea; background:rgba(188,210,234,.12); }
-.result-tier-badge.tier-gold     { color:#e2c14e; background:rgba(226,193,78,.12); }
-.result-tier-badge.tier-silver   { color:#b8bcc6; background:rgba(184,188,198,.12); }
-.result-tier-badge.tier-bronze   { color:#cd8b5a; background:rgba(205,139,90,.12); }
-/* 採点ティアでスコア色も連動 */
-.result-big.tier-diamond  .result-score { color:#5fd0ee; }
-.result-big.tier-platinum .result-score { color:#cfe0f2; }
-.result-big.tier-gold     .result-score { color:#e2c14e; }
-.result-big.tier-silver   .result-score { color:#c4c8d2; }
-.result-big.tier-bronze   .result-score { color:#cd8b5a; }
+.result-big.tier-bronze {
+  background: linear-gradient(135deg,#200d03 0%,#5c2808 20%,#8a4018 35%,#c06820 50%,#8a4018 65%,#5c2808 80%,#200d03 100%);
+  background-size: 200% 100%;
+  border-color: #a0622a;
+  box-shadow: 0 2px 18px rgba(130,60,30,.6), inset 0 1px 0 rgba(220,140,70,.3);
+  animation: tier-shimmer-mountain 10s linear infinite;
+}
+.result-big.tier-silver {
+  background: linear-gradient(135deg,#1e2c3a 0%,#425e70 20%,#6a8898 35%,#a0bece 50%,#6a8898 65%,#425e70 80%,#1e2c3a 100%);
+  background-size: 200% 100%;
+  border-color: #b0c8da;
+  box-shadow: 0 2px 20px rgba(150,190,215,.45), inset 0 1px 0 rgba(255,255,255,.45);
+  animation: tier-shimmer-mountain 8s linear infinite;
+}
+.result-big.tier-gold {
+  background: linear-gradient(135deg,#0d0c01 0%,#3e3a04 20%,#706410 35%,#c8a818 50%,#706410 65%,#3e3a04 80%,#0d0c01 100%);
+  background-size: 200% 100%;
+  border-color: #a89614;
+  box-shadow: 0 2px 22px rgba(165,148,18,.55), inset 0 1px 0 rgba(250,225,60,.35);
+  animation: tier-shimmer-mountain 7s linear infinite;
+}
+.result-big.tier-platinum {
+  background: linear-gradient(135deg,#1e3050 0%,#4878a8 20%,#8ab8e0 35%,#c0dff8 50%,#8ab8e0 65%,#4878a8 80%,#1e3050 100%);
+  background-size: 200% 100%;
+  border-color: #c0ddf5;
+  box-shadow: 0 2px 32px rgba(130,190,255,.65), 0 0 55px rgba(130,190,255,.3), inset 0 1px 0 rgba(210,240,255,.65);
+  animation: tier-shimmer-mountain 6s linear infinite;
+}
+.result-big.tier-diamond {
+  background: linear-gradient(135deg,#060d1e 0%,#0c1a40 20%,#163a96 35%,#4aaae0 44%,#d8f0ff 50%,#4aaae0 56%,#163a96 65%,#0c1a40 80%,#060d1e 100%);
+  background-size: 200% 100%;
+  border-color: #90ccee;
+  box-shadow: 0 2px 20px rgba(56,180,248,.5), 0 0 40px rgba(100,160,255,.2), inset 0 1px 0 rgba(255,255,255,.55);
+  animation: tier-diamond-mountain 4s linear infinite, diamond-hue-drift 8s ease-in-out infinite;
+}
+
+/* スコア数字：ヘッダーの .hd-num と同じ金属グラデ文字 */
+.result-big.tier-bronze .result-score {
+  background: linear-gradient(160deg,#ffb870 0%,#e07830 35%,#ffaa50 65%,#c86820 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 5px rgba(255,150,50,.8));
+}
+.result-big.tier-silver .result-score {
+  background: linear-gradient(160deg,#ffffff 0%,#ccdae8 30%,#ffffff 58%,#a8c0d4 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 6px rgba(200,230,255,.95));
+}
+.result-big.tier-gold .result-score {
+  background: linear-gradient(160deg,#fff4a0 0%,#ffd700 28%,#c89000 55%,#ffd700 78%,#fff4a0 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 8px rgba(255,215,0,.95));
+}
+.result-big.tier-platinum .result-score {
+  background: linear-gradient(150deg,#ffffff 0%,#ddf0ff 20%,#ffffff 50%,#bbdeff 75%,#ffffff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 12px #fff) drop-shadow(0 0 22px rgba(160,215,255,1)) drop-shadow(0 0 36px rgba(120,185,255,.75));
+}
+.result-big.tier-diamond .result-score {
+  background: linear-gradient(160deg,#ffccdd 0%,#ffdd88 18%,#ffffcc 34%,#aaf0ff 50%,#aabbff 66%,#e0aaff 82%,#ffffff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,.95)) drop-shadow(0 0 10px rgba(200,180,255,.9)) drop-shadow(0 0 22px rgba(80,210,255,1)) drop-shadow(0 0 40px rgba(185,80,255,.9));
+}
+
+/* 枠内の補助テキスト（キャプション・選択肢・％）を金属背景の上で読みやすく */
+.result-big.tier-bronze .result-caption,  .result-big.tier-silver .result-caption,
+.result-big.tier-gold .result-caption,    .result-big.tier-platinum .result-caption,
+.result-big.tier-diamond .result-caption,
+.result-big.tier-bronze .result-sub,  .result-big.tier-silver .result-sub,
+.result-big.tier-gold .result-sub,    .result-big.tier-platinum .result-sub,
+.result-big.tier-diamond .result-sub,
+.result-big.tier-bronze .result-pct,  .result-big.tier-silver .result-pct,
+.result-big.tier-gold .result-pct,    .result-big.tier-platinum .result-pct,
+.result-big.tier-diamond .result-pct {
+  color: rgba(255,255,255,.9) !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.85);
+}
 .result-btns  { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .result-btns .btn.result-kb-focus {
   outline: 2.5px solid var(--primary-light);

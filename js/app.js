@@ -4479,7 +4479,6 @@ function examScoreTier(pct) {
   if (pct >= 50)  return 'bronze';
   return null;
 }
-const EXAM_TIER_NAMES = { diamond:'💎 ダイヤ', platinum:'プラチナ', gold:'ゴールド', silver:'シルバー', bronze:'ブロンズ' };
 
 function showSessionResult() {
   flushSessionTime();
@@ -4488,7 +4487,6 @@ function showSessionResult() {
   const { total, correct } = state.sessionStats;
   const subEl   = document.getElementById('result-sub');
   const bigEl   = document.querySelector('#screen-result .result-big');
-  const badgeEl = document.getElementById('result-tier-badge');
   const TIERCLS = ['tier-diamond','tier-platinum','tier-gold','tier-silver','tier-bronze'];
   if (bigEl) bigEl.classList.remove(...TIERCLS);
 
@@ -4500,18 +4498,12 @@ function showSessionResult() {
     document.getElementById('result-pct').textContent   = `${pct}%`;
     if (subEl) { subEl.textContent = `${correct}／${total} 選択肢`; subEl.classList.remove('hidden'); }
     const tier = examScoreTier(pct);
-    if (tier && bigEl) bigEl.classList.add('tier-' + tier);
-    if (badgeEl) {
-      badgeEl.classList.remove(...TIERCLS);
-      if (tier) { badgeEl.textContent = EXAM_TIER_NAMES[tier]; badgeEl.classList.add('tier-' + tier); badgeEl.classList.remove('hidden'); }
-      else badgeEl.classList.add('hidden');
-    }
+    if (tier && bigEl) bigEl.classList.add('tier-' + tier);  // 枠＋数字をティア演出（ヘッダー準拠）
   } else {
     document.getElementById('result-score').textContent = `${correct} / ${total}`;
     document.getElementById('result-pct').textContent =
       total > 0 ? `${Math.round((correct / total) * 100)}%` : '-';
-    if (subEl)   subEl.classList.add('hidden');
-    if (badgeEl) badgeEl.classList.add('hidden');
+    if (subEl) subEl.classList.add('hidden');
   }
 
   saveRecentWrong({ mode: 'normal', total, correct });
