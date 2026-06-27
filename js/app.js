@@ -2137,24 +2137,26 @@ function isQuestionMastered(q) {
 }
 
 /**
- * 指定問題群の選択肢ベース進捗統計を集計する。
- * 各選択肢の直近の連続正解数（最大5）を見て、ちょうど1/2/3/4/5連続を排他カウントする。
+ * 指定問題群の問題ベース進捗統計を集計する。
+ * 問題の連続正解数 = 全採点単位（選択肢 or 問題単位）の最小連続正解数で判定。
+ * 5択問題なら全5選択肢がN連続正解して初めてその問題がN連続正解とみなす。
  */
 function computeFilterProgress(questions) {
   let total = 0, attempted = 0;
   let e1 = 0, e2 = 0, e3 = 0, e4 = 0, e5 = 0; // ちょうど1/2/3/4/5連続(以上)
   for (const q of (questions || [])) {
-    for (const hist of questionProgressHistories(q)) {
-      total++;
-      const h = Array.isArray(hist) ? hist.slice(-5) : [];
-      if (h.length > 0) attempted++;
-      const streak = histStreak(h);
-      if (streak >= 5)      e5++;
-      else if (streak === 4) e4++;
-      else if (streak === 3) e3++;
-      else if (streak === 2) e2++;
-      else if (streak === 1) e1++;
-    }
+    const hists = questionProgressHistories(q);
+    if (hists.length === 0) continue;
+    total++;
+    const hs = hists.map(h => Array.isArray(h) ? h.slice(-5) : []);
+    if (hs.some(h => h.length > 0)) attempted++;
+    // 問題全体の連続正解数 = 全採点単位の最小値
+    const minStreak = hs.reduce((min, h) => Math.min(min, histStreak(h)), Infinity);
+    if (minStreak >= 5)       e5++;
+    else if (minStreak === 4) e4++;
+    else if (minStreak === 3) e3++;
+    else if (minStreak === 2) e2++;
+    else if (minStreak === 1) e1++;
   }
   const pct = n => total > 0 ? Math.round((n / total) * 100) : 0;
   return {
