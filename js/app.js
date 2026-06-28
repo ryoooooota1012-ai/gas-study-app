@@ -450,9 +450,10 @@ function applyTempMarkers(q) {
 function clearAllTempMarkers() { tempMarkers = {}; }
 
 // ========== Storage ==========
-const PROGRESS_KEY  = 'gas_study_progress_v1';
-const QUESTIONS_KEY = 'gas_questions_v1';
-const SETTINGS_KEY  = 'gas_settings_v1';
+const PROGRESS_KEY     = 'gas_study_progress_v1';
+const QUESTIONS_KEY    = 'gas_questions_v1';
+const SETTINGS_KEY     = 'gas_settings_v1';
+const LAST_FILTER_KEY  = 'gas_last_filter_v1';
 
 // ========== IndexedDB (画像専用ストレージ) ==========
 const IDB_NAME  = 'gas_study_db';
@@ -550,6 +551,24 @@ function migrateQuestionHistory() {
 
 function saveProgress() {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(state.progress));
+}
+
+function saveLastUsedFilter() {
+  localStorage.setItem(LAST_FILTER_KEY, JSON.stringify({
+    cat:      lastUsedFilterCat,
+    years:    [...lastUsedFilterYears],
+    sections: [...lastUsedFilterSections],
+  }));
+}
+
+function loadLastUsedFilter() {
+  try {
+    const data = JSON.parse(localStorage.getItem(LAST_FILTER_KEY) || 'null');
+    if (!data) return;
+    lastUsedFilterCat      = data.cat      ?? null;
+    lastUsedFilterYears    = new Set(data.years    || []);
+    lastUsedFilterSections = new Set(data.sections || []);
+  } catch {}
 }
 
 // ========== App Settings ==========
@@ -3082,6 +3101,7 @@ function startSession(mode, opts = {}) {
   lastUsedFilterYears    = new Set(state.activeYears);
   lastUsedFilterSections = new Set(state.activeSections);
   lastUsedFilterCat      = topFilterOpenCat;
+  saveLastUsedFilter();
   // 中断データがあれば確認モーダルを表示
   if (loadInterruptedSession()) {
     pendingStartMode = { mode, filtered, examScoring: true };
@@ -8446,12 +8466,17 @@ function _refreshStudyAfterEdit(updatedQ) {
   const wasChecked   = state.checked;
   const savedAnswers = { ...state.answers };
 
+  if (wasChecked) {
+    // renderQuestion() より先に progress を訂正しておく。
+    // こうすることで renderQuestion() がドットを描画する時点で正しい値が使われる。
+    _recorrectStudyProgressAfterEdit(updatedQ, savedAnswers);
+  }
+
   // 最新の問題内容で再描画（state.checked=false・answers={} にリセットされる）
+  // progress は上で訂正済みなので、ドットも正しい状態で描画される。
   renderQuestion();
 
   if (wasChecked) {
-    // 記録済みの判定（連続正解・正答数・間違いリスト）を編集後の内容で訂正
-    _recorrectStudyProgressAfterEdit(updatedQ, savedAnswers);
     // 回答を復元して再度答え合わせ → 表示のみ更新（progress 等は上で訂正済み）
     state.answers = savedAnswers;
     _checkNoRecord = true;
@@ -9136,6 +9161,7 @@ function openCalcModal(editIndex) {
 document.addEventListener('DOMContentLoaded', async () => { try {
   loadAppSettings();
   loadProgress();
+  loadLastUsedFilter();
   loadDrillPresets();
   await loadCalcProblems();
   migrateQuestionHistory();  // 選択肢historyから問題レベルhistoryを生成（初回のみ）
