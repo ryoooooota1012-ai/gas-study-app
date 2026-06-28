@@ -153,6 +153,7 @@ window.DEFAULT_QUESTIONS = {
 | 単一選択極性判定 | `detectPolarityFromText(text)`（問題文から自動判定 `'correct'\|'incorrect'`）/ `getQuestionPolarity(q)`（`q.answerPolarity` 優先→自動判定）/ `singleSelectStatementTrue(q,c)`（選択肢の文章が正しいか返す）/ `q.answerPolarity`で手動上書き可 |
 | 編集後の進捗修正 | `_recorrectStudyProgressAfterEdit(q, savedAnswers)`（通常学習中に問題編集→最後の進捗エントリを修正）/ `_fixLastProgressEntry(key, newRight)`（進捗キーの最新履歴を書き換え）。壁打ち中の編集も同様に修正あり |
 | Drive保存中メッセージ | `showSyncStatus(msg, persistent=false)`（`persistent=true` で完了/失敗メッセージが出るまで表示し続ける）/ 「保存中」は `persistent:true`・「保存完了/失敗」は `persistent:false`（タイマー自動消去） |
+| Drive自動再認証 | `_gdriveRequestTokenSilent()` → `prompt:''` でユーザー操作なし再認証（Googleセッションが有効なら成功。切れていれば reject）。`gdriveUpload(silent, _isRetry)` がトークンなし時・401時に自動呼び出し→成功すればそのまま続行/リトライ。1回のみリトライ（`_isRetry` フラグで無限ループ防止）|
 | 計算問題管理 | `calcProblems`（グローバル配列・stateとは独立）/ `saveCalcProblems()`（`gas_calc_problems_v1` に保存・`mark`フィールドも必ず含める）/ `calcMarkFilter`（Set・◎/〇フィルター・空=全件）/ `calcSortMode`（`'registered-asc'`がデフォルト） |
 | Drive 自動バックアップ・案内 | `gdriveCheckRemote`（Drive無し→初回UP／ローカルが3日以上未保存→自動UP）・`checkLocalBackupReminder`（未接続ユーザーへ7日毎に案内） |
 

@@ -6663,6 +6663,24 @@ function _gdriveRequestToken() {
   });
 }
 
+/**
+ * サイレント再認証（ユーザー操作不要）。
+ * Googleのブラウザセッションが有効なら自動成功。
+ * セッション切れ等の場合は reject される（その場合は手動再接続が必要）。
+ */
+function _gdriveRequestTokenSilent() {
+  return new Promise((resolve, reject) => {
+    if (!_gisTokenClient) { reject('GIS未ロード'); return; }
+    _gisTokenClient.callback = res => {
+      _gisTokenClient.callback = _onTokenResponse; // 元のコールバックに戻す
+      if (res.error) { reject(res.error); return; }
+      _gdriveToken = res.access_token;
+      resolve(res.access_token);
+    };
+    _gisTokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+
 // connected=true → トークンはないがフラグあり（過去接続済み）の見た目
 function _updateDriveBtnUI(connected = false) {
   const btn = document.getElementById('btn-drive-signin');
@@ -6691,18 +6709,31 @@ function showSyncStatus(msg, persistent = false) {
   if (!persistent) _syncTimer = setTimeout(() => el.classList.remove('sync-active'), 5000);
 }
 
-/** 全データを Drive にアップロード（silent=true なら未サインインは無視） */
-async function gdriveUpload(silent = false) {
+/**
+ * 全データを Drive にアップロード。
+ * silent=true → 未サインイン時はサイレント再接続を試み、失敗時のみ通知。
+ * _isRetry=true → 401後の自動リトライ（1回のみ。無限ループ防止）。
+ */
+async function gdriveUpload(silent = false, _isRetry = false) {
   try {
     if (!_gdriveToken) {
       if (silent) {
         if (localStorage.getItem(GDRIVE_CONNECTED_KEY)) {
-          showSyncStatus('⚠️ Drive 未接続のため保存されませんでした（設定から再接続してください）');
+          // 過去に接続済み → サイレント再接続を試みてそのまま続行
+          try {
+            await _gdriveRequestTokenSilent();
+            _updateDriveBtnUI();
+          } catch {
+            showSyncStatus('⚠️ Drive 未接続のため保存されませんでした（設定から再接続してください）');
+            return;
+          }
+        } else {
+          return; // 一度も接続したことがない → 何もしない（通知も不要）
         }
-        return;
+      } else {
+        _gdriveToken = await _gdriveRequestToken(false);
+        _updateDriveBtnUI();
       }
-      _gdriveToken = await _gdriveRequestToken(false);
-      _updateDriveBtnUI();
     }
     showSyncStatus('☁️ Drive に保存中…', true);  // 完了/失敗メッセージが出るまで表示し続ける
 
@@ -6734,7 +6765,14 @@ async function gdriveUpload(silent = false) {
       `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${encodeURIComponent(GDRIVE_FILE)}%27&fields=files(id)`,
       { headers: { Authorization: `Bearer ${_gdriveToken}` } }
     );
-    if (listRes.status === 401) { _gdriveToken = null; _updateDriveBtnUI(); showSyncStatus('⚠️ Drive 再接続が必要です'); return; }
+    if (listRes.status === 401) {
+      _gdriveToken = null; _updateDriveBtnUI();
+      if (!_isRetry) {
+        // サイレント再接続→自動リトライ（1回のみ）
+        try { await _gdriveRequestTokenSilent(); _updateDriveBtnUI(); await gdriveUpload(silent, true); return; } catch {}
+      }
+      showSyncStatus('⚠️ Drive 再接続が必要です'); return;
+    }
     const listData   = await listRes.json();
     const existingId = listData.files?.[0]?.id;
 
