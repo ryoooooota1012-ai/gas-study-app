@@ -747,8 +747,8 @@ pre {
   overflow: hidden;
   transition: border-color .2s;
 }
-.choice-item.result-correct   { border-color: var(--success); }
-.choice-item.result-incorrect { border-color: var(--danger); }
+.choice-item.result-correct   { border-color: var(--success); border-width: 3px; }
+.choice-item.result-incorrect { border-color: var(--danger);  border-width: 3px; }
 
 /* 計算問題モード：クリック選択 */
 .choice-item-calc {
