@@ -820,14 +820,10 @@ pre {
 }
 
 /* 出題画面：計算問題登録チェックボックス */
-.study-nav-row {
-  display: flex;
-  gap: 8px;
-}
 .study-nav-btn {
-  flex: 1;
-  opacity: .55;
+  opacity: .45;
   transition: opacity .15s;
+  padding: 5px 10px;
 }
 .study-nav-btn:not(:disabled) {
   opacity: 1;
@@ -4012,7 +4008,7 @@ body.tier-border-diamond .card {
     align-items: center;
     justify-content: center;
   }
-  .study-nav-btn { min-height: 44px; }
+  .study-nav-btn { min-height: 36px; min-width: 36px; }
 }
 .kb-item { display: inline-flex; align-items: center; gap: 3px; font-size: .72rem; color: var(--text-3); white-space: nowrap; }
 .kb-sep { color: var(--border); font-size: .8rem; }
