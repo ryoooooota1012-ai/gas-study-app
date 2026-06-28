@@ -159,6 +159,61 @@ window.DEFAULT_QUESTIONS = {
 
 ---
 
+## Google Drive 認証フロー
+
+### トークンのライフサイクル
+
+| タイミング | 動作 |
+|-----------|------|
+| ページロード時 | `_gisLoaded()` → 過去接続済み（`gas_drive_connected` フラグ）なら `prompt:''` でサイレント取得 |
+| トークン取得成功 | `_onTokenResponse()` → `_gdriveToken` にセット・UIを「同期中」に更新 |
+| アクセストークン有効期限 | **1時間**。期限切れは次回APIアクセス時に401として発覚 |
+| 手動再接続ボタン押下 | `_gdriveRequestToken()` → `prompt:'select_account'` でポップアップ表示 |
+
+### 自動再認証フロー（`_gdriveRequestTokenSilent`）
+
+`gdriveUpload()` は以下の2ケースで自動的にサイレント再接続を試みる:
+
+```
+① トークンなし + 過去接続済み（silent=true 時）
+   → _gdriveRequestTokenSilent() を呼ぶ
+       成功 → そのままアップロード続行
+       失敗 → 「再接続してください」通知のみ
+
+② アップロード中に 401
+   → _gdriveRequestTokenSilent() を呼ぶ
+       成功 → gdriveUpload(silent, _isRetry=true) でリトライ（1回限り）
+       失敗 → 「再接続が必要です」通知のみ
+```
+
+`_isRetry` フラグにより **リトライは最大1回**。401が続く場合は無限ループしない。
+
+### 「サイレント再接続が成功する」条件
+
+- ブラウザがGoogleアカウントにログインしたまま（Googleのセッションが有効）
+- アプリへのOAuth権限が取り消されていない
+
+### 「サイレント再接続が失敗する」条件（手動操作が必要）
+
+- Googleアカウントからサインアウトした
+- パスワード変更・2段階認証の再設定
+- アプリへの権限をGoogleアカウント設定で削除した
+- 非常に長期間（数週間〜）アクセスしなかった
+
+### 関連定数・変数
+
+| 名前 | 内容 |
+|------|------|
+| `GDRIVE_CLIENT_ID` | OAuth2クライアントID |
+| `GDRIVE_SCOPE` | `drive.appdata`（アプリ専用フォルダのみ。ユーザーのDriveは見えない） |
+| `GDRIVE_FILE` | `gas_study_backup.json` |
+| `GDRIVE_CONNECTED_KEY` | `gas_drive_connected`（一度でも接続したフラグ） |
+| `GDRIVE_SYNCED_KEY` | `gas_drive_synced_at`（最終同期タイムスタンプ） |
+| `_gdriveToken` | 現在のアクセストークン（nullなら未接続/期限切れ） |
+| `_gisTokenClient` | Google Identity Services のトークンクライアント |
+
+---
+
 ## 規約・注意点（ハマりどころ）
 
 - **キャッシュバスティングのバージョン更新を絶対に忘れない**（デプロイ手順参照）。
