@@ -141,6 +141,7 @@ window.DEFAULT_QUESTIONS = {
 | リッチテキスト描画 | `renderText`（HTMLエスケープ + `[r]..[/r]`→赤字 + `\n`→`<br>`） |
 | マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示）/ `_clearMarkElements`（永続mark除去）/ `_clearTempMarks`（一時mark除去） |
 | フィルター進捗バー | `computeFilterProgress`（**問題単位**で集計。問題の連続正解数=全採点単位の最小値。5択問題なら全5選択肢がN連続して初めてその問題がN連続とみなす）/ `filterProgressHTML` |
+| 直前フィルター目印 | `lastUsedFilterYears` / `lastUsedFilterSections` / `lastUsedFilterCat`（グローバルSet）。`startSession()` 開始時にスナップショット保存。ホーム帰還時に `activeYears/Sections` をクリア。`renderTopFilterCard()` で `.last-used` クラスを付与し右上のオレンジドット（`::after`）で表示 |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
 | タグ並び替え | `sortTagsJa`（数字→50音順） |
 | 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |

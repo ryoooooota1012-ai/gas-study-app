@@ -2696,6 +2696,20 @@ body.tier-border-diamond .card {
   cursor: pointer;
   text-align: left;
   transition: all .15s;
+  position: relative;
+}
+/* 直前セッションで使ったフィルター項目：右上にオレンジの小ドットを表示 */
+.top-filter-item.last-used::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 6px rgba(249,115,22,.75);
+  pointer-events: none;
 }
 .top-filter-item:hover {
   border-color: var(--primary-light);

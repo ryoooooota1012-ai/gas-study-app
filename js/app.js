@@ -20,6 +20,10 @@ let createChoicesList   = []; // [{text, isCorrect}]
 let topFilterOpenCat    = null;  // 開いているカテゴリパネル（null=閉じ）
 let topFilterSubMode    = 'year'; // 'year' | 'sec'
 let topFilterStartOpen  = false;  // 出題開始ポップアップ表示フラグ
+// 直前セッションで使ったフィルター（ホーム帰還後に目印表示するため）
+let lastUsedFilterYears    = new Set();
+let lastUsedFilterSections = new Set();
+let lastUsedFilterCat      = null;
 let excludeMasteredStreak = 0;  // 出題開始時の連続正解除外しきい値（0=除外なし / 3 / 4 / 5）
 // 壁打ち設定モーダル用
 let drillSetupCats      = new Set();
@@ -2391,7 +2395,8 @@ function renderTopFilterCard() {
         const qcnt = yearQs.length;
         const tier = filterTier(yearQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (tier ? ' tier-' + tier : '');
+        const yearLastUsed = lastUsedFilterCat === topFilterOpenCat && lastUsedFilterYears.has(year);
+        btn.className = 'top-filter-item' + (state.activeYears.has(year) ? ' active' : '') + (tier ? ' tier-' + tier : '') + (yearLastUsed ? ' last-used' : '');
         btn.innerHTML = `<span class="tfi-name">${year}</span>${filterProgressHTML(yearQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeYears.has(year)) state.activeYears.delete(year);
@@ -2418,7 +2423,8 @@ function renderTopFilterCard() {
         const qcnt = secQs.length;
         const tier = filterTier(secQs);
         const btn = document.createElement('button');
-        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (tier ? ' tier-' + tier : '');
+        const secLastUsed = lastUsedFilterCat === topFilterOpenCat && lastUsedFilterSections.has(sec);
+        btn.className = 'top-filter-item' + (state.activeSections.has(sec) ? ' active' : '') + (tier ? ' tier-' + tier : '') + (secLastUsed ? ' last-used' : '');
         btn.innerHTML = `<span class="tfi-name">${sec}</span>${filterProgressHTML(secQs)}<span class="top-filter-item-cnt">${qcnt}問</span>`;
         btn.addEventListener('click', () => {
           if (state.activeSections.has(sec)) state.activeSections.delete(sec);
@@ -2986,9 +2992,9 @@ function renderHome() {
   clearAllTempMarkers();   // ホームに戻ったら一時マーカーを消す
   gdriveCheckRemote().catch(() => {}); // Drive に新しいデータがあれば通知のみ（自動上書きはしない）
   updateHeaderStats();
-  // フィルター選択（カテゴリ・年度・分野・タグ）はホームに戻っても維持する。
-  // 学習→ホーム→同じ範囲で再学習、のたびに選び直す手間をなくすため。
-  // クリアは出題フィルターの「絞り込みクリア」やカテゴリ再クリックで行える。
+  // ホームに戻ったらフィルター選択を解除（直前フィルターは lastUsedFilter* に記録済み）
+  state.activeYears.clear();
+  state.activeSections.clear();
   topFilterStartOpen     = false;  // 出題開始ポップアップだけは閉じる
   const categories = [...new Set(state.questions.map(q => q.category))]
     .sort((a, b) => a.localeCompare(b, 'ja'));
@@ -3072,6 +3078,10 @@ function startSession(mode, opts = {}) {
       : 'フィルターに合致する問題がありません。カテゴリを選択してください。');
     return;
   }
+  // 直前セッションのフィルターを記録（ホーム帰還後に目印表示するため）
+  lastUsedFilterYears    = new Set(state.activeYears);
+  lastUsedFilterSections = new Set(state.activeSections);
+  lastUsedFilterCat      = topFilterOpenCat;
   // 中断データがあれば確認モーダルを表示
   if (loadInterruptedSession()) {
     pendingStartMode = { mode, filtered, examScoring: true };
