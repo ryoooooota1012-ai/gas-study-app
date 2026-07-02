@@ -3762,6 +3762,9 @@ body.tier-border-diamond .card {
 }
 .calc-practice-item-mark.mark-double { color: #ef5a4f; } /* ◎ 赤系 */
 .calc-practice-item-mark.mark-single { color: #e0a23a; } /* 〇 橙系 */
+/* 一覧の直近5回正誤ドット（右端・少し小さめ） */
+.calc-practice-item-dots { flex-shrink: 0; }
+.calc-practice-item-dots .history-dot { width: 8px; height: 8px; }
 /* tier背景の上でもマークを視認できるよう白縁を足す（旧バッジ用・無害なため残置） */
 .calc-practice-item.tier-gold .calc-practice-item-mark,
 .calc-practice-item.tier-platinum .calc-practice-item-mark,

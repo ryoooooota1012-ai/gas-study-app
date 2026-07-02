@@ -8912,6 +8912,10 @@ function renderCalcPracticeScreen() {
       itemEl.className = 'calc-practice-item' + (calcTier ? ' tier-' + calcTier : '');
       itemEl.dataset.index = origIndex;
       itemEl.innerHTML = markHtml + metaHtml;
+      // 直近5回の正誤ドット（出題画面と同じ表示を一覧でも見られるように）
+      const listDots = makeHistoryDots(state.progress[p.id]);
+      listDots.classList.add('calc-practice-item-dots');
+      itemEl.appendChild(listDots);
       itemEl.addEventListener('click', () => {
         calcDetailIndex = parseInt(itemEl.dataset.index);
         openCalcDetail();
@@ -8999,6 +9003,8 @@ function recordCalcAnswer(isRight) {
   const p = calcProblems[calcDetailIndex];
   if (!p) return;
   recordAnswer(p.id, isRight);
+  recordStudyActivity(1, isRight ? 1 : 0, 1, '計算問題'); // 今日の学習（選択肢・問数）に加算
+  updateHeaderStats();                                    // ヘッダーの「今日の学習」を即時反映
   const dotsEl = document.getElementById('calc-detail-dots');
   if (dotsEl) dotsEl.replaceChildren(makeHistoryDots(state.progress[p.id]));
   const accEl = document.getElementById('calc-detail-acc');
@@ -10101,6 +10107,21 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'instant' });
     nextQuestion();
+  }, { passive: false });
+
+  // 答え合わせ前：選択肢カード本体のタップで ○⇔× をトグル（PCの数字キーと同じ挙動）
+  // ○×ボタン・ブックマーク等のインタラクティブ要素・画像リサイズハンドルのタップは対象外
+  _studyScreen.addEventListener('touchend', e => {
+    if (state.checked || _studyTouchScrolled) return;
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], .choice-img-resize-handle';
+    if (e.target.closest(INTERACTIVE)) return;
+    const item = e.target.closest('.choice-item');
+    if (!item || !item.dataset.cid) return;
+    const q = state.queue[state.queueIndex];
+    if (!q || isOnePickQuestion(q)) return; // 1択・計算問題は選択肢タップ=そのまま選択なので除外
+    e.preventDefault();
+    const current = state.answers[item.dataset.cid];
+    selectChoiceAnswer(item.dataset.cid, current === 'maru' ? 'batsu' : 'maru');
   }, { passive: false });
 
   // Study actions

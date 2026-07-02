@@ -156,6 +156,8 @@ window.DEFAULT_QUESTIONS = {
 | Drive保存中メッセージ | `showSyncStatus(msg, persistent=false)`（`persistent=true` で完了/失敗メッセージが出るまで表示し続ける）/ 「保存中」は `persistent:true`・「保存完了/失敗」は `persistent:false`（タイマー自動消去） |
 | Drive自動再認証 | `_gdriveRequestTokenSilent()` → `prompt:''` でユーザー操作なし再認証（Googleセッションが有効なら成功。切れていれば reject）。`gdriveUpload(silent, _isRetry)` がトークンなし時・401時に自動呼び出し→成功すればそのまま続行/リトライ。1回のみリトライ（`_isRetry` フラグで無限ループ防止）|
 | 計算問題管理 | `calcProblems`（グローバル配列・stateとは独立）/ `saveCalcProblems()`（`gas_calc_problems_v1` に保存・`mark`フィールドも必ず含める）/ `calcMarkFilter`（Set・◎/〇フィルター・空=全件）/ `calcSortMode`（`'registered-asc'`がデフォルト） |
+| 計算問題の正誤記録 | `recordCalcAnswer(isRight)`（詳細画面の〇正解/✖不正解ボタン）→ `recordAnswer(p.id)` で進捗履歴 + `recordStudyActivity(1, isRight?1:0, 1, '計算問題')` で**今日の学習に加算** + `updateHeaderStats()` でヘッダー即時更新。studyLogのcatsには `'計算問題'` バケットで集計 |
+| 計算問題一覧のドット | `renderCalcPracticeScreen()` の各 `.calc-practice-item` に `makeHistoryDots(state.progress[p.id])`（class `calc-practice-item-dots`・8px）を append。出題画面(`calc-detail-dots`)と同じ直近5回正誤を一覧でも表示 |
 | Drive 自動バックアップ・案内 | `gdriveCheckRemote`（Drive無し→初回UP／ローカルが3日以上未保存→自動UP）・`checkLocalBackupReminder`（未接続ユーザーへ7日毎に案内） |
 
 ---
@@ -229,3 +231,4 @@ window.DEFAULT_QUESTIONS = {
 - **スクリーンショットはシマー/ティアアニメーション中にタイムアウトする**。視覚確認は `preview_inspect`・`preview_eval` を使うこと。
 - **単一選択問題の進捗キーは `q.id + ':q'`**（選択肢単位ではなく問題単位で記録）。`questionProgressHistories(q)` でまとめて取得可能。
 - **マーカー作成は `markerDisplayOn` フラグとは独立**（表示ON/OFFと作成を分離済み）。マーカー表示を切っていても新規作成は可能。
+- **モバイルの選択肢タップで○×トグル**：学習画面（`screen-study`）で **答え合わせ前** に選択肢カード本体をタップすると `○⇔×` が切り替わる（PCの数字キーと同じ挙動＝`selectChoiceAnswer(cid, current==='maru'?'batsu':'maru')`）。`_studyScreen` の `touchend` ハンドラで実装（`_studyTouchScrolled` でスクロールと区別）。答え合わせ後タップ＝次の問題へ、のハンドラと `state.checked` で排他。○×ボタン・ブックマーク等（`button, a, ...`）と `.choice-img-resize-handle` は除外。1択・計算問題（`isOnePickQuestion`）はタップ＝そのまま選択なので対象外。マーカー作成は答え合わせ後のみ（`state.checked`）なのでトグルと競合しない。
