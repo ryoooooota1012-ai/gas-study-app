@@ -8949,7 +8949,7 @@ function renderCalcDetailScreen() {
   const posEl = document.getElementById('calc-detail-pos');
   if (posEl) posEl.textContent = `${calcDetailIndex + 1} / ${calcProblems.length}`;
 
-  // メタ情報
+  // メタ情報（先頭に◎/〇マークを一覧と同じ色付きで表示）
   const metaEl = document.getElementById('calc-detail-meta');
   if (metaEl) {
     const parts = [];
@@ -8957,7 +8957,10 @@ function renderCalcDetailScreen() {
     if (p.subcategory) parts.push(p.subcategory);
     if (p.year)        parts.push(p.year);
     if (p.category)    parts.push(p.category);
-    metaEl.textContent = parts.join('　／　');
+    const markHtml = p.mark
+      ? `<span class="calc-practice-item-mark mark-${p.mark === '◎' ? 'double' : 'single'}">${p.mark}</span>　`
+      : '';
+    metaEl.innerHTML = markHtml + escapeHtml(parts.join('　／　'));
   }
 
   // 問題画像
