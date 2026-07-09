@@ -148,7 +148,9 @@ window.DEFAULT_QUESTIONS = {
 | 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |
 | 直近の間違い復習 | `saveRecentWrong(meta)`（結果画面で最大5セット保存）/ `loadRecentWrong`（旧フラット配列形式も自動移行）/ `openRecentWrongModal`（`#modal-recent-wrong` でセット一覧表示）/ `startRecentWrongSet(ts)`（選択セットを削除して復習開始）/ `deleteRecentWrongSet` |
 | 直近間違い出題形式 | `recentWrongFormat`（グローバル変数 `'normal'\|'drill'`）/ `_startRecentWrongQuestions(qs)`（形式に応じて通常 or 壁打ちで開始） |
-| ブックマーク選択肢 | `bookmarkedChoiceItems()`（ブックマーク済み選択肢を `{question,choice,choiceIndex}` 配列で返す）/ ブックマークポップアップで壁打ち or 通常形式を選択可 |
+| ブックマーク選択肢 | `bookmarkedChoiceItems()`（ブックマーク済み選択肢を `{question,choice,choiceIndex}` 配列で返す） |
+| ブックマーク出題（2階層） | `#btn-start-bookmark` のポップアップ（`#bookmark-start-popup`）。第1階層=**☆問題／☆選択肢**。☆問題→第2階層[📄通常出題=`_startSession('sequential', bqs)` / 🥊壁打ち=ブクマ問題の全選択肢をドリル / ←戻る]。☆選択肢→ブクマした選択肢**のみ**を壁打ち（同問題の非ブクマ選択肢は出さない）。ナビ用ボタンは `keepOpen=true`+`ev.stopPropagation()` でポップアップ維持 |
+| キーワード出題 | `keywordMatchedChoices(kw)`（**スペース/全角スペース区切りでOR検索**・**年度別問題のみ**=`q.year` かつ非「分野別」・穴埋め/計算除外）→ `{question,choice,choiceIndex}[]`。`openKeywordModePopup(kw)`（`#keyword-mode-popup`）で🥊壁打ち=`startKeywordDrill`（従来どおり）/ 📄通常出題=`startKeywordNormal`（ヒット選択肢を5つずつrandom分割した合成問題 id=`kwset-*`・questionText空・実choice id保持で進捗連動・最終セットは端数のまま）を選択 |
 | 一時マーカー（薄黄緑） | `tempMarkers`（グローバルオブジェクト `{[qId]: [{id,area,choiceId,start,end}]}`）/ `applyTempMarkers(q)`（renderQuestion後に呼ぶ）/ `clearAllTempMarkers()`（ホーム遷移・新規セッション開始時）。保存しない・リザルト画面まで保持 |
 | 採点モード | `state.examScoring`（カテゴリフィルター出題時true）/ `computeExamScore()`（1問5点・全選択肢正解で5点・単一選択/計算は1択正解で5点）/ `examScoreTier(pct)`（満点=diamond/80%=platinum/70%=gold/60%=silver/50%=bronze）/ リザルト画面は `result-score` に点数・`result-sub` に選択肢正解数・`bigEl.classList.add('tier-'+tier)` でティア演出 |
 | 単一選択極性判定 | `detectPolarityFromText(text)`（問題文から自動判定 `'correct'\|'incorrect'`）/ `getQuestionPolarity(q)`（`q.answerPolarity` 優先→自動判定）/ `singleSelectStatementTrue(q,c)`（選択肢の文章が正しいか返す）/ `q.answerPolarity`で手動上書き可 |

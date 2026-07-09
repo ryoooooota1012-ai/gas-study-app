@@ -455,10 +455,11 @@
         <div class="btn-desc">3連続正解未達の選択肢のみ</div>
       </button>
     </div>
-    <div class="drill-section-label">🔍 キーワード検索 壁打ち</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
-      <input type="text" id="drill-search-input" class="edit-input" placeholder="キーワードを入力..." style="flex:1;width:auto;padding:6px 10px;font-size:.88rem;">
+    <div class="drill-section-label">🔍 キーワード検索出題 <span style="font-weight:400;font-size:.8em;color:var(--text-3);">（年度別のみ・スペースでOR検索）</span></div>
+    <div style="position:relative;display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+      <input type="text" id="drill-search-input" class="edit-input" placeholder="キーワードを入力（スペース区切りでOR）..." style="flex:1;width:auto;padding:6px 10px;font-size:.88rem;">
       <button id="btn-start-drill-search" class="btn btn-primary btn-sm" style="flex-shrink:0;white-space:nowrap;">出題開始</button>
+      <div id="keyword-mode-popup" class="top-filter-start-popup hidden" style="top:auto;bottom:calc(100% + 6px);right:0;"></div>
     </div>
     <div class="drill-section-label">🏷 タグから出題</div>
     <div id="tag-study-area" class="tag-study-area"></div>
@@ -1510,7 +1511,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260701b"></script>
+<script src="js/app.js?v=20260701c"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

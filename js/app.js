@@ -7286,28 +7286,92 @@ function retryWrongChoices() {
   startDrillWithQueue(queue);
 }
 
-function startKeywordDrill(keyword) {
-  const kw = keyword.trim();
-  if (!kw) { alert('キーワードを入力してください'); return; }
-  const lq = kw.toLowerCase();
-  const queue = [];
+// キーワードにマッチする選択肢を集める。
+//  ・スペース（半角/全角）区切りで複数ワード → OR 検索（いずれか含めばヒット）
+//  ・検索対象は「年度別」問題のみ（分野別・year無しは除外）。ほぼ同内容の重複出題を防ぐため。
+function keywordMatchedChoices(keyword) {
+  const words = (keyword || '').trim().toLowerCase().split(/[\s　]+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const items = [];
   state.questions.forEach(q => {
+    if (!q.year || String(q.year).startsWith('分野別')) return; // 年度別のみ
     if (isFillBlankQuestion(q) || isCalcQuestion(q)) return;
     (q.choices || []).forEach((c, i) => {
-      if ((c.text || '').toLowerCase().includes(lq)) {
-        queue.push({ question: q, choice: c, choiceIndex: i });
+      const t = (c.text || '').toLowerCase();
+      if (words.some(w => t.includes(w))) {                      // OR 検索
+        items.push({ question: q, choice: c, choiceIndex: i });
       }
     });
   });
-  if (queue.length === 0) {
-    alert(`「${kw}」を含む選択肢がありません`);
-    return;
-  }
-  for (let i = queue.length - 1; i > 0; i--) {
+  return items;
+}
+
+function _shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [queue[i], queue[j]] = [queue[j], queue[i]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  startDrillWithQueue(queue, 'keyword-search');
+  return arr;
+}
+
+// キーワード出題：壁打ち形式（従来どおり1選択肢ずつ即時判定）
+function startKeywordDrill(keyword) {
+  const items = keywordMatchedChoices(keyword);
+  if (items.length === 0) { alert(`「${(keyword||'').trim()}」を含む選択肢がありません（年度別のみ検索）`); return; }
+  startDrillWithQueue(_shuffleInPlace(items), 'keyword-search');
+}
+
+// キーワード出題：通常形式（ヒット選択肢を5つずつランダムに並べた合成問題で○×入力）
+// 大元の問題文は表示しない。最終セットは5未満ならそのまま（4なら4、3なら3…）。
+function startKeywordNormal(keyword) {
+  const items = keywordMatchedChoices(keyword);
+  if (items.length === 0) { alert(`「${(keyword||'').trim()}」を含む選択肢がありません（年度別のみ検索）`); return; }
+  const choices = _shuffleInPlace(items.map(it => it.choice));
+  const stamp = Date.now();
+  const synth = [];
+  for (let i = 0; i < choices.length; i += 5) {
+    synth.push({
+      id: `kwset-${stamp}-${synth.length}`,
+      category: '🔍 キーワード出題',
+      source: `セット${synth.length + 1}`,
+      questionText: '',
+      questionBlocks: [],
+      tags: [],
+      choices: choices.slice(i, i + 5),
+    });
+  }
+  _startSession('sequential', synth, { queue: synth });
+}
+
+// キーワード出題の方式（壁打ち／通常）を選ぶポップアップ
+function openKeywordModePopup(keyword) {
+  const kw = (keyword || '').trim();
+  if (!kw) { alert('キーワードを入力してください'); return; }
+  const items = keywordMatchedChoices(kw);
+  if (items.length === 0) { alert(`「${kw}」を含む選択肢がありません（年度別のみ検索）`); return; }
+  const popup = document.getElementById('keyword-mode-popup');
+  if (!popup) { startKeywordDrill(kw); return; }
+  popup.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bookmark-popup-label';
+  label.textContent = `🔍「${kw}」${items.length}選択肢`;
+  popup.appendChild(label);
+  const addBtn = (text, onClick) => {
+    const btn = document.createElement('button');
+    btn.className = 'top-filter-start-mode-btn';
+    btn.textContent = text;
+    btn.addEventListener('click', ev => { ev.stopPropagation(); popup.classList.add('hidden'); onClick(); });
+    popup.appendChild(btn);
+  };
+  addBtn('🥊 壁打ちで出題', () => startKeywordDrill(kw));
+  addBtn('📄 通常出題（5選択肢ずつ）', () => startKeywordNormal(kw));
+  popup.classList.remove('hidden');
+  setTimeout(() => {
+    document.addEventListener('click', function closeKw() {
+      popup.classList.add('hidden');
+      document.removeEventListener('click', closeKw);
+    }, { once: true });
+  }, 0);
 }
 
 function startDrillWithQueue(queue, mode) {
@@ -9527,7 +9591,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       alert('ブックマークした問題・選択肢がありません。\n出題画面の ☆ ボタンで登録できます。');
       return;
     }
-    // ポップアップを構築
+    // ポップアップを構築（☆問題／☆選択肢の2階層フィルター）
     bookmarkPopup.innerHTML = '';
     const addLabel = text => {
       const l = document.createElement('div');
@@ -9535,39 +9599,58 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       l.textContent = text;
       bookmarkPopup.appendChild(l);
     };
-    const addBtn = (label, onClick) => {
+    // keepOpen=true のボタンはポップアップを閉じず、次の階層を描画するナビ用
+    const addBtn = (label, onClick, keepOpen = false) => {
       const btn = document.createElement('button');
       btn.className = 'top-filter-start-mode-btn';
       btn.textContent = label;
-      btn.addEventListener('click', () => { bookmarkPopup.classList.add('hidden'); onClick(); });
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();                       // 外側クリック閉じ処理を発火させない
+        if (!keepOpen) bookmarkPopup.classList.add('hidden');
+        onClick();
+      });
       bookmarkPopup.appendChild(btn);
     };
+    const shuffleArr = arr => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
 
-    // 問題ブックマーク → 通常出題
-    if (bqs.length > 0) {
-      addLabel(`📑 ブックマークした問題（${bqs.length}問）`);
-      [['sequential','📋 出題順'], ['weak','⚡ 苦手優先'], ['random','🔀 ランダム']]
-        .forEach(([mode, label]) => addBtn(label, () => _startSession(mode, bqs)));
-    }
-    // 選択肢ブックマーク → 壁打ち形式 / 通常問題形式 を選べる
-    if (cItems.length > 0) {
-      addLabel(`🔖 ブックマークした選択肢（${cItems.length}個）`);
-      addBtn('🥊 壁打ち形式で出題', () => {
-        const queue = cItems.map(it => ({ ...it }));
-        for (let i = queue.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [queue[i], queue[j]] = [queue[j], queue[i]];
-        }
-        startDrillWithQueue(queue, 'bookmark');
-      });
-      addBtn('📄 通常問題形式で出題', () => {
-        const seen = new Set(); const qs = [];
-        cItems.forEach(it => { if (!seen.has(it.question.id)) { seen.add(it.question.id); qs.push(it.question); } });
-        _startSession('sequential', qs);
-      });
-    }
+    // 第1階層：☆問題／☆選択肢
+    const renderRoot = () => {
+      bookmarkPopup.innerHTML = '';
+      addLabel('ブックマーク出題');
+      if (bqs.length > 0)    addBtn(`⭐ ☆問題（${bqs.length}問）`,   renderProblemModes, true);
+      if (cItems.length > 0) addBtn(`🔖 ☆選択肢（${cItems.length}個）`, startChoiceDrill);
+    };
 
-    bookmarkPopup.classList.toggle('hidden');
+    // 第2階層（☆問題）：通常出題／壁打ち
+    const renderProblemModes = () => {
+      bookmarkPopup.innerHTML = '';
+      addLabel(`⭐ ☆問題（${bqs.length}問）`);
+      addBtn('📄 通常出題', () => _startSession('sequential', bqs));
+      addBtn('🥊 壁打ち', () => {
+        const queue = [];
+        bqs.forEach(q => {
+          if (isFillBlankQuestion(q) || isCalcQuestion(q) || isOnePickQuestion(q)) return;
+          (q.choices || []).forEach((c, i) => queue.push({ question: q, choice: c, choiceIndex: i }));
+        });
+        if (queue.length === 0) { alert('壁打ちできる選択肢がありません（計算・穴埋め・1択問題は除外）。'); return; }
+        startDrillWithQueue(shuffleArr(queue), 'bookmark');
+      });
+      addBtn('← 戻る', renderRoot, true);
+    };
+
+    // ☆選択肢：☆を付けた選択肢のみを壁打ち出題（同問題の他の選択肢は出さない）
+    const startChoiceDrill = () => {
+      startDrillWithQueue(shuffleArr(cItems.map(it => ({ ...it }))), 'bookmark');
+    };
+
+    renderRoot();
+    bookmarkPopup.classList.remove('hidden');
     // クリック外で閉じる
     setTimeout(() => {
       document.addEventListener('click', function closeBookmarkPopup() {
@@ -9884,11 +9967,12 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.getElementById('modal-exam-generator')?.addEventListener('click', e => {
     if (e.target.id === 'modal-exam-generator') closeExamGenerator();
   });
-  document.getElementById('btn-start-drill-search').addEventListener('click', () => {
-    startKeywordDrill(document.getElementById('drill-search-input').value);
+  document.getElementById('btn-start-drill-search').addEventListener('click', e => {
+    e.stopPropagation();
+    openKeywordModePopup(document.getElementById('drill-search-input').value);
   });
   document.getElementById('drill-search-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') startKeywordDrill(e.target.value);
+    if (e.key === 'Enter') openKeywordModePopup(e.target.value);
   });
   document.getElementById('btn-drill-maru').addEventListener('click',  () => answerDrill(true));
   document.getElementById('btn-drill-batsu').addEventListener('click', () => answerDrill(false));
