@@ -9619,37 +9619,18 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       return arr;
     };
 
-    // 第1階層：☆問題／☆選択肢
-    const renderRoot = () => {
-      bookmarkPopup.innerHTML = '';
-      addLabel('ブックマーク出題');
-      if (bqs.length > 0)    addBtn(`⭐ ☆問題（${bqs.length}問）`,   renderProblemModes, true);
-      if (cItems.length > 0) addBtn(`🔖 ☆選択肢（${cItems.length}個）`, startChoiceDrill);
-    };
-
-    // 第2階層（☆問題）：通常出題／壁打ち
-    const renderProblemModes = () => {
-      bookmarkPopup.innerHTML = '';
-      addLabel(`⭐ ☆問題（${bqs.length}問）`);
-      addBtn('📄 通常出題', () => _startSession('sequential', bqs));
-      addBtn('🥊 壁打ち', () => {
-        const queue = [];
-        bqs.forEach(q => {
-          if (isFillBlankQuestion(q) || isCalcQuestion(q) || isOnePickQuestion(q)) return;
-          (q.choices || []).forEach((c, i) => queue.push({ question: q, choice: c, choiceIndex: i }));
-        });
-        if (queue.length === 0) { alert('壁打ちできる選択肢がありません（計算・穴埋め・1択問題は除外）。'); return; }
-        startDrillWithQueue(shuffleArr(queue), 'bookmark');
+    // ①☆問題＝通常出題のみ／②☆選択肢＝壁打ちのみ。両者を明確に分離する。
+    //   - 「通常出題」は①☆を付けた問題のみ（全選択肢に○×）
+    //   - 「壁打ち」は②☆を付けた選択肢のみ（同問題の非ブクマ選択肢は出さない）
+    addLabel('ブックマーク出題');
+    if (bqs.length > 0) {
+      addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => _startSession('sequential', bqs));
+    }
+    if (cItems.length > 0) {
+      addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => {
+        startDrillWithQueue(shuffleArr(cItems.map(it => ({ ...it }))), 'bookmark');
       });
-      addBtn('← 戻る', renderRoot, true);
-    };
-
-    // ☆選択肢：☆を付けた選択肢のみを壁打ち出題（同問題の他の選択肢は出さない）
-    const startChoiceDrill = () => {
-      startDrillWithQueue(shuffleArr(cItems.map(it => ({ ...it }))), 'bookmark');
-    };
-
-    renderRoot();
+    }
     bookmarkPopup.classList.remove('hidden');
     // クリック外で閉じる
     setTimeout(() => {
