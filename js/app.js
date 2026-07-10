@@ -5209,10 +5209,10 @@ function renderDrillChoice() {
     drillExBtn.title = q.drillExcluded ? '壁打ちから除外中（クリックで解除）' : '壁打ちから除外';
   }
 
-  // ブックマークボタン
+  // ブックマークボタン（壁打ちは「選択肢単位」でブックマーク）
   const drillBmBtn = document.getElementById('btn-drill-bookmark');
   if (drillBmBtn) {
-    const isBm = state.bookmarks.has(q.id);
+    const isBm = !!(c.id && state.choiceBookmarks.has(c.id));
     drillBmBtn.textContent = isBm ? '★' : '☆';
     drillBmBtn.classList.toggle('bookmarked', isBm);
   }
@@ -6052,7 +6052,7 @@ function renderQuestionList(openState) {
   const allQs = state.questions.filter(q => {
     if (!matchesSearch(q, qlistSearchQuery)) return false;
     if (qlistFilterCats.size > 0 && !qlistFilterCats.has(q.category)) return false;
-    if (qlistFilterBookmark && !state.bookmarks.has(q.id)) return false;
+    if (qlistFilterBookmark && !questionHasAnyBookmark(q)) return false; // 問題☆または選択肢☆
     if (qlistFilterTags.size > 0 && !q.tags?.some(t => qlistFilterTags.has(t))) return false;
     return true;
   });
@@ -6214,14 +6214,8 @@ function renderQuestionList(openState) {
 
         const srcEl = document.createElement('div');
         srcEl.className = 'qlist-src';
-        // ★ ブックマーク表示
-        const isBookmarked = state.bookmarks.has(q.id);
-        if (isBookmarked) {
-          const bmStar = document.createElement('span');
-          bmStar.className = 'qlist-bm-star';
-          bmStar.textContent = '★';
-          srcEl.appendChild(bmStar);
-        }
+        // ★ ブックマーク表示（問題／選択肢を区別してラベル）
+        appendBookmarkBadges(srcEl, q);
         srcEl.appendChild(document.createTextNode(getQLabel(q)));
         // 計算問題バッジ
         if (isCalcQuestion(q)) {
@@ -6390,13 +6384,8 @@ function renderFilteredQuestionList(openState) {
 
       const srcEl = document.createElement('div');
       srcEl.className = 'qlist-src';
-      // ★ ブックマーク表示
-      if (state.bookmarks.has(q.id)) {
-        const bmStar = document.createElement('span');
-        bmStar.className = 'qlist-bm-star';
-        bmStar.textContent = '★';
-        srcEl.appendChild(bmStar);
-      }
+      // ★ ブックマーク表示（問題／選択肢を区別してラベル）
+      appendBookmarkBadges(srcEl, q);
       srcEl.appendChild(document.createTextNode(getQLabel(q) + (q.year ? ` (${q.year})` : '')));
       // 計算問題バッジ
       if (isCalcQuestion(q)) {
@@ -7261,6 +7250,35 @@ function bookmarkedChoiceItems() {
     });
   });
   return items;
+}
+
+// 問題が「問題ブックマーク（①☆）」「選択肢ブックマーク（②☆）」どちらで登録されているか
+function questionBookmarkKinds(q) {
+  const isQ = state.bookmarks.has(q.id);
+  const choiceCount = (q.choices || []).filter(c => c.id && state.choiceBookmarks.has(c.id)).length;
+  return { isQ, choiceCount };
+}
+function questionHasAnyBookmark(q) {
+  const { isQ, choiceCount } = questionBookmarkKinds(q);
+  return isQ || choiceCount > 0;
+}
+// 一覧の src 行に「問題／選択肢」ブックマークのラベルを付与
+function appendBookmarkBadges(srcEl, q) {
+  const { isQ, choiceCount } = questionBookmarkKinds(q);
+  if (isQ) {
+    const b = document.createElement('span');
+    b.className = 'qlist-bm-badge qlist-bm-badge-q';
+    b.textContent = '★問題';
+    b.title = '問題としてブックマーク（ブックマーク出題「通常出題」で対象）';
+    srcEl.appendChild(b);
+  }
+  if (choiceCount > 0) {
+    const b = document.createElement('span');
+    b.className = 'qlist-bm-badge qlist-bm-badge-c';
+    b.textContent = `☆選択肢${choiceCount}`;
+    b.title = '選択肢としてブックマーク（ブックマーク出題「壁打ち」で対象）';
+    srcEl.appendChild(b);
+  }
 }
 
 function retryWrongQuestions() {
@@ -10023,9 +10041,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // 壁打ち：ブックマーク
   document.getElementById('btn-drill-bookmark').addEventListener('click', () => {
     const di = state.drillQueue?.[state.drillIndex];
-    if (!di) return;
-    toggleBookmark(di.question.id);
-    const isBm = state.bookmarks.has(di.question.id);
+    if (!di || !di.choice?.id) return;
+    toggleChoiceBookmark(di.choice.id);   // 壁打ちは「選択肢単位」でブックマーク
+    const isBm = state.choiceBookmarks.has(di.choice.id);
     const btn = document.getElementById('btn-drill-bookmark');
     btn.textContent = isBm ? '★' : '☆';
     btn.classList.toggle('bookmarked', isBm);
@@ -10092,9 +10110,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       case '=': {
         e.preventDefault();
         const item = state.drillQueue[state.drillIndex];
-        if (item?.question) {
-          toggleBookmark(item.question.id);
-          const isBm = state.bookmarks.has(item.question.id);
+        if (item?.choice?.id) {
+          toggleChoiceBookmark(item.choice.id);   // 壁打ちは「選択肢単位」でブックマーク
+          const isBm = state.choiceBookmarks.has(item.choice.id);
           const bmBtn = document.getElementById('btn-drill-bookmark');
           if (bmBtn) { bmBtn.textContent = isBm ? '★' : '☆'; bmBtn.classList.toggle('bookmarked', isBm); }
         }
