@@ -3050,6 +3050,9 @@ body.tier-border-diamond .card {
   gap: 2px;
   z-index: 200;
   min-width: 150px;
+  max-width: min(88vw, 340px);
+  max-height: 60vh;          /* 画面外へはみ出さないよう内部スクロール */
+  overflow-y: auto;
   box-shadow: 0 6px 24px rgba(0,0,0,.5);
 }
 .top-filter-start-mode-btn {

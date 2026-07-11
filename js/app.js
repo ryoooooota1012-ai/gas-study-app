@@ -9644,15 +9644,24 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const startNormal = questions => _startSession('sequential', questions);
     const startDrill  = items => startDrillWithQueue(shuffleArr(items.map(it => ({ ...it }))), 'bookmark');
 
-    // 分野(section)ごとにブックマークを集計。メインの「📂 分野で絞り込む」と同じく q.section で分類。
-    // 分野が未設定の問題は「（分野なし）」バケットへ集約する。
+    // 分野ごとにブックマークを集計。q.category を5分野
+    //（法令／ガス技術：製造／ガス技術：供給／ガス技術：消費機器／基礎）に正規化して分類する。
     const NO_SEC = '（分野なし）';
-    const secMap = new Map(); // section名 -> { qs:[☆問題], items:[☆選択肢] }
+    const catOf = q => {
+      const c = displayCategoryName(q.category || '');   // 「ガス技術：消費」→「消費機器」に寄せる
+      if (!c) return NO_SEC;
+      if (c === '法令' || c === '基礎') return c;
+      if (c.includes('製造')) return 'ガス技術：製造';
+      if (c.includes('供給')) return 'ガス技術：供給';
+      if (c.includes('消費')) return 'ガス技術：消費機器';
+      return c;
+    };
+    const secMap = new Map(); // 分野名 -> { qs:[☆問題], items:[☆選択肢] }
     const ensureSec = sec => { if (!secMap.has(sec)) secMap.set(sec, { qs: [], items: [] }); return secMap.get(sec); };
-    bqs.forEach(q => ensureSec(q.section || NO_SEC).qs.push(q));
-    cItems.forEach(it => ensureSec(it.question.section || NO_SEC).items.push(it));
-    // 分野名は節番号順（sortSections）。未設定は末尾。
-    const secNames = sortSections([...secMap.keys()].filter(s => s !== NO_SEC));
+    bqs.forEach(q => ensureSec(catOf(q)).qs.push(q));
+    cItems.forEach(it => ensureSec(catOf(it.question)).items.push(it));
+    // 分野の並びは CATEGORY_ORDER（sortCategories）。未設定は末尾。
+    const secNames = sortCategories([...secMap.keys()].filter(s => s !== NO_SEC));
     if (secMap.has(NO_SEC)) secNames.push(NO_SEC);
 
     // メイン画面：全分野まとめての出題ボタン＋（分野が複数あれば）分野別の絞り込み
