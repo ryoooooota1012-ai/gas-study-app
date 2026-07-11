@@ -9609,7 +9609,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       alert('ブックマークした問題・選択肢がありません。\n出題画面の ☆ ボタンで登録できます。');
       return;
     }
-    // ポップアップを構築（☆問題／☆選択肢の2階層フィルター）
+    // ポップアップを構築（☆問題／☆選択肢＋分野で絞り込む多階層ナビ）
     bookmarkPopup.innerHTML = '';
     const addLabel = text => {
       const l = document.createElement('div');
@@ -9640,15 +9640,57 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     // ①☆問題＝通常出題のみ／②☆選択肢＝壁打ちのみ。両者を明確に分離する。
     //   - 「通常出題」は①☆を付けた問題のみ（全選択肢に○×）
     //   - 「壁打ち」は②☆を付けた選択肢のみ（同問題の非ブクマ選択肢は出さない）
-    addLabel('ブックマーク出題');
-    if (bqs.length > 0) {
-      addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => _startSession('sequential', bqs));
-    }
-    if (cItems.length > 0) {
-      addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => {
-        startDrillWithQueue(shuffleArr(cItems.map(it => ({ ...it }))), 'bookmark');
-      });
-    }
+    // 出題開始ヘルパ（分野で絞り込んだ集合をそのまま渡せる）
+    const startNormal = questions => _startSession('sequential', questions);
+    const startDrill  = items => startDrillWithQueue(shuffleArr(items.map(it => ({ ...it }))), 'bookmark');
+
+    // 分野(section)ごとにブックマークを集計。メインの「📂 分野で絞り込む」と同じく q.section で分類。
+    // 分野が未設定の問題は「（分野なし）」バケットへ集約する。
+    const NO_SEC = '（分野なし）';
+    const secMap = new Map(); // section名 -> { qs:[☆問題], items:[☆選択肢] }
+    const ensureSec = sec => { if (!secMap.has(sec)) secMap.set(sec, { qs: [], items: [] }); return secMap.get(sec); };
+    bqs.forEach(q => ensureSec(q.section || NO_SEC).qs.push(q));
+    cItems.forEach(it => ensureSec(it.question.section || NO_SEC).items.push(it));
+    // 分野名は節番号順（sortSections）。未設定は末尾。
+    const secNames = sortSections([...secMap.keys()].filter(s => s !== NO_SEC));
+    if (secMap.has(NO_SEC)) secNames.push(NO_SEC);
+
+    // メイン画面：全分野まとめての出題ボタン＋（分野が複数あれば）分野別の絞り込み
+    const renderMain = () => {
+      bookmarkPopup.innerHTML = '';
+      addLabel('ブックマーク出題');
+      if (bqs.length > 0) {
+        addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => startNormal(bqs));
+      }
+      if (cItems.length > 0) {
+        addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => startDrill(cItems));
+      }
+      if (secNames.length >= 2) {
+        addLabel('📂 分野で絞り込む');
+        secNames.forEach(sec => {
+          const { qs, items } = secMap.get(sec);
+          const parts = [];
+          if (qs.length)    parts.push(`☆問題${qs.length}`);
+          if (items.length) parts.push(`☆選択肢${items.length}`);
+          addBtn(`${sec}（${parts.join(' / ')}）`, () => renderSection(sec), true);
+        });
+      }
+    };
+    // 分野サブ画面：戻る＋その分野に絞った通常出題／壁打ち
+    const renderSection = sec => {
+      const { qs, items } = secMap.get(sec);
+      bookmarkPopup.innerHTML = '';
+      addBtn('◀ 分野一覧に戻る', () => renderMain(), true);
+      addLabel(`📂 ${sec}`);
+      if (qs.length > 0) {
+        addBtn(`📄 通常出題（☆問題 ${qs.length}問）`, () => startNormal(qs));
+      }
+      if (items.length > 0) {
+        addBtn(`🥊 壁打ち（☆選択肢 ${items.length}個）`, () => startDrill(items));
+      }
+    };
+
+    renderMain();
     bookmarkPopup.classList.remove('hidden');
     // クリック外で閉じる
     setTimeout(() => {
