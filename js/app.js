@@ -1276,15 +1276,21 @@ function _loadScriptOnce(src) {
     document.head.appendChild(s);
   });
 }
+// Promiseにタイムアウトを付ける（ハングでアプリが操作不能にならないように）
+function _withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout: ' + label)), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 async function _getKuromojiTokenizer() {
   if (_kuromojiTokenizer) return _kuromojiTokenizer;
   if (typeof kuromoji === 'undefined') {
-    await _loadScriptOnce('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
+    await _withTimeout(_loadScriptOnce('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js'), 20000, 'kuromoji.js');
   }
-  _kuromojiTokenizer = await new Promise((res, rej) => {
+  _kuromojiTokenizer = await _withTimeout(new Promise((res, rej) => {
     kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
       .build((err, tok) => err ? rej(err) : res(tok));
-  });
+  }), 30000, 'kuromoji dict');
   return _kuromojiTokenizer;
 }
 // 漢字始まり等で読み未取得のタグがあれば kuromoji で解析→キャッシュ→onDoneで再描画。
@@ -3204,7 +3210,8 @@ function renderTagStudyArea() {
   });
   area.appendChild(chipsRow);
 
-  // 漢字始まりタグの読みが未取得なら kuromoji で解析（初回のみ辞書DL）→完了後に再描画して正しい行へ。
+  // 漢字始まりタグの読み。※自動ロードはしない（起動を重くしない・固まらせない）。
+  //   ユーザーがボタンを押したときだけ kuromoji を読み込んで解析する（オプトイン）。
   const pendingReading = allTags.some(t => {
     const s = tagKey(t); const ch = s[0] || '';
     return !(/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch)) && !(s in tagReadings);
@@ -3212,9 +3219,22 @@ function renderTagStudyArea() {
   if (pendingReading) {
     const hint = document.createElement('div');
     hint.className = 'tag-study-reading-hint';
-    hint.textContent = '漢字タグの読みを解析中…（初回のみ辞書を読み込みます）';
+    if (_tagReadingLoading) {
+      hint.textContent = '漢字タグの読みを解析中…（辞書を読み込んでいます）';
+    } else {
+      hint.textContent = '漢字始まりのタグは「その他」にまとめています。';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tag-study-clear';
+      btn.style.marginLeft = '6px';
+      btn.textContent = '🈶 漢字も五十音順に並べる';
+      btn.addEventListener('click', () => {
+        ensureTagReadings(allTags, () => renderTagStudyArea()); // 先に呼ぶと同期的に読み込み中フラグが立つ
+        renderTagStudyArea();                                    // 「解析中…」表示へ切替
+      });
+      hint.appendChild(btn);
+    }
     area.appendChild(hint);
-    ensureTagReadings(allTags, () => renderTagStudyArea());
   }
 
   // 該当なしメッセージ用
