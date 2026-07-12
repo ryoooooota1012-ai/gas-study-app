@@ -1192,18 +1192,33 @@ function updateSubPanelVisibility() {
 }
 
 
+// タグを 数字 → 英字 → 50音 の順にソート（先頭の # は無視してタグ本体で比較）
 function sortTagsJa(tags) {
+  const key = t => String(t).replace(/^#+/, '');
+  const bucket = s => /^[0-9]/.test(s) ? 0 : /^[A-Za-z]/.test(s) ? 1 : 2; // 数字/英字/かな・漢字
   return [...tags].sort((a, b) => {
-    const aNum = /^\d/.test(a);
-    const bNum = /^\d/.test(b);
-    if (aNum && bNum) {
-      const diff = parseFloat(a) - parseFloat(b);
-      return diff !== 0 ? diff : a.localeCompare(b, 'ja');
-    }
-    if (aNum) return -1;
-    if (bNum) return  1;
-    return a.localeCompare(b, 'ja');
+    const sa = key(a), sb = key(b);
+    const ba = bucket(sa), bb = bucket(sb);
+    if (ba !== bb) return ba - bb;
+    if (ba === 0) { const d = parseFloat(sa) - parseFloat(sb); if (d) return d; }
+    return sa.localeCompare(sb, 'ja');
   });
+}
+
+// タグの「頭文字グループ」キー（区切り線の境目判定に使用）。
+//  数字→'0-9' / 英字→'A-Z' / かな→清音・ひらがなに畳んだ頭文字（ガ→か 等）/ 漢字等→その文字。
+function tagGroupKey(tag) {
+  const s = String(tag).replace(/^#+/, '');
+  if (!s) return '';
+  const ch = s[0];
+  if (/[0-9]/.test(ch)) return '0-9';
+  if (/[A-Za-z]/.test(ch)) return 'A-Z';
+  let h = ch;
+  const code = ch.charCodeAt(0);
+  if (code >= 0x30A1 && code <= 0x30F6) h = String.fromCharCode(code - 0x60); // カタカナ→ひらがな
+  h = h.normalize('NFD').replace(/[゙゚]/g, '').normalize('NFC');      // 濁点・半濁点を除去
+  const small = { 'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ','ゕ':'か','ゖ':'け' };
+  return small[h] || h;
 }
 
 function getAllTags() {
@@ -3049,10 +3064,19 @@ function renderTagStudyArea() {
   }
   area.appendChild(searchWrap);
 
-  // タグチップ行（スクロール可）
+  // タグチップ行（スクロール可）。50音順（sortTagsJa）で並べ、頭文字グループの境目に区切り線を挿入。
   const chipsRow = document.createElement('div');
   chipsRow.className = 'tag-study-chips';
+  let prevKey = null;
   allTags.forEach(tag => {
+    const gk = tagGroupKey(tag);
+    if (prevKey !== null && gk !== prevKey) {
+      const div = document.createElement('span');
+      div.className = 'tag-study-divider';
+      div.setAttribute('aria-hidden', 'true');
+      chipsRow.appendChild(div);
+    }
+    prevKey = gk;
     const chip = document.createElement('button');
     chip.className = 'chip tag-study-chip' + (tagStudySelectedTags.has(tag) ? ' active' : '');
     chip.textContent = '#' + tag;
@@ -3082,6 +3106,8 @@ function renderTagStudyArea() {
       c.classList.toggle('hidden', !match);
       if (match) visible++;
     });
+    // 頭文字の区切り線は絞り込み中は非表示（部分集合では境目が意味をなさないため）
+    chipsRow.querySelectorAll('.tag-study-divider').forEach(d => d.classList.toggle('hidden', !!q));
     emptyMsg.classList.toggle('hidden', visible > 0);
   };
   applyTagFilter();

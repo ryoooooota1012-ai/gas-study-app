@@ -2216,6 +2216,16 @@ body.tier-border-diamond .card {
   color: var(--text-3);
   padding: 8px 2px;
 }
+/* 頭文字グループの境目を示す薄い縦の区切り線 */
+.tag-study-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  min-height: 20px;
+  background: var(--border);
+  opacity: .7;
+  margin: 2px 4px;
+  border-radius: 1px;
+}
 .tag-study-chip {
   font-size: .8rem;
   padding: 4px 12px;

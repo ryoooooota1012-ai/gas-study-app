@@ -144,7 +144,7 @@ window.DEFAULT_QUESTIONS = {
 | フィルター進捗バー | `computeFilterProgress`（**問題単位**で集計。問題の連続正解数=全採点単位の最小値。5択問題なら全5選択肢がN連続して初めてその問題がN連続とみなす）/ `filterProgressHTML` |
 | 直前フィルター目印 | `lastUsedFilterYears` / `lastUsedFilterSections` / `lastUsedFilterCat`（グローバルSet）。`startSession()` 開始時にスナップショット保存。ホーム帰還時に `activeYears/Sections` をクリア。`renderTopFilterCard()` で `.last-used` クラスを付与し右上のオレンジドット（`::after`）で表示 |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
-| タグ並び替え | `sortTagsJa`（数字→50音順） |
+| タグ並び替え | `sortTagsJa`（**数字→英字→50音**の順・先頭#無視）。`tagGroupKey(tag)`＝頭文字グループ（数字→'0-9'／英字→'A-Z'／かなは清音ひらがなに畳む例:ガ→か・ぱ→は／漢字はその文字）。`renderTagStudyArea`（タグから出題のタグクラウド）は`sortTagsJa`順で並べ、`tagGroupKey`が変わる境目に薄い縦区切り線`.tag-study-divider`を挿入。検索絞り込み中は区切り線を非表示（部分集合では境目が無意味なため） |
 | 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |
 | 直近の間違い復習 | `saveRecentWrong(meta)`（結果画面で最大5セット保存）/ `loadRecentWrong`（旧フラット配列形式も自動移行）/ `openRecentWrongModal`（`#modal-recent-wrong` でセット一覧表示）/ `startRecentWrongSet(ts)`（選択セットを削除して復習開始）/ `deleteRecentWrongSet` |
 | 直近間違い出題形式 | `recentWrongFormat`（グローバル変数 `'normal'\|'drill'`）/ `_startRecentWrongQuestions(qs)`（形式に応じて通常 or 壁打ちで開始） |
