@@ -50,6 +50,7 @@ let _checkNoRecord          = false;  // true のとき checkAnswers() が記録
 let _checkNoProgressRecord  = false;  // true のとき recordAnswer() のみスキップ（編集後の再チェック用）
 let tagStudySelectedTags    = new Set(); // タグ出題エリアで選択中のタグ
 let tagStudyFilter          = '';        // タグ出題エリアの検索キーワード
+let tagReadingPanelOpen     = false;     // タグ出題エリアの「読みを編集」パネル開閉
 let statsTabMode            = 'progress'; // 'progress' | 'history'
 let histFilterCats          = new Set();  // 成績履歴フィルター（カテゴリ）
 let qlistNavQueue        = []; // 問題リストの現在の表示順（問題ID配列）
@@ -1232,8 +1233,9 @@ function tagGroupKey(tag) {
   if (/[A-Za-z]/.test(ch)) return 'A-Z';
   const folded = foldKanaChar(ch);
   if (folded) return folded;
-  const r = tagReadings[s];           // 漢字等：読みキャッシュ（畳んだ頭文字 or 未解決なら元の文字）
-  return r || ch;
+  const r = tagReadings[s];           // 漢字等：登録された読み（ふりがな）の頭文字で分類
+  if (r) { const rf = foldKanaChar(r[0]); if (rf) return rf; }
+  return ch;                          // 読み未登録 → その文字（＝「その他」）
 }
 
 // タグを行（ぎょう）グループへ分類。数字/英字/あ〜わ行/その他(漢字等)。
@@ -1256,11 +1258,10 @@ function tagGyo(tag) {
   return _GYO_MAP[k] || 'その他';
 }
 
-// ===== 漢字タグの読み（ふりがな）による行分類：kuromoji で自動取得しキャッシュ =====
+// ===== 漢字タグの読み（ふりがな）：ユーザーが手動登録し、五十音の行分類に使う =====
+// （kuromojiでの自動解析は実機で不安定だったため廃止。読みは手入力で登録する）
 const TAG_READINGS_KEY = 'gas_tag_readings_v1';
-let tagReadings = {};            // { タグ本体: 畳んだ頭文字ひらがな or 元の文字 }
-let _kuromojiTokenizer = null;
-let _tagReadingLoading = false;
+let tagReadings = {};            // { タグ本体: 読み（ふりがな。ひらがな/カタカナ） }
 function loadTagReadings() {
   try { tagReadings = JSON.parse(localStorage.getItem(TAG_READINGS_KEY) || '{}') || {}; }
   catch { tagReadings = {}; }
@@ -1268,64 +1269,18 @@ function loadTagReadings() {
 function saveTagReadings() {
   try { localStorage.setItem(TAG_READINGS_KEY, JSON.stringify(tagReadings)); } catch {}
 }
-function _loadScriptOnce(src) {
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = src; s.async = true;
-    s.onload = res; s.onerror = () => rej(new Error('script load failed: ' + src));
-    document.head.appendChild(s);
-  });
+// タグの読みを登録/更新（空なら削除）。並び順に反映されるので保存後は再描画側で更新。
+function setTagReading(tag, reading) {
+  const s = tagKey(tag);
+  const r = (reading || '').trim();
+  if (r) tagReadings[s] = r;
+  else delete tagReadings[s];
+  saveTagReadings();
 }
-// Promiseにタイムアウトを付ける（ハングでアプリが操作不能にならないように）
-function _withTimeout(promise, ms, label) {
-  let timer;
-  const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout: ' + label)), ms); });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-async function _getKuromojiTokenizer() {
-  if (_kuromojiTokenizer) return _kuromojiTokenizer;
-  if (typeof kuromoji === 'undefined') {
-    await _withTimeout(_loadScriptOnce('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js'), 20000, 'kuromoji.js');
-  }
-  _kuromojiTokenizer = await _withTimeout(new Promise((res, rej) => {
-    kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
-      .build((err, tok) => err ? rej(err) : res(tok));
-  }), 30000, 'kuromoji dict');
-  return _kuromojiTokenizer;
-}
-// 漢字始まり等で読み未取得のタグがあれば kuromoji で解析→キャッシュ→onDoneで再描画。
-// 追加DL/解析が不要なら即return（無限再描画にならない）。
-async function ensureTagReadings(tags, onDone) {
-  if (_tagReadingLoading) return;
-  const needsReading = t => {
-    const s = tagKey(t);
-    const ch = s[0] || '';
-    if (/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch)) return false; // 数字/英字/かなは不要
-    return !(s in tagReadings);                                    // 漢字等でキャッシュ未取得
-  };
-  const need = [...new Set(tags.filter(needsReading))];
-  if (need.length === 0) return;
-  _tagReadingLoading = true;
-  try {
-    const tok = await _getKuromojiTokenizer();
-    need.forEach(t => {
-      const s = tagKey(t);
-      let key = s[0]; // 取得失敗時は元の文字（＝その他）
-      try {
-        const toks = tok.tokenize(s);
-        const reading = toks && toks[0] && (toks[0].reading || toks[0].pronunciation);
-        const folded = reading ? foldKanaChar(reading[0]) : null;
-        if (folded) key = folded;
-      } catch {}
-      tagReadings[s] = key;
-    });
-    saveTagReadings();
-  } catch (e) {
-    console.warn('[kuromoji] 読み取得に失敗（漢字タグは「その他」に分類）', e);
-  } finally {
-    _tagReadingLoading = false;
-    if (typeof onDone === 'function') onDone();
-  }
+// タグが「読み登録が有効なもの（漢字始まり等）」か。数字/英字/かな始まりは読み不要。
+function tagNeedsReading(tag) {
+  const ch = tagKey(tag)[0] || '';
+  return !(/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch));
 }
 
 function getAllTags() {
@@ -3210,30 +3165,12 @@ function renderTagStudyArea() {
   });
   area.appendChild(chipsRow);
 
-  // 漢字始まりタグの読み。※自動ロードはしない（起動を重くしない・固まらせない）。
-  //   ユーザーがボタンを押したときだけ kuromoji を読み込んで解析する（オプトイン）。
-  const pendingReading = allTags.some(t => {
-    const s = tagKey(t); const ch = s[0] || '';
-    return !(/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch)) && !(s in tagReadings);
-  });
+  // 漢字始まりで読み未登録のタグは「その他」に入る。読みはタグを選んで「読みを編集」から登録できる。
+  const pendingReading = allTags.some(t => tagNeedsReading(t) && !(tagKey(t) in tagReadings));
   if (pendingReading) {
     const hint = document.createElement('div');
     hint.className = 'tag-study-reading-hint';
-    if (_tagReadingLoading) {
-      hint.textContent = '漢字タグの読みを解析中…（辞書を読み込んでいます）';
-    } else {
-      hint.textContent = '漢字始まりのタグは「その他」にまとめています。';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'tag-study-clear';
-      btn.style.marginLeft = '6px';
-      btn.textContent = '🈶 漢字も五十音順に並べる';
-      btn.addEventListener('click', () => {
-        ensureTagReadings(allTags, () => renderTagStudyArea()); // 先に呼ぶと同期的に読み込み中フラグが立つ
-        renderTagStudyArea();                                    // 「解析中…」表示へ切替
-      });
-      hint.appendChild(btn);
-    }
+    hint.textContent = '漢字始まりで読み未登録のタグは「その他」に入ります。タグを選んで「🖊 読みを編集」で読みを登録すると五十音順に並びます。';
     area.appendChild(hint);
   }
 
@@ -3284,6 +3221,47 @@ function renderTagStudyArea() {
       drillBtn.innerHTML = '<div class="btn-label">🥊 壁打ち</div><div class="btn-desc">選択タグの選択肢を1つずつ判定</div>';
       drillBtn.addEventListener('click', () => startTagDrill(tagStudySelectedTags));
       area.appendChild(drillBtn);
+    }
+
+    // 読みを編集（選択タグのうち、漢字始まり等で読みが並び順に必要なもの）
+    const selectedNeedReading = [...tagStudySelectedTags].filter(tagNeedsReading);
+    if (selectedNeedReading.length > 0) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'tag-study-clear';
+      editBtn.style.marginTop = '8px';
+      editBtn.textContent = tagReadingPanelOpen ? '🖊 読みを編集（閉じる）' : '🖊 読みを編集';
+      editBtn.addEventListener('click', () => { tagReadingPanelOpen = !tagReadingPanelOpen; renderTagStudyArea(); });
+      area.appendChild(editBtn);
+
+      if (tagReadingPanelOpen) {
+        const panel = document.createElement('div');
+        panel.className = 'tag-reading-panel';
+        selectedNeedReading.forEach(tag => {
+          const s = tagKey(tag);
+          const row = document.createElement('div');
+          row.className = 'tag-reading-row';
+          const name = document.createElement('span');
+          name.className = 'tag-reading-name';
+          name.textContent = '#' + s;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'tag-reading-input';
+          input.placeholder = 'よみ（ひらがな）例: あつりょく';
+          input.value = tagReadings[s] || '';
+          input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); setTagReading(s, input.value); renderTagStudyArea(); }
+          });
+          input.addEventListener('blur', () => setTagReading(s, input.value)); // タブ移動時は保存のみ（再描画しない）
+          row.append(name, input);
+          panel.appendChild(row);
+        });
+        const note = document.createElement('div');
+        note.className = 'tag-reading-note';
+        note.textContent = '読みを入力して Enter で五十音順に反映されます。';
+        panel.appendChild(note);
+        area.appendChild(panel);
+      }
     }
   }
 }
@@ -5682,12 +5660,27 @@ function renderDrillTagSection(q, c) {
     renderDrillTagSection(updatedQ, di.choice);
   };
 
-  // 現在のタグをチップで表示（×ボタン付き）
+  // 現在のタグをチップで表示（×ボタン付き）。漢字始まりタグは読み(よみ)状態も表示し、
+  // チップ本文タップで タグ名＋読み を入力欄へ読み込んで編集できる。
   chipsEl.innerHTML = '';
   tags.forEach((tag, i) => {
     const chip = document.createElement('span');
     chip.className = 'edit-tag-chip';
-    chip.appendChild(document.createTextNode('#' + tag + ' '));
+    const label = document.createElement('span');
+    label.className = 'edit-tag-label';
+    const rd = tagReadings[tagKey(tag)];
+    label.textContent = '#' + tag + (tagNeedsReading(tag) ? (rd ? `（${rd}）` : '（よみ未登録）') : '') + ' ';
+    if (tagNeedsReading(tag)) {
+      label.style.cursor = 'pointer';
+      label.title = 'タップして よみ を編集';
+      label.addEventListener('click', () => {
+        const ti = document.getElementById('drill-tag-input');
+        const ri = document.getElementById('drill-tag-reading-input');
+        if (ti) ti.value = tag;
+        if (ri) { ri.value = rd || ''; ri.focus(); }
+      });
+    }
+    chip.appendChild(label);
     const rm = document.createElement('button');
     rm.type = 'button';
     rm.className = 'edit-tag-remove';
@@ -10354,16 +10347,20 @@ document.addEventListener('DOMContentLoaded', async () => { try {
 
   // 壁打ち：タグ追加
   const _drillAddTag = () => {
-    const input = document.getElementById('drill-tag-input');
-    const val   = (input?.value || '').trim().replace(/^#+/, '');
+    const input   = document.getElementById('drill-tag-input');
+    const readEl  = document.getElementById('drill-tag-reading-input');
+    const val     = (input?.value || '').trim().replace(/^#+/, '');
+    const reading = (readEl?.value || '').trim();
     if (!val) return;
+    // よみが入力されていれば、タグの読みを登録（既存タグへの読み追記もできる）
+    if (reading) setTagReading(val, reading);
     const di = state.drillQueue?.[state.drillIndex];
     if (!di) return;
     const qIdx = state.questions.findIndex(x => x.id === di.question.id);
     if (qIdx === -1) return;
     const c   = di.choice;
     const cur = c.tags || [];
-    if (cur.includes(val)) { input.value = ''; return; }
+    if (cur.includes(val)) { input.value = ''; if (readEl) readEl.value = ''; renderDrillTagSection(di.question, c); return; }
     const updatedQ = { ...state.questions[qIdx] };
     updatedQ.choices = updatedQ.choices.map(ch =>
       ch.id === c.id ? { ...ch, tags: [...cur, val] } : ch
@@ -10374,6 +10371,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     saveQuestions();
     renderDrillTagSection(updatedQ, di.choice);
     input.value = '';
+    if (readEl) readEl.value = '';
     input.focus();
   };
   document.getElementById('btn-drill-add-tag').addEventListener('click', _drillAddTag);

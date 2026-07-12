@@ -2239,7 +2239,23 @@ body.tier-border-diamond .card {
   font-size: .74rem;
   color: var(--text-3);
   padding: 4px 2px 0;
+  line-height: 1.5;
 }
+/* タグの読み編集パネル */
+.tag-reading-panel {
+  margin-top: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tag-reading-row { display: flex; align-items: center; gap: 8px; }
+.tag-reading-name { flex: 0 0 auto; font-size: .82rem; font-weight: 700; color: var(--text-2); white-space: nowrap; }
+.tag-reading-input { flex: 1; min-width: 0; font-size: .82rem; padding: 5px 8px; }
+.tag-reading-note { font-size: .72rem; color: var(--text-3); }
 .tag-study-empty {
   width: 100%;
   font-size: .78rem;
