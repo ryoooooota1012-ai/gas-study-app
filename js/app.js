@@ -1205,20 +1205,121 @@ function sortTagsJa(tags) {
   });
 }
 
-// タグの「頭文字グループ」キー（区切り線の境目判定に使用）。
-//  数字→'0-9' / 英字→'A-Z' / かな→清音・ひらがなに畳んだ頭文字（ガ→か 等）/ 漢字等→その文字。
+// かな1文字を清音ひらがなに畳む（カタカナ→ひらがな・濁点/半濁点除去・小書き→大書き）。
+// かなでなければ null を返す。
+function foldKanaChar(ch) {
+  if (!ch) return null;
+  let code = ch.charCodeAt(0);
+  let h = ch;
+  if (code >= 0x30A1 && code <= 0x30F6) { h = String.fromCharCode(code - 0x60); code = h.charCodeAt(0); } // カタカナ→ひらがな
+  if (!(code >= 0x3041 && code <= 0x3096)) return null; // ひらがな範囲外＝かなでない
+  h = h.normalize('NFD').replace(/[゙゚]/g, '').normalize('NFC'); // 濁点・半濁点除去
+  const small = { 'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ','ゕ':'か','ゖ':'け' };
+  return small[h] || h;
+}
+
+// タグ本体（先頭#除去）を得る
+function tagKey(tag) { return String(tag).replace(/^#+/, ''); }
+
+// タグの「頭文字グループ」キー。
+//  数字→'0-9' / 英字→'A-Z' / かな→清音ひらがな頭文字（ガ→か 等）
+//  漢字等→読みキャッシュ(tagReadings)があればその頭文字、無ければその文字（＝暫定「その他」）。
 function tagGroupKey(tag) {
-  const s = String(tag).replace(/^#+/, '');
+  const s = tagKey(tag);
   if (!s) return '';
   const ch = s[0];
   if (/[0-9]/.test(ch)) return '0-9';
   if (/[A-Za-z]/.test(ch)) return 'A-Z';
-  let h = ch;
-  const code = ch.charCodeAt(0);
-  if (code >= 0x30A1 && code <= 0x30F6) h = String.fromCharCode(code - 0x60); // カタカナ→ひらがな
-  h = h.normalize('NFD').replace(/[゙゚]/g, '').normalize('NFC');      // 濁点・半濁点を除去
-  const small = { 'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ','ゕ':'か','ゖ':'け' };
-  return small[h] || h;
+  const folded = foldKanaChar(ch);
+  if (folded) return folded;
+  const r = tagReadings[s];           // 漢字等：読みキャッシュ（畳んだ頭文字 or 未解決なら元の文字）
+  return r || ch;
+}
+
+// タグを行（ぎょう）グループへ分類。数字/英字/あ〜わ行/その他(漢字等)。
+const TAG_GYO_ORDER = ['0-9','A-Z','あ行','か行','さ行','た行','な行','は行','ま行','や行','ら行','わ行','その他'];
+const _GYO_MAP = {
+  'あ':'あ行','い':'あ行','う':'あ行','え':'あ行','お':'あ行',
+  'か':'か行','き':'か行','く':'か行','け':'か行','こ':'か行',
+  'さ':'さ行','し':'さ行','す':'さ行','せ':'さ行','そ':'さ行',
+  'た':'た行','ち':'た行','つ':'た行','て':'た行','と':'た行',
+  'な':'な行','に':'な行','ぬ':'な行','ね':'な行','の':'な行',
+  'は':'は行','ひ':'は行','ふ':'は行','へ':'は行','ほ':'は行',
+  'ま':'ま行','み':'ま行','む':'ま行','め':'ま行','も':'ま行',
+  'や':'や行','ゆ':'や行','よ':'や行',
+  'ら':'ら行','り':'ら行','る':'ら行','れ':'ら行','ろ':'ら行',
+  'わ':'わ行','を':'わ行','ん':'わ行',
+};
+function tagGyo(tag) {
+  const k = tagGroupKey(tag);
+  if (k === '0-9' || k === 'A-Z') return k;
+  return _GYO_MAP[k] || 'その他';
+}
+
+// ===== 漢字タグの読み（ふりがな）による行分類：kuromoji で自動取得しキャッシュ =====
+const TAG_READINGS_KEY = 'gas_tag_readings_v1';
+let tagReadings = {};            // { タグ本体: 畳んだ頭文字ひらがな or 元の文字 }
+let _kuromojiTokenizer = null;
+let _tagReadingLoading = false;
+function loadTagReadings() {
+  try { tagReadings = JSON.parse(localStorage.getItem(TAG_READINGS_KEY) || '{}') || {}; }
+  catch { tagReadings = {}; }
+}
+function saveTagReadings() {
+  try { localStorage.setItem(TAG_READINGS_KEY, JSON.stringify(tagReadings)); } catch {}
+}
+function _loadScriptOnce(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = res; s.onerror = () => rej(new Error('script load failed: ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function _getKuromojiTokenizer() {
+  if (_kuromojiTokenizer) return _kuromojiTokenizer;
+  if (typeof kuromoji === 'undefined') {
+    await _loadScriptOnce('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
+  }
+  _kuromojiTokenizer = await new Promise((res, rej) => {
+    kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
+      .build((err, tok) => err ? rej(err) : res(tok));
+  });
+  return _kuromojiTokenizer;
+}
+// 漢字始まり等で読み未取得のタグがあれば kuromoji で解析→キャッシュ→onDoneで再描画。
+// 追加DL/解析が不要なら即return（無限再描画にならない）。
+async function ensureTagReadings(tags, onDone) {
+  if (_tagReadingLoading) return;
+  const needsReading = t => {
+    const s = tagKey(t);
+    const ch = s[0] || '';
+    if (/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch)) return false; // 数字/英字/かなは不要
+    return !(s in tagReadings);                                    // 漢字等でキャッシュ未取得
+  };
+  const need = [...new Set(tags.filter(needsReading))];
+  if (need.length === 0) return;
+  _tagReadingLoading = true;
+  try {
+    const tok = await _getKuromojiTokenizer();
+    need.forEach(t => {
+      const s = tagKey(t);
+      let key = s[0]; // 取得失敗時は元の文字（＝その他）
+      try {
+        const toks = tok.tokenize(s);
+        const reading = toks && toks[0] && (toks[0].reading || toks[0].pronunciation);
+        const folded = reading ? foldKanaChar(reading[0]) : null;
+        if (folded) key = folded;
+      } catch {}
+      tagReadings[s] = key;
+    });
+    saveTagReadings();
+  } catch (e) {
+    console.warn('[kuromoji] 読み取得に失敗（漢字タグは「その他」に分類）', e);
+  } finally {
+    _tagReadingLoading = false;
+    if (typeof onDone === 'function') onDone();
+  }
 }
 
 function getAllTags() {
@@ -3064,19 +3165,17 @@ function renderTagStudyArea() {
   }
   area.appendChild(searchWrap);
 
-  // タグチップ行（スクロール可）。50音順（sortTagsJa）で並べ、頭文字グループの境目に区切り線を挿入。
+  // タグチップ（スクロール可）。行（あ行/か行…）ごとに見出し付きで縦に並べる。
   const chipsRow = document.createElement('div');
   chipsRow.className = 'tag-study-chips';
-  let prevKey = null;
+  // 行グループに振り分け（allTags は sortTagsJa 済みなので各行内も50音順）
+  const gyoGroups = new Map();
   allTags.forEach(tag => {
-    const gk = tagGroupKey(tag);
-    if (prevKey !== null && gk !== prevKey) {
-      const div = document.createElement('span');
-      div.className = 'tag-study-divider';
-      div.setAttribute('aria-hidden', 'true');
-      chipsRow.appendChild(div);
-    }
-    prevKey = gk;
+    const g = tagGyo(tag);
+    if (!gyoGroups.has(g)) gyoGroups.set(g, []);
+    gyoGroups.get(g).push(tag);
+  });
+  const makeChip = tag => {
     const chip = document.createElement('button');
     chip.className = 'chip tag-study-chip' + (tagStudySelectedTags.has(tag) ? ' active' : '');
     chip.textContent = '#' + tag;
@@ -3086,9 +3185,37 @@ function renderTagStudyArea() {
       else tagStudySelectedTags.add(tag);
       renderTagStudyArea();
     });
-    chipsRow.appendChild(chip);
+    return chip;
+  };
+  TAG_GYO_ORDER.forEach(glabel => {
+    const tags = gyoGroups.get(glabel);
+    if (!tags || tags.length === 0) return;
+    const groupEl = document.createElement('div');
+    groupEl.className = 'tag-study-group';
+    groupEl.dataset.gyo = glabel;
+    const label = document.createElement('div');
+    label.className = 'tag-study-group-label';
+    label.textContent = glabel;
+    const gchips = document.createElement('div');
+    gchips.className = 'tag-study-group-chips';
+    tags.forEach(tag => gchips.appendChild(makeChip(tag)));
+    groupEl.append(label, gchips);
+    chipsRow.appendChild(groupEl);
   });
   area.appendChild(chipsRow);
+
+  // 漢字始まりタグの読みが未取得なら kuromoji で解析（初回のみ辞書DL）→完了後に再描画して正しい行へ。
+  const pendingReading = allTags.some(t => {
+    const s = tagKey(t); const ch = s[0] || '';
+    return !(/[0-9A-Za-z]/.test(ch) || foldKanaChar(ch)) && !(s in tagReadings);
+  });
+  if (pendingReading) {
+    const hint = document.createElement('div');
+    hint.className = 'tag-study-reading-hint';
+    hint.textContent = '漢字タグの読みを解析中…（初回のみ辞書を読み込みます）';
+    area.appendChild(hint);
+    ensureTagReadings(allTags, () => renderTagStudyArea());
+  }
 
   // 該当なしメッセージ用
   const emptyMsg = document.createElement('div');
@@ -3106,8 +3233,11 @@ function renderTagStudyArea() {
       c.classList.toggle('hidden', !match);
       if (match) visible++;
     });
-    // 頭文字の区切り線は絞り込み中は非表示（部分集合では境目が意味をなさないため）
-    chipsRow.querySelectorAll('.tag-study-divider').forEach(d => d.classList.toggle('hidden', !!q));
+    // 表示チップが無い行グループ（見出し含む）は隠す
+    chipsRow.querySelectorAll('.tag-study-group').forEach(g => {
+      const anyVisible = [...g.querySelectorAll('.tag-study-chip')].some(c => !c.classList.contains('hidden'));
+      g.classList.toggle('hidden', !anyVisible);
+    });
     emptyMsg.classList.toggle('hidden', visible > 0);
   };
   applyTagFilter();
@@ -7134,6 +7264,7 @@ const BACKUP_LS_KEYS = [
   'gas_calc_problems_v1',
   'gas_questions_v1',
   'gas_pending_verify_v1',
+  'gas_tag_readings_v1',
 ];
 
 async function exportProgress() {
@@ -9424,6 +9555,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   loadHighlights();
   state.bookmarks       = loadBookmarks();
   state.choiceBookmarks = loadChoiceBookmarks();
+  loadTagReadings();
   updateHeaderStats();
 
   if (!await loadStoredQuestions()) {
