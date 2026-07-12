@@ -1212,13 +1212,24 @@ function getAllTags() {
   return sortTagsJa(tags);
 }
 
-function matchesSearch(q, query) {
-  if (!query) return true;
-  const lq = query.toLowerCase().replace(/^#/, '');
+// 検索クエリを単語に分割（半角/全角スペース区切り）。各語の先頭 # は除去。
+// 大文字小文字の元表記を保持（タグ登録に使うため）。
+function searchWords(query) {
+  return (query || '').trim().split(/[\s　]+/).map(w => w.replace(/^#+/, '')).filter(Boolean);
+}
+// 1語が問題にマッチするか（本文・分野・年度・出典・選択肢・タグを対象・大文字小文字無視）
+function questionMatchesWord(q, word) {
+  const w = (word || '').toLowerCase();
+  if (!w) return false;
   const fields = [q.body, q.section, q.subcategory, q.year, q.source,
     ...(q.choices || []).map(c => c.text || ''),
     ...(q.tags || [])];
-  return fields.some(f => f && f.toLowerCase().includes(lq));
+  return fields.some(f => f && f.toLowerCase().includes(w));
+}
+function matchesSearch(q, query) {
+  const words = searchWords(query);
+  if (words.length === 0) return true;
+  return words.some(w => questionMatchesWord(q, w));   // スペース区切り = OR 検索
 }
 
 function getFilteredQuestions() {
@@ -1230,6 +1241,132 @@ function getFilteredQuestions() {
     const tagOk  = state.activeTags.size === 0 || (q.tags || []).some(t => state.activeTags.has(t));
     return calcOk && catOk && yearOk && secOk && tagOk;
   });
+}
+
+// ========== 検索ワードの一括タグ付与（保存済み問題管理画面） ==========
+// 「保存済み問題を管理」画面で現在表示中（検索＋フィルター適用後）の問題集合を返す。
+// renderQuestionList（6063行）の絞り込みと同一条件にすること。
+function currentQlistDisplayed() {
+  return state.questions.filter(q => {
+    if (!matchesSearch(q, qlistSearchQuery)) return false;
+    if (qlistFilterCats.size > 0 && !qlistFilterCats.has(q.category)) return false;
+    if (qlistFilterBookmark && !questionHasAnyBookmark(q)) return false;
+    if (qlistFilterTags.size > 0 && !q.tags?.some(t => qlistFilterTags.has(t))) return false;
+    return true;
+  });
+}
+
+// 検索ボックス下の「一括タグ登録」ボタン/パネルを描画（検索語がある時のみ表示）
+function renderBulkTagArea() {
+  const area = document.getElementById('qlist-bulk-tag-area');
+  if (!area) return;
+  const words = searchWords(qlistSearchQuery);
+  const displayed = words.length > 0 ? currentQlistDisplayed() : [];
+  if (words.length === 0 || displayed.length === 0) {
+    area.classList.add('hidden');
+    area.innerHTML = '';
+    return;
+  }
+  area.classList.remove('hidden');
+  area.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-outline btn-sm';
+  btn.textContent = '🏷 検索ワードをタグとして一括登録';
+  btn.addEventListener('click', () => onBulkTagClick(words, displayed));
+  area.appendChild(btn);
+}
+
+function onBulkTagClick(words, displayed) {
+  if (words.length === 1) {
+    const w = words[0];
+    const cnt = displayed.filter(q => questionMatchesWord(q, w)).length;
+    if (confirm(`${cnt}件の問題に「${w}」タグを付与します。\n（すでに付いている問題はスキップします）\n\nよろしいですか？`)) {
+      applyBulkTag([w], displayed);
+    }
+    return;
+  }
+  // OR検索：どのワードをタグ登録するかを選ぶパネルを開く
+  openBulkTagPanel(words, displayed);
+}
+
+function openBulkTagPanel(words, displayed) {
+  const area = document.getElementById('qlist-bulk-tag-area');
+  if (!area) return;
+  area.innerHTML = '';
+  const panel = document.createElement('div');
+  panel.className = 'bulk-tag-panel';
+
+  const title = document.createElement('div');
+  title.className = 'bulk-tag-panel-title';
+  title.textContent = '🏷 タグとして登録するワードを選択（各問題にはヒットしたワードのみ付与）';
+  panel.appendChild(title);
+
+  const checks = [];
+  words.forEach(w => {
+    const cnt = displayed.filter(q => questionMatchesWord(q, w)).length;
+    const label = document.createElement('label');
+    label.className = 'bulk-tag-word';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.value = w;
+    checks.push(cb);
+    const span = document.createElement('span');
+    span.textContent = ` 「${w}」（${cnt}問）`;
+    label.append(cb, span);
+    panel.appendChild(label);
+  });
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'bulk-tag-panel-btns';
+  const applyBtn = document.createElement('button');
+  applyBtn.className = 'btn btn-primary btn-sm';
+  applyBtn.textContent = '一括登録';
+  applyBtn.addEventListener('click', () => {
+    const selected = checks.filter(c => c.checked).map(c => c.value);
+    if (selected.length === 0) { alert('登録するワードを1つ以上選んでください。'); return; }
+    const summary = selected
+      .map(w => `・「${w}」→ ${displayed.filter(q => questionMatchesWord(q, w)).length}問`)
+      .join('\n');
+    if (confirm(`以下のタグを、実際にヒットした問題にのみ付与します。\n${summary}\n（すでに付いている問題はスキップ）\n\nよろしいですか？`)) {
+      applyBulkTag(selected, displayed);
+    }
+  });
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-sm';
+  cancelBtn.textContent = 'キャンセル';
+  cancelBtn.addEventListener('click', renderBulkTagArea);
+  btnRow.append(applyBtn, cancelBtn);
+  panel.appendChild(btnRow);
+  area.appendChild(panel);
+}
+
+// 選択ワードを、実際にヒットした問題にのみタグ付与（重複はスキップ）
+function applyBulkTag(words, displayed) {
+  let taggedQ = 0, added = 0;
+  displayed.forEach(q => {
+    if (!Array.isArray(q.tags)) q.tags = [];
+    let changed = false;
+    words.forEach(w => {
+      if (questionMatchesWord(q, w) && !q.tags.includes(w)) {
+        q.tags.push(w);
+        added++;
+        changed = true;
+      }
+    });
+    if (changed) taggedQ++;
+  });
+  if (added > 0) {
+    saveQuestions();
+    if (typeof buildFilters === 'function') buildFilters();
+    if (typeof renderTagStudyArea === 'function') renderTagStudyArea();
+    renderQuestionList(getToggleOpenState('questions-container'));
+  } else {
+    renderBulkTagArea();
+  }
+  alert(added > 0
+    ? `タグを付与しました（対象 ${taggedQ}問・新規タグ ${added}件）`
+    : 'すべて既にタグ付与済みでした（新規なし）。');
 }
 
 // ========== Diamond Calendar Medal ==========
@@ -6064,6 +6201,7 @@ function renderQuestionList(openState) {
       ? `「${qlistSearchQuery}」に一致する問題がありません`
       : hasFilter ? 'フィルター条件に一致する問題がありません' : '問題がありません';
     container.appendChild(msg);
+    renderBulkTagArea();
     showScreen('questions');
     return;
   }
@@ -6302,6 +6440,7 @@ function renderQuestionList(openState) {
     container.appendChild(catEl);
   });
 
+  renderBulkTagArea();
   showScreen('questions');
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260711b">
+  <link rel="stylesheet" href="css/style.css?v=20260711c">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -866,8 +866,9 @@
     <button id="btn-cancel-select" class="btn btn-ghost btn-sm">キャンセル</button>
   </div>
   <div style="margin-bottom:8px;">
-    <input type="text" id="qlist-search" class="edit-input" placeholder="🔍 キーワードで絞り込み..." style="width:100%;padding:6px 10px;font-size:.88rem;">
+    <input type="text" id="qlist-search" class="edit-input" placeholder="🔍 キーワードで絞り込み（スペース区切りでOR）..." style="width:100%;padding:6px 10px;font-size:.88rem;">
   </div>
+  <div id="qlist-bulk-tag-area" class="hidden" style="margin-bottom:8px;"></div>
   <div id="qlist-filter-bar" class="qlist-filter-bar"></div>
   <div id="qlist-sort-bar" class="qlist-sort-bar">
     <span class="qlist-sort-label">並び替え</span>
@@ -1511,7 +1512,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260711b"></script>
+<script src="js/app.js?v=20260711c"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
