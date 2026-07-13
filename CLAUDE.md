@@ -114,6 +114,8 @@ window.DEFAULT_QUESTIONS = {
 | `gas_settings_v1` / `gas_interrupted_session_v1` / `gas_drill_presets_v1` / `gas_calc_problems_v1` | 設定・中断復帰・壁打ちプリセット・計算問題 |
 | `gas_recent_wrong_v1` | 直近の各セッションで間違えた問題セット（最大5件、`[{ts,mode,label,total,correct,ids[]}]` 新しい順）。ホームの「最近間違えた問題」でセット選択→復習。選んだセットは削除 |
 | `gas_last_filter_v1` | 直前セッションで使ったフィルター `{ cat, years:[], sections:[] }`。ホーム画面のオレンジドット表示に使用。PC/モバイル共有 |
+| `gas_tag_readings_v1` | タグの読み（ふりがな）`{タグ本体:よみ}`。手動登録・五十音の行分類に使用 |
+| `gas_external_study_v1` | 外部学習（他アプリ等）の実績 `[{id,date,questions,ts}]`。**「今日の学習」表示にのみ**当日分を加算（1問=5選択肢換算）。studyLogには書かない＝週間/月間/タグ集計に非影響。`externalTodayQuestions()`/`addExternalStudy`/`editExternalStudy`/`deleteExternalStudy`、UIは「データ」内`#btn-external-study`→`#modal-external-study`（`renderExternalStudyModal`・当日分のみ修正/削除可・正の整数のみ）。`updateHeaderStats`で加算 |
 | `gas_drive_remind_at` / `gas_backup_remind_at` | Drive 関連の通知制御（端末ローカル、同期対象外） |
 
 ### IndexedDB（画像）

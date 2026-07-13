@@ -2256,6 +2256,18 @@ body.tier-border-diamond .card {
 .tag-reading-name { flex: 0 0 auto; font-size: .82rem; font-weight: 700; color: var(--text-2); white-space: nowrap; }
 .tag-reading-input { flex: 1; min-width: 0; font-size: .82rem; padding: 5px 8px; }
 .tag-reading-note { font-size: .72rem; color: var(--text-3); }
+
+/* 外部学習の入力一覧 */
+.ext-study-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.ext-study-label { flex: 1; min-width: 0; font-size: .85rem; color: var(--text-1); }
 .tag-study-empty {
   width: 100%;
   font-size: .78rem;

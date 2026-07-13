@@ -884,8 +884,10 @@ function updateHeaderStats() {
   const log          = loadStudyLog();
   const todayStr     = getLocalDateStr();
   const entry        = log[todayStr] || {};
-  const todayChoices = entry.answered || 0;
-  const todayQs      = entry.questions || Math.floor(todayChoices / 5);
+  // 外部学習（他アプリ等）の当日分を加算。※「今日の学習」表示のみ（週間/月間/タグ集計には含めない）。
+  const extQ         = externalTodayQuestions();                                     // 外部学習（問）
+  const todayChoices = (entry.answered || 0) + extQ * 5;                             // 外部は1問=5選択肢換算
+  const todayQs      = (entry.questions || Math.floor((entry.answered || 0) / 5)) + extQ;
 
   const tierCls = todayChoices >= 250 ? 'hd-tier-diamond'
                 : todayChoices >= 200 ? 'hd-tier-platinum'
@@ -931,6 +933,108 @@ function updateHeaderStats() {
   }
 
   updateStudyCardTier();
+}
+
+// ========== 外部学習の実績（他アプリ等・問単位のみ） ==========
+// 「今日の学習」表示にのみ加算する。studyLog（週間/月間/タグ集計）には一切書き込まない。
+const EXTERNAL_STUDY_KEY = 'gas_external_study_v1';
+function loadExternalStudy() {
+  try { const a = JSON.parse(localStorage.getItem(EXTERNAL_STUDY_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch { return []; }
+}
+function saveExternalStudy(list) {
+  try { localStorage.setItem(EXTERNAL_STUDY_KEY, JSON.stringify(list)); } catch {}
+}
+// 当日分の外部学習「問」の合計
+function externalTodayQuestions() {
+  const today = getLocalDateStr();
+  return loadExternalStudy().filter(e => e.date === today).reduce((s, e) => s + (e.questions || 0), 0);
+}
+function addExternalStudy(n) {
+  const list = loadExternalStudy();
+  list.push({ id: 'ext_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), date: getLocalDateStr(), questions: n, ts: Date.now() });
+  saveExternalStudy(list);
+}
+function editExternalStudy(id, n) {
+  const list = loadExternalStudy();
+  const e = list.find(x => x.id === id);
+  if (e) { e.questions = n; saveExternalStudy(list); }
+}
+function deleteExternalStudy(id) {
+  saveExternalStudy(loadExternalStudy().filter(x => x.id !== id));
+}
+
+function _extStudyError(msg) {
+  const el = document.getElementById('external-study-error');
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+  else { el.textContent = ''; el.classList.add('hidden'); }
+}
+// 入力値を検証して正の整数を返す（不正なら null）
+function _parseExtStudyValue(raw) {
+  const s = (raw || '').trim();
+  if (!/^\d+$/.test(s)) return null;
+  const n = parseInt(s, 10);
+  return n > 0 ? n : null;
+}
+function renderExternalStudyModal() {
+  const today  = getLocalDateStr();
+  const todays = loadExternalStudy().filter(e => e.date === today).sort((a, b) => a.ts - b.ts);
+  const total  = todays.reduce((s, e) => s + (e.questions || 0), 0);
+  const totalEl = document.getElementById('external-study-total');
+  if (totalEl) totalEl.textContent = total;
+  const listEl = document.getElementById('external-study-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (todays.length === 0) {
+    listEl.innerHTML = '<div style="font-size:.78rem;color:var(--text-3);">本日の入力はまだありません。</div>';
+    return;
+  }
+  todays.forEach(e => {
+    const t   = new Date(e.ts);
+    const tstr = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+    const row = document.createElement('div');
+    row.className = 'ext-study-row';
+    const label = document.createElement('span');
+    label.className = 'ext-study-label';
+    label.textContent = `${tstr}　${e.questions}問`;
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-ghost btn-sm';
+    editBtn.textContent = '✏️';
+    editBtn.title = '修正';
+    editBtn.addEventListener('click', () => {
+      const input = prompt('問題数を修正（0より大きい整数）', String(e.questions));
+      if (input === null) return;
+      const n = _parseExtStudyValue(input);
+      if (n === null) { alert('0より大きい整数を入力してください。'); return; }
+      editExternalStudy(e.id, n);
+      updateHeaderStats();
+      renderExternalStudyModal();
+    });
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.textContent = '🗑';
+    delBtn.title = '削除';
+    delBtn.addEventListener('click', () => {
+      if (!confirm(`この入力（${e.questions}問）を削除しますか？`)) return;
+      deleteExternalStudy(e.id);
+      updateHeaderStats();
+      renderExternalStudyModal();
+    });
+    row.append(label, editBtn, delBtn);
+    listEl.appendChild(row);
+  });
+}
+function openExternalStudyModal() {
+  // データポップアップを閉じる
+  document.getElementById('hd-popup-data')?.classList.add('hidden');
+  document.getElementById('hd-popup-backdrop')?.classList.add('hidden');
+  document.getElementById('btn-hd-data')?.classList.remove('active');
+  const input = document.getElementById('external-study-input');
+  if (input) input.value = '';
+  _extStudyError('');
+  renderExternalStudyModal();
+  document.getElementById('modal-external-study')?.classList.remove('hidden');
 }
 
 // ========== Notes ==========
@@ -7278,6 +7382,7 @@ const BACKUP_LS_KEYS = [
   'gas_questions_v1',
   'gas_pending_verify_v1',
   'gas_tag_readings_v1',
+  'gas_external_study_v1',
 ];
 
 async function exportProgress() {
@@ -11052,6 +11157,28 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     } catch(e) {
       showSyncStatus('⚠️ サインイン失敗: ' + e);
     }
+  });
+
+  // ── 外部学習の実績入力 ──
+  document.getElementById('btn-external-study')?.addEventListener('click', openExternalStudyModal);
+  document.getElementById('btn-external-study-add')?.addEventListener('click', () => {
+    const input = document.getElementById('external-study-input');
+    const n = _parseExtStudyValue(input?.value);
+    if (n === null) { _extStudyError('0より大きい整数を入力してください。'); return; }
+    _extStudyError('');
+    addExternalStudy(n);
+    updateHeaderStats();          // 「今日の学習」表示に即反映
+    renderExternalStudyModal();
+    if (input) { input.value = ''; input.focus(); }
+  });
+  document.getElementById('external-study-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-external-study-add').click(); }
+  });
+  document.getElementById('btn-external-study-close')?.addEventListener('click', () => {
+    document.getElementById('modal-external-study')?.classList.add('hidden');
+  });
+  document.getElementById('modal-external-study')?.addEventListener('click', e => {
+    if (e.target.id === 'modal-external-study') document.getElementById('modal-external-study').classList.add('hidden');
   });
 
   // ── Drive 手動同期：アップロード／ダウンロードを選ばせる ──
