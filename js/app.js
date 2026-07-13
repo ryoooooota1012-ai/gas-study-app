@@ -11060,6 +11060,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     document.getElementById('modal-drive-sync').classList.add('hidden');
   });
   document.getElementById('btn-drive-sync-upload').addEventListener('click', async () => {
+    if (!confirm('⚠️ このデバイスの内容で Drive を上書きします。\n他のデバイスでより新しく保存している場合、その進捗が失われる可能性があります。\n\nアップロードを実行しますか？')) return;
     document.getElementById('modal-drive-sync').classList.add('hidden');
     await gdriveUpload(false);
   });
