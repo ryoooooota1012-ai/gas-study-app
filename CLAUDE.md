@@ -142,7 +142,7 @@ window.DEFAULT_QUESTIONS = {
 | 永続化 | `saveQuestions(skipImageWrite)` / `loadStoredQuestions` / `saveProgress` |
 | 問題編集モーダル | `openEditModal` / `saveEditModal` |
 | リッチテキスト描画 | `renderText`（HTMLエスケープ + `[r]..[/r]`→赤字 + `\n`→`<br>`） |
-| マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示）/ `_clearMarkElements`（永続mark除去）/ `_clearTempMarks`（一時mark除去） |
+| マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示）/ `_clearMarkElements`（永続mark除去）/ `_clearTempMarks`（一時mark除去）。**再アンカー**＝`_visibleText(root)`（テキストノードのみ連結＝オフセット基準の文字列）/ `_anchorHighlight(el, h)`（保存した`h.text`＝マーク実文字列を現在のテキストから探して`start/end`を補正・複数出現は保存offsetに最も近い方・`changed`時は呼出側が`saveHighlights()`で自己修復・`h.text`無い旧データは現在位置からバックフィル）。作成時は`_visibleText(targetEl).slice(start,end)`で`text`も保存 |
 | フィルター進捗バー | `computeFilterProgress`（**問題単位**で集計。問題の連続正解数=全採点単位の最小値。5択問題なら全5選択肢がN連続して初めてその問題がN連続とみなす）/ `filterProgressHTML` |
 | 直前フィルター目印 | `lastUsedFilterYears` / `lastUsedFilterSections` / `lastUsedFilterCat`（グローバルSet）。`startSession()` 開始時にスナップショット保存。ホーム帰還時に `activeYears/Sections` をクリア。`renderTopFilterCard()` で `.last-used` クラスを付与し右上のオレンジドット（`::after`）で表示 |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
@@ -231,6 +231,7 @@ window.DEFAULT_QUESTIONS = {
 - **選択肢の機能は学習・壁打ちの両画面に実装する**（上記2系統を参照）。
 - `checkAnswers` は編集後の再描画・前の問題への移動時に `_checkNoRecord = true` で呼ばれ、その間は統計記録をスキップする（表示だけ更新）。新たに記録処理を足すときは必ず `if (!_checkNoRecord)` ガード内に置く。
 - マーカーは **描画後のDOMの文字オフセット** で保持。`renderText` の出力（`<br>` 等）を作成時・適用時の両方が見るため整合する。`renderText` の出力規則を変えると過去マーカーがずれ得る点に留意。
+- **マーカーのズレ対策（テキストアンカー）**：オフセットだけだと「問題を修正する」で本文/解説/選択肢を編集し**マーク位置より前の文字数が増減すると以降の全マーカーがずれる**（`saveEditModal`はオフセットを再計算しない＋保存時`.trim()`もズレ要因）。対策として作成時にマーク実文字列 `h.text` も保存し、適用時 `_anchorHighlight` が現在テキストから `h.text` を探して位置を補正→編集に追従してずれない。補正できたら `saveHighlights()` で自己修復。`h.text` を捕捉するため **新規マーカー作成時は必ず `_visibleText(root).slice(start,end)` を `text` として保存すること**（`highlightsData` と `tempMarkers` の両方）。
 - **`_applyHighlights(q)` を呼ぶ際は必ず直後に `applyTempMarkers(q)` も呼ぶこと**。`_applyHighlights` 内部で一時マーカー（`temp-hl`）を除去してから永続マーカーを適用するため、呼び出し後に一時マーカーが消えた状態になる。`applyTempMarkers` で再描画しないと一時マーカーが失われる。（`renderQuestion` 内は元から `applyTempMarkers` を後続で呼んでいるので問題なし）
 - `state` と関数はグローバル。デバッグ時はコンソール/`preview_eval` から直接叩ける。
 - 文字コードは UTF-8。日本語UIなのでユーザー向け文言・コミットメッセージは日本語可。

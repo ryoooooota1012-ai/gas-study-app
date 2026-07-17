@@ -295,6 +295,53 @@ function _getTextOffset(root, targetNode, targetOffset) {
 }
 
 /**
+ * el 配下の「可視テキスト」（テキストノードだけを連結した文字列）を返す。
+ * <br>（改行）や画像は0文字。_getTextOffset / _applyHighlightRange と同じ
+ * 「テキストノードのみを数える」基準なので、この文字列の [start,end) がマーカー範囲に一致する。
+ */
+function _visibleText(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let s = '', n;
+  while ((n = w.nextNode()) !== null) s += n.textContent;
+  return s;
+}
+
+/**
+ * 保存済みマーカー h を現在のテキストに合わせて再アンカーし、描画に使う {start,end,changed} を返す。
+ *   - h.text（作成時にマークした実文字列）があれば、それを現在の可視テキストから探して位置を補正。
+ *     これにより、マーク位置より前の文字が編集で増減してもマーカーがずれない（テキストに追従する）。
+ *   - h.text が無い旧データは、現在のオフセット位置の文字列を text としてバックフィルし、以後安定化させる。
+ *   - 同じ文字列が複数ある場合は、保存オフセットに最も近い出現を採用する。
+ * changed=true のとき、呼び出し側が saveHighlights() すれば補正結果が永続化され自己修復する。
+ */
+function _anchorHighlight(el, h) {
+  const full = _visibleText(el);
+  // 旧データ: text 未保存 → 現在位置の文字列をバックフィル（未編集なら正しい語を捕捉できる）
+  if (!h.text) {
+    if (h.start < h.end && h.end <= full.length) {
+      const cur = full.slice(h.start, h.end);
+      if (cur) { h.text = cur; return { start: h.start, end: h.end, changed: true }; }
+    }
+    return { start: h.start, end: h.end, changed: false };
+  }
+  // 保存オフセットのままで一致すれば補正不要
+  if (full.slice(h.start, h.end) === h.text) return { start: h.start, end: h.end, changed: false };
+  // 現在のテキストから h.text の全出現を走査し、保存 start に最も近いものを採用
+  let from = 0, i, best = -1;
+  while ((i = full.indexOf(h.text, from)) !== -1) {
+    if (best === -1 || Math.abs(i - h.start) < Math.abs(best - h.start)) best = i;
+    from = i + 1;
+  }
+  if (best === -1) return { start: h.start, end: h.end, changed: false }; // マーク文字列自体が消えた→従来位置にフォールバック
+  if (best !== h.start) {
+    h.start = best;
+    h.end   = best + h.text.length;
+    return { start: h.start, end: h.end, changed: true };
+  }
+  return { start: h.start, end: h.end, changed: false };
+}
+
+/**
  * el 内の [start, end) を <mark class=markClass> で包む
  * markClass: 'q-highlight'（黄色）| 'q-highlight-red'（赤文字）
  */
@@ -356,6 +403,7 @@ function _applyHighlights(q) {
   }
   if (!q) return;
 
+  let dirty = false;
   (highlightsData[q.id] || []).forEach(h => {
     const area      = h.area || 'choice';
     // 解説の赤マーカーは常時表示。選択肢の黄色マーカーは markerDisplayOn 時のみ。
@@ -363,8 +411,13 @@ function _applyHighlights(q) {
     const selector  = area === 'explanation' ? '.choice-explanation' : '.choice-item-text';
     const markClass = area === 'explanation' ? 'q-highlight-red'     : 'q-highlight';
     const el = document.querySelector(`#choices-list [data-cid="${h.choiceId}"] ${selector}`);
-    if (el) _applyHighlightRange(el, h.start, h.end, h.id, markClass);
+    if (el) {
+      const a = _anchorHighlight(el, h);   // 編集で前方がずれても実文字列で位置補正
+      dirty = dirty || a.changed;
+      _applyHighlightRange(el, a.start, a.end, h.id, markClass);
+    }
   });
+  if (dirty) saveHighlights();   // 補正結果を永続化して自己修復
 }
 
 /** マーカーボタンの表示を現在の状態に合わせて更新 */
@@ -395,17 +448,25 @@ function _applyDrillHighlights(q, c) {
   if (textEl) _clearMarkElements(textEl);
   if (expEl)  _clearMarkElements(expEl);
   if (!q || !c) return;
+  let dirty = false;
   (highlightsData[q.id] || []).filter(h => h.choiceId === c.id).forEach(h => {
     const area = h.area || 'choice';
     if (area !== 'explanation' && !markerDisplayOn) return;
     if (area === 'explanation') {
-      if (expEl && !expEl.classList.contains('hidden'))
-        _applyHighlightRange(expEl, h.start, h.end, h.id, 'q-highlight-red');
+      if (expEl && !expEl.classList.contains('hidden')) {
+        const a = _anchorHighlight(expEl, h);
+        dirty = dirty || a.changed;
+        _applyHighlightRange(expEl, a.start, a.end, h.id, 'q-highlight-red');
+      }
     } else {
-      if (textEl)
-        _applyHighlightRange(textEl, h.start, h.end, h.id, 'q-highlight');
+      if (textEl) {
+        const a = _anchorHighlight(textEl, h);
+        dirty = dirty || a.changed;
+        _applyHighlightRange(textEl, a.start, a.end, h.id, 'q-highlight');
+      }
     }
   });
+  if (dirty) saveHighlights();
 }
 
 /** 壁打ちモード用マーカーボタン状態更新 */
@@ -443,7 +504,10 @@ function applyTempMarkers(q) {
   if (!q) return;
   (tempMarkers[q.id] || []).forEach(h => {
     const root = _tempMarkerRoot(h.area, h.choiceId);
-    if (root) _applyHighlightRange(root, h.start, h.end, h.id, 'temp-hl');
+    if (root) {
+      const a = _anchorHighlight(root, h);   // 一時マーカーは保存しないので changed は無視
+      _applyHighlightRange(root, a.start, a.end, h.id, 'temp-hl');
+    }
   });
 }
 
@@ -10213,7 +10277,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     sel.removeAllRanges();
     if (overlaps) return;
 
-    highlightsData[q.id].push({ id: crypto.randomUUID(), choiceId, area, start, end });
+    // マークした実文字列も保存（表示時に再アンカーしてズレを防ぐ）
+    const text = _visibleText(targetEl).slice(start, end);
+    highlightsData[q.id].push({ id: crypto.randomUUID(), choiceId, area, start, end, text });
     markerDisplayOn = true;   // 作成したマーカー（黄色含む）が必ず見えるよう表示ON
     saveHighlights();
     if (inDrill) {
@@ -10291,7 +10357,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (overlap.length > 0) {
       tempMarkers[q.id] = arr.filter(h => !overlap.includes(h));
     } else {
-      arr.push({ id: crypto.randomUUID(), area, choiceId, start, end });
+      const text = _visibleText(root).slice(start, end);
+      arr.push({ id: crypto.randomUUID(), area, choiceId, start, end, text });
     }
     applyTempMarkers(q);
   });
