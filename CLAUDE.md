@@ -107,8 +107,8 @@ window.DEFAULT_QUESTIONS = {
 | キー | 内容 |
 |------|------|
 | `gas_questions_v1` | ユーザー編集後の問題（画像は `idb:` 参照に置換して保存） |
-| `gas_study_progress_v1` | `{ [choiceId]: {attempts, correct, history:[bool×最大3], lastDate}, [qId+':q']: {...} }` |
-| `gas_highlights_v1` | マーカー `{ [qId]: [{id, choiceId, area:'choice'\|'explanation', start, end}] }` |
+| `gas_study_progress_v1` | `{ [choiceId]: {attempts, correct, history:[bool×最大5], locked, lastDate}, [qId+':q']: {...} }`。`locked`=**5連続正解に到達して連続正解数を5で固定した印**（後述の連続正解ロック） |
+| `gas_highlights_v1` | マーカー `{ [qId]: [{id, choiceId, area:'choice'\|'explanation', start, end, text}] }`。`text`=マーク実文字列（再アンカー用） |
 | `gas_notes_v1` / `gas_bookmarks_v1` / `gas_choice_bookmarks_v1` | ノート・ブックマーク |
 | `gas_study_log_v1` / `gas_session_records_v1` | 学習ログ・セッション記録 |
 | `gas_settings_v1` / `gas_interrupted_session_v1` / `gas_drill_presets_v1` / `gas_calc_problems_v1` | 設定・中断復帰・壁打ちプリセット・計算問題 |
@@ -134,7 +134,8 @@ window.DEFAULT_QUESTIONS = {
 | 通常学習の開始 | `startSession(mode, opts)`（`opts.excludeMastered` で3連続正解済み問題を除外）/ `_startSession(mode, filtered, opts)`（`opts.queue` で事前構築キュー、`opts.quickMode` でとりあえず50） |
 | とりあえず50 | `startRandomFifty`（全問から計算/1択・記述・壁打ち除外を除き、壁打ち=1選択肢1答形式で完全ランダム50択。`startDrillWithQueue(queue,'quick50')` で起動） |
 | 出題ジェネレータ | `openExamGenerator`（`#modal-exam-generator`）。分野選択+シャッフル単位(問題/選択肢)+習熟度割合(多め/普通/少なめ/除外)→模試形式で出題。`generateExamSet`(問題単位=問番号ごとに年度を重み付き抽選し1問)/`generateExamSetByChoice`(選択肢単位=各選択肢位置イロハ…を別年度の同番号問題から合成。合成問題id=`gen-<cat>-q<N>`、選択肢は実idを保持し進捗連動)。`questionBucket`/`choiceBucket`(未挑戦/直近不正解/1〜3連続正解)/`egWeightedPick`。構成は保存しない |
-| マスター判定 | `isQuestionMastered`（全選択肢が直近3連続正解）/ `isFilterMastered`（問題群が全てマスター） |
+| マスター判定 | `isQuestionMastered`（全採点単位が3連続正解以上）/ `isFilterMastered`（問題群が全てマスター）。いずれもロック考慮 |
+| **連続正解ロック（5連続で固定）** | 5連続正解に到達した採点単位は progress エントリに `locked:true` が立ち、**以後どれだけ不正解でも連続正解数は5のまま**（一度ダイヤになった年度・分野の表示が下がらない）。`STREAK_LOCK_AT=5` / `entryStreak(p)`（ロック考慮の連続正解数。`locked` 未設定の既存データも履歴が5連続なら5扱いで移行不要）/ `lockIfMastered(p)`（5連続到達でロック付与）。`recordAnswer` は**履歴を積む前後の2回** `lockIfMastered` を呼ぶ（前=既存の5連続データが今回の不正解でロックを取り逃さないため／後=今回5連続に到達した場合）。`_fixLastProgressEntry` も訂正後に再判定。**ロックされるのは連続正解（ティア・マスター・習熟度バケット）だけで、`attempts`/`correct`/`history` は毎回そのまま加算・減算される**（正答率・直近5回ドットは実態を表示）。ロック考慮の入口＝`entryStreak`／`questionProgressEntries`／`questionProgressStreaks`／`bucketFromEntry`／`streakTierFromEntry`。⚠️`questionProgressHistories`・`histStreak`・`bucketFromHistory` は**生履歴でロックを反映しない**ので連続正解判定に使わないこと |
 | 模試モード | `startExamMode` |
 | 壁打ち（カスタム設定） | `buildDrillQueueCustom` / `startDrillFromSetup` / `renderDrillChoice` |
 | 答え合わせ（学習画面） | `checkAnswers` |

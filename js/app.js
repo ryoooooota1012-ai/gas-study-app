@@ -1130,11 +1130,17 @@ function onMemoInput(qId, text) {
 function recordAnswer(choiceId, isCorrect) {
   if (_checkNoProgressRecord) return; // 編集後再チェック時は state.progress を更新しない
   const p = state.progress[choiceId] || { attempts: 0, correct: 0, history: [] };
+  if (!Array.isArray(p.history)) p.history = [];
+  // 今回の回答を積む前に、既に5連続到達済みならロックを確定させる。
+  // （locked 未設定の既存データが、この回答で不正解になっても5連続扱いを維持できるようにする）
+  lockIfMastered(p);
+  // 正答率まわり（attempts/correct/history）はロック後も毎回そのまま加算・減算する
   p.attempts++;
   if (isCorrect) p.correct++;
-  if (!Array.isArray(p.history)) p.history = [];
   p.history.push(isCorrect);
   if (p.history.length > 5) p.history.shift();
+  // 今回の回答で5連続に到達したらロック
+  lockIfMastered(p);
   p.lastDate = new Date().toISOString().slice(0, 10);
   state.progress[choiceId] = p;
   saveProgress();
@@ -2469,9 +2475,35 @@ function histStreak(h) {
   for (let i = a.length - 1; i >= 0; i--) { if (a[i] === true) s++; else break; }
   return s;
 }
-// 選択肢の直近連続正解数（末尾から、履歴は最大5）
+
+// ===== 連続正解のロック =====
+// 5連続正解に到達した採点単位は progress エントリに locked を立て、以後 **連続正解数を5で固定** する。
+// 一度ダイヤティア（=全採点単位が5連続）に到達した年度・分野は、その後に不正解しても表示が下がらない。
+// ロックするのは「連続正解（=ティア・マスター・習熟度バケット）」だけで、
+// attempts / correct / history（正答率・直近5回ドット）は通常どおり毎回加算・減算される。
+const STREAK_LOCK_AT = 5;
+
+/**
+ * progress エントリの「ロック考慮」連続正解数を返す。
+ * locked が立っていれば以後の不正解に関係なく 5 を返す。
+ * locked 未設定の既存データでも、現在の履歴が5連続なら5扱い（移行なしで整合）。
+ */
+function entryStreak(p) {
+  if (!p) return 0;
+  const s = histStreak(p.history);
+  if (p.locked || s >= STREAK_LOCK_AT) return STREAK_LOCK_AT;
+  return s;
+}
+
+/** 5連続に到達していればロックを立てる（既に locked なら維持）。立てたら true */
+function lockIfMastered(p) {
+  if (p && !p.locked && histStreak(p.history) >= STREAK_LOCK_AT) { p.locked = true; return true; }
+  return false;
+}
+
+// 選択肢の直近連続正解数（ロック考慮）
 function choiceStreak(c) {
-  return histStreak(state.progress[c?.id]?.history);
+  return entryStreak(state.progress[c?.id]);
 }
 /**
  * フィルター集計・マスター判定で使う「採点単位」ごとの履歴配列を返す。
@@ -2480,26 +2512,40 @@ function choiceStreak(c) {
  * （1択問題は選択肢単位ではなく問題単位で正誤が記録されるため、
  *   選択肢idを見ると常に未学習に見えてしまうのを防ぐ）
  */
+// ⚠️ 生の history を返すためロック（5連続固定）を反映しない。
+//    連続正解・ティア・マスター判定には questionProgressStreaks / entryStreak を使うこと。
 function questionProgressHistories(q) {
   if (isOnePickQuestion(q)) {
     return [state.progress[q.id + ':q']?.history];
   }
   return (q.choices || []).filter(c => c.id).map(c => state.progress[c.id]?.history);
 }
-// 1問が直近 n 連続正解済みか（採点単位すべてが n 連続以上）
-function isQuestionMasteredAt(q, n) {
-  const hs = questionProgressHistories(q);
-  return hs.length > 0 && hs.every(h => histStreak(h) >= n);
+/** questionProgressHistories と同じ採点単位で progress エントリ（ロック情報込み）を返す */
+function questionProgressEntries(q) {
+  if (isOnePickQuestion(q)) {
+    return [state.progress[q.id + ':q']];
+  }
+  return (q.choices || []).filter(c => c.id).map(c => state.progress[c.id]);
 }
-// 単一履歴の連続正解数 → ティア（5連続=diamond / 4=platinum / 3=gold / 未満=null）
-function streakTierFromHistory(hist) {
-  const h = Array.isArray(hist) ? hist : [];
-  let s = 0;
-  for (let i = h.length - 1; i >= 0; i--) { if (h[i] === true) s++; else break; }
+/** 採点単位ごとの「ロック考慮」連続正解数の配列 */
+function questionProgressStreaks(q) {
+  return questionProgressEntries(q).map(entryStreak);
+}
+// 1問が直近 n 連続正解済みか（採点単位すべてが n 連続以上・ロック考慮）
+function isQuestionMasteredAt(q, n) {
+  const ss = questionProgressStreaks(q);
+  return ss.length > 0 && ss.every(s => s >= n);
+}
+// 連続正解数 → ティア（5連続=diamond / 4=platinum / 3=gold / 未満=null）
+function tierFromStreak(s) {
   if (s >= 5) return 'diamond';
   if (s === 4) return 'platinum';
   if (s >= 3) return 'gold';
   return null;
+}
+// progress エントリ → ティア（ロック考慮。5連続到達済みなら以後も diamond を維持）
+function streakTierFromEntry(p) {
+  return tierFromStreak(entryStreak(p));
 }
 
 // フィルター(年度/分野)の達成ティアを判定：全選択肢の直近連続正解数の最小値で決定。
@@ -2507,9 +2553,8 @@ function streakTierFromHistory(hist) {
 function filterTier(questions) {
   let any = false, minStreak = Infinity;
   for (const q of (questions || [])) {
-    for (const hist of questionProgressHistories(q)) {
+    for (const streak of questionProgressStreaks(q)) {   // ロック考慮
       any = true;
-      const streak = histStreak(hist);
       if (streak < minStreak) minStreak = streak;
       if (minStreak < 3) return null;
     }
@@ -2524,21 +2569,19 @@ function isFilterMastered(questions) {
   if (!questions || questions.length === 0) return false;
   let hasAny = false;
   for (const q of questions) {
-    for (const hist of questionProgressHistories(q)) {
+    for (const streak of questionProgressStreaks(q)) {   // ロック考慮
       hasAny = true;
-      if (!Array.isArray(hist) || hist.length < 3 || !hist.slice(-3).every(v => v === true)) return false;
+      if (streak < 3) return false;
     }
   }
   return hasAny;
 }
 
-// 1問が直近3連続正解済みか（= その問題はマスター済み）
+// 1問が直近3連続正解済みか（= その問題はマスター済み・ロック考慮）
 function isQuestionMastered(q) {
-  const hs = questionProgressHistories(q);
-  if (hs.length === 0) return false;
-  return hs.every(hist =>
-    Array.isArray(hist) && hist.length >= 3 && hist.slice(-3).every(v => v === true)
-  );
+  const ss = questionProgressStreaks(q);
+  if (ss.length === 0) return false;
+  return ss.every(s => s >= 3);
 }
 
 /**
@@ -2550,13 +2593,13 @@ function computeFilterProgress(questions) {
   let total = 0, attempted = 0;
   let e1 = 0, e2 = 0, e3 = 0, e4 = 0, e5 = 0; // ちょうど1/2/3/4/5連続(以上)
   for (const q of (questions || [])) {
-    const hists = questionProgressHistories(q);
-    if (hists.length === 0) continue;
+    const entries = questionProgressEntries(q);
+    if (entries.length === 0) continue;
     total++;
-    const hs = hists.map(h => Array.isArray(h) ? h.slice(-5) : []);
-    if (hs.some(h => h.length > 0)) attempted++;
-    // 問題全体の連続正解数 = 全採点単位の最小値
-    const minStreak = hs.reduce((min, h) => Math.min(min, histStreak(h)), Infinity);
+    // 回答済み判定：履歴があるか、ロック済み（5連続到達済み）なら回答済み
+    if (entries.some(p => p && (p.locked || (Array.isArray(p.history) && p.history.length > 0)))) attempted++;
+    // 問題全体の連続正解数 = 全採点単位の最小値（ロック考慮）
+    const minStreak = entries.reduce((min, p) => Math.min(min, entryStreak(p)), Infinity);
     if (minStreak >= 5)       e5++;
     else if (minStreak === 4) e4++;
     else if (minStreak === 3) e3++;
@@ -3678,10 +3721,15 @@ function bucketFromHistory(hist) {
   if (streak === 2) return 'streak2';
   return 'streak1';
 }
-// 問題の習熟度バケット（問題レベル history q.id+':q'）
-function questionBucket(q) { return bucketFromHistory(state.progress[q.id + ':q']?.history); }
-// 選択肢の習熟度バケット（選択肢レベル history choice.id）
-function choiceBucket(c) { return bucketFromHistory(state.progress[c.id]?.history); }
+// progress エントリ → 習熟度バケット（ロック考慮。5連続ロック済みは常に streak5）
+function bucketFromEntry(p) {
+  if (p && entryStreak(p) >= STREAK_LOCK_AT) return 'streak5';
+  return bucketFromHistory(p?.history);
+}
+// 問題の習熟度バケット（問題レベル q.id+':q'）
+function questionBucket(q) { return bucketFromEntry(state.progress[q.id + ':q']); }
+// 選択肢の習熟度バケット（選択肢レベル choice.id）
+function choiceBucket(c) { return bucketFromEntry(state.progress[c.id]); }
 
 // 指定分野の年度別問題（問番号が取れるもの）
 function egYearQuestions(category) {
@@ -8957,6 +9005,7 @@ function _fixLastProgressEntry(key, newRight) {
   if (p.history[last] === newRight) return;
   p.history[last] = newRight;
   p.correct = newRight ? (p.correct || 0) + 1 : Math.max(0, (p.correct || 0) - 1);
+  lockIfMastered(p);   // 訂正の結果5連続に到達したらロック（既にロック済みなら維持）
 }
 
 // 出題中に問題を編集した際、答え合わせ済みなら記録済みの判定（連続正解・正答数・間違いリスト・振り返り）を
@@ -9464,7 +9513,7 @@ function renderCalcPracticeScreen() {
       // 表示順：◎/〇 ／ 年度 ／ カテゴリ ／ サブカテゴリ
       const metaParts = [p.year, p.category, p.subcategory].filter(Boolean);
       const metaHtml = `<span class="calc-practice-item-meta">${escapeHtml(metaParts.join('　／　'))}</span>`;
-      const calcTier = streakTierFromHistory(state.progress[p.id]?.history);
+      const calcTier = streakTierFromEntry(state.progress[p.id]);   // ロック考慮
       const markHtml = p.mark
         ? `<span class="calc-practice-item-mark mark-${p.mark === '◎' ? 'double' : 'single'}">${p.mark}</span>`
         : '';
