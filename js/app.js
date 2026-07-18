@@ -3650,6 +3650,7 @@ function _startSession(mode, filtered, opts = {}) {
   state.sessionHistory        = [];
   state.answers               = {};
   state.checked              = false;
+  state.drillAnswered         = false;   // 壁打ちの答え合わせ状態を持ち越さない（マーカーの誤保存防止）
   markerDisplayOn             = false;   // 出題開始時はマーカー表示をリセット
   showScreen('study');
   renderQuestion();
@@ -10261,10 +10262,6 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // 作成は markerDisplayOn の状態に依存しない（マーカー表示OFFでもドラッグで作成可。
   // 作成時に表示をONにするので、「－」でOFFにした後でも追加マーカーを引ける）
   document.addEventListener('mouseup', e => {
-    const inStudy = state.checked;
-    const inDrill = state.drillAnswered;
-    if (!inStudy && !inDrill) return;
-
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.rangeCount) return;
     const range = sel.getRangeAt(0);
@@ -10280,10 +10277,22 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       return;
     }
 
+    // どちらの画面でドラッグしたかは **DOMの所属で判定** する。
+    // state.drillAnswered 等のフラグはセッションをまたいで残ることがあり
+    // （通常セッション開始時にリセットされない経路がある）、それを信じると
+    // 学習画面のドラッグを壁打ち扱いして「前のセッションの問題」にマーカーを
+    // 保存してしまい、赤太文字が付かない＝機能しないように見えるバグになる。
+    // 解説の .choice-explanation は学習・壁打ちで共用クラスなので特に重要。
+    const inDrill = !!startEl.closest('#screen-drill');
+    const inStudy = !inDrill && !!startEl.closest('#choices-list');
+    if (!inDrill && !inStudy) return;
+    // 作成できるのは答え合わせ後のみ
+    if (inDrill ? !state.drillAnswered : !state.checked) return;
+
     // 壁打ちモード：drill-choice-text（選択肢）または choice-explanation（解説）
-    const drillTextEl = inDrill ? startEl.closest('.drill-choice-text') : null;
+    const drillTextEl  = inDrill ? startEl.closest('.drill-choice-text') : null;
     // 通常モード
-    const choiceTextEl = startEl.closest('.choice-item-text');
+    const choiceTextEl = inStudy ? startEl.closest('.choice-item-text') : null;
     const choiceExpEl  = startEl.closest('.choice-explanation');
 
     const targetEl = drillTextEl || choiceTextEl || choiceExpEl;
@@ -10293,7 +10302,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (drillTextEl) {
       // 壁打ち：選択肢テキスト
       area = 'choice';
-      const di = state.drillQueue[state.drillIndex];
+      const di = state.drillQueue?.[state.drillIndex];
       if (!di) return;
       q = di.question; choiceId = di.choice.id;
     } else if (choiceTextEl) {
@@ -10305,7 +10314,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       // 解説（通常 or 壁打ち共通クラス）
       area = 'explanation';
       if (inDrill) {
-        const di = state.drillQueue[state.drillIndex];
+        const di = state.drillQueue?.[state.drillIndex];
         if (!di) return;
         q = di.question; choiceId = di.choice.id;
       } else {
@@ -10314,6 +10323,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
         choiceId = ci.dataset.cid; q = state.queue[state.queueIndex];
       }
     }
+    if (!q) return;
 
     const start = _getTextOffset(targetEl, range.startContainer, range.startOffset);
     const end   = _getTextOffset(targetEl, range.endContainer,   range.endOffset);
@@ -10347,7 +10357,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (!mark) return;
     if (!markerDisplayOn && mark.classList.contains('q-highlight')) return;
     e.preventDefault();
-    const inDrill = state.drillAnswered && state.drillQueue && state.drillQueue[state.drillIndex];
+    // 作成側と同じく、フラグではなく mark の所属画面で判定する
+    // （フラグを信じると別セッションの問題からマーカーを消してしまう）
+    const inDrill = !!mark.closest('#screen-drill') && !!state.drillQueue?.[state.drillIndex];
     const q = inDrill ? state.drillQueue[state.drillIndex].question : state.queue[state.queueIndex];
     if (!q) return;
     const hid = mark.dataset.hid;
