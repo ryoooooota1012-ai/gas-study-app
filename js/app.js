@@ -2824,7 +2824,7 @@ function renderTopFilterCard() {
   // 名前列の幅を「全カテゴリの年度名・分野名」の中で最も長いものに固定する。
   // カテゴリ・年度別/分野別タブのいずれでもバーの開始位置・長さを統一し、描画前に確定させてちらつきを防ぐ。
   {
-    const w = computeGlobalFilterNameWidth(card);
+    const w = computeGlobalFilterNameWidth();
     if (w > 0) items.style.setProperty('--tfi-name-w', (Math.ceil(w) + 2) + 'px');
   }
 
@@ -2886,29 +2886,36 @@ function renderTopFilterCard() {
 }
 
 // 全カテゴリの年度名・分野名（💎込み）から最長の表示幅(px)を求める（カテゴリ間でバー位置を統一するため）
-function computeGlobalFilterNameWidth(card) {
+function computeGlobalFilterNameWidth() {
   const names = [];
   [...new Set(state.questions.map(q => q.category))].forEach(cat => {
     const cq = state.questions.filter(q => q.category === cat);
     [...new Set(cq.filter(q => q.year).map(q => q.year))].forEach(y => names.push(y));
     [...new Set(cq.filter(q => q.section).map(q => q.section))].forEach(s => names.push(s));
   });
-  return measureMaxFilterNameWidth(card, names);
+  return measureMaxFilterNameWidth(names);
 }
 
 // 与えられた名前群の中で最大の表示幅(px)を、.tfi-name と同じフォントで実測する（非表示で測定）
-function measureMaxFilterNameWidth(card, names) {
-  if (!card || !names || names.length === 0) return 0;
+// ⚠️ 測定要素は **document.body 直下** に置くこと。
+//    renderHome() は showScreen('home') より先に renderTopFilterCard() を呼ぶため、
+//    測定時点で #screen-home はまだ .hidden（display:none）。display:none の子孫では
+//    getBoundingClientRect() が 0 を返し、--tfi-name-w が未設定のまま
+//    grid-template-columns のフォールバック max-content が効いて
+//    「セッション終了→ホーム復帰でバーが全幅に伸びる」不具合になる。
+//    font-family は body 継承・font-size は rem 基準なので body 直下でも実測値は同じ。
+function measureMaxFilterNameWidth(names) {
+  if (!names || names.length === 0) return 0;
   const meas = document.createElement('span');
-  meas.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:.88rem;font-weight:600;';
-  card.appendChild(meas);
+  meas.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:.88rem;font-weight:600;';
+  document.body.appendChild(meas);
   let max = 0;
   names.forEach(n => {
     meas.textContent = n;
     const w = meas.getBoundingClientRect().width;
     if (w > max) max = w;
   });
-  card.removeChild(meas);
+  document.body.removeChild(meas);
   return max;
 }
 
