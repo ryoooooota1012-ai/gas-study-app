@@ -3421,8 +3421,9 @@ function renderTagStudyArea() {
   // タグ選択時: 壁打ちボタン（選択肢単位）
   if (tagStudySelectedTags.size > 0) {
     // 選択タグを持つ選択肢数
+    // 出題側(startTagDrill)と同じ条件で数える（計算問題を除外しないと実際の出題数とズレる）
     const tagChoiceCount = state.questions
-      .filter(q => !q.drillExcluded && !isFillBlankQuestion(q))
+      .filter(q => !q.drillExcluded && !isFillBlankQuestion(q) && !isCalcQuestion(q) && q.choices?.length)
       .flatMap(q => (q.choices || []))
       .filter(c => (c.tags || []).some(t => tagStudySelectedTags.has(t)))
       .length;
@@ -5597,72 +5598,6 @@ function startDrillFromSetup() {
   renderDrillChoice();
 }
 
-function buildDrillQueue(drillMode) {
-  const filtered = state.questions.filter(q => {
-    if (q.drillExcluded) return false;
-    if (isFillBlankQuestion(q)) return false;
-    if (!(q.choices && q.choices.length)) return false;
-    if (state.activeCategories.size > 0 && !state.activeCategories.has(q.category)) return false;
-    if (state.activeYears.size > 0    && q.year    && !state.activeYears.has(q.year))       return false;
-    if (state.activeSections.size > 0 && q.section && !state.activeSections.has(q.section)) return false;
-    return true;
-  });
-
-  const queue = [];
-  filtered.forEach(q => {
-    (q.choices || []).forEach((c, i) => {
-      if (drillMode === 'weak') {
-        const p = state.progress[c.id];
-        const hist = (p && Array.isArray(p.history)) ? p.history : [];
-        const isStrong = hist.length >= 3 && hist.slice(-3).every(v => v === true);
-        if (isStrong) return;
-      }
-      queue.push({ question: q, choice: c, choiceIndex: i });
-    });
-  });
-
-  // Fisher-Yates shuffle
-  for (let i = queue.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [queue[i], queue[j]] = [queue[j], queue[i]];
-  }
-  return queue;
-}
-
-function startDrill(drillMode) {
-  if (state.questions.length === 0) {
-    alert('問題データがありません。JSONファイルを読み込んでください。');
-    return;
-  }
-  flushSessionTime();
-  startSessionTimer();
-  const queue = buildDrillQueue(drillMode);
-  if (queue.length === 0) {
-    if (drillMode === 'weak') {
-      alert('苦手な選択肢がありません。\nフィルター範囲の全選択肢が3連続正解済みです！');
-    } else {
-      alert('出題できる選択肢がありません。\nフィルターを確認してください。');
-    }
-    return;
-  }
-  state.quickMode = false;
-  // 「もう一度」用に保存
-  state.lastAgainType     = 'drill';
-  state.lastAgainMode     = drillMode;
-  state.lastAgainFiltered = queue.slice();
-  state.lastAgainLimit    = state.drillLimit || null;
-  state.drillQueue            = state.drillLimit ? queue.slice(0, state.drillLimit) : queue;
-  state.drillIndex            = 0;
-  state.drillMode             = drillMode;
-  state.drillStats            = { total: 0, correct: 0 };
-  state.drillAnswered         = false;
-  state.drillAnswers          = {};
-  state.sessionWrongChoices   = [];
-  state.sessionWrongQuestions = [];
-  showScreen('drill');
-  renderDrillChoice();
-}
-
 function renderDrillChoice() {
   markerDisplayOn = false;  // 次の選択肢に移ったらマーカーをリセット
   _applyDrillHighlights(null, null);
@@ -7825,12 +7760,18 @@ function retryWrongQuestions() {
 
 function retryWrongChoices() {
   // 同上：選択肢も現行の問題・選択肢に解決してから出題
-  const queue = (state.sessionWrongChoices || []).map(item => {
+  const resolved = (state.sessionWrongChoices || []).map(item => {
     const lq = state.questions.find(x => x.id === item.question.id) || item.question;
     const lc = lq.choices?.[item.choiceIndex] || item.choice;
     return { question: lq, choice: lc, choiceIndex: item.choiceIndex };
   });
-  if (queue.length === 0) return;
+  if (resolved.length === 0) return;
+  // 計算問題は壁打ち（1選択肢ずつ○✕）に馴染まないため、他の壁打ち導線と同様に除外する
+  const queue = resolved.filter(it => !isCalcQuestion(it.question));
+  if (queue.length === 0) {
+    alert('壁打ちで出題できる選択肢がありません。\n（計算問題は壁打ちの対象外です）');
+    return;
+  }
   for (let i = queue.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [queue[i], queue[j]] = [queue[j], queue[i]];
@@ -10177,8 +10118,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     //   - 「通常出題」は①☆を付けた問題のみ（全選択肢に○×）
     //   - 「壁打ち」は②☆を付けた選択肢のみ（同問題の非ブクマ選択肢は出さない）
     // 出題開始ヘルパ（分野で絞り込んだ集合をそのまま渡せる）
-    const startNormal = questions => _startSession('sequential', questions);
-    const startDrill  = items => startDrillWithQueue(shuffleArr(items.map(it => ({ ...it }))), 'bookmark');
+    const startBookmarkNormal = questions => _startSession('sequential', questions);
+    const startBookmarkDrill  = items => startDrillWithQueue(shuffleArr(items.map(it => ({ ...it }))), 'bookmark');
 
     // 分野ごとにブックマークを集計。q.category を5分野
     //（法令／ガス技術：製造／ガス技術：供給／ガス技術：消費機器／基礎）に正規化して分類する。
@@ -10205,10 +10146,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       bookmarkPopup.innerHTML = '';
       addLabel('ブックマーク出題');
       if (bqs.length > 0) {
-        addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => startNormal(bqs));
+        addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => startBookmarkNormal(bqs));
       }
       if (cItems.length > 0) {
-        addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => startDrill(cItems));
+        addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => startBookmarkDrill(cItems));
       }
       if (secNames.length >= 2) {
         addLabel('📂 分野で絞り込む');
@@ -10228,10 +10169,10 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       addBtn('◀ 分野一覧に戻る', () => renderMain(), true);
       addLabel(`📂 ${sec}`);
       if (qs.length > 0) {
-        addBtn(`📄 通常出題（☆問題 ${qs.length}問）`, () => startNormal(qs));
+        addBtn(`📄 通常出題（☆問題 ${qs.length}問）`, () => startBookmarkNormal(qs));
       }
       if (items.length > 0) {
-        addBtn(`🥊 壁打ち（☆選択肢 ${items.length}個）`, () => startDrill(items));
+        addBtn(`🥊 壁打ち（☆選択肢 ${items.length}個）`, () => startBookmarkDrill(items));
       }
     };
 

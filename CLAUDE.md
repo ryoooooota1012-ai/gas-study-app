@@ -138,6 +138,7 @@ window.DEFAULT_QUESTIONS = {
 | **連続正解ロック（5連続で固定）** | 5連続正解に到達した採点単位は progress エントリに `locked:true` が立ち、**以後どれだけ不正解でも連続正解数は5のまま**（一度ダイヤになった年度・分野の表示が下がらない）。`STREAK_LOCK_AT=5` / `entryStreak(p)`（ロック考慮の連続正解数。`locked` 未設定の既存データも履歴が5連続なら5扱いで移行不要）/ `lockIfMastered(p)`（5連続到達でロック付与）。`recordAnswer` は**履歴を積む前後の2回** `lockIfMastered` を呼ぶ（前=既存の5連続データが今回の不正解でロックを取り逃さないため／後=今回5連続に到達した場合）。`_fixLastProgressEntry` も訂正後に再判定。**ロックされるのは連続正解（ティア・マスター・習熟度バケット）だけで、`attempts`/`correct`/`history` は毎回そのまま加算・減算される**（正答率・直近5回ドットは実態を表示）。ロック考慮の入口＝`entryStreak`／`questionProgressEntries`／`questionProgressStreaks`／`bucketFromEntry`／`streakTierFromEntry`。⚠️`questionProgressHistories`・`histStreak`・`bucketFromHistory` は**生履歴でロックを反映しない**ので連続正解判定に使わないこと |
 | 模試モード | `startExamMode` |
 | 壁打ち（カスタム設定） | `buildDrillQueueCustom` / `startDrillFromSetup` / `renderDrillChoice` |
+| **壁打ちは計算問題を出さない** | 壁打ち（1選択肢ずつ○✕）に計算問題は馴染まないため、**全キュービルダーで `isCalcQuestion(q)` を除外する**。対象：`buildDrillQueueCustom`／`startRandomFifty`(`isOnePickQuestion`)／`bookmarkedChoiceItems`／`keywordMatchedChoices`／`startTagDrill`／`_startRecentWrongQuestions`(drill時)／`retryWrongChoices`。**壁打ちキューを新設するときは必ず除外条件を入れること。** 併せて「対象: N選択肢」等の件数表示も出題側と同じ条件で数える（ズレ防止）。旧実装の `buildDrillQueue`／`startDrill(drillMode)` は未使用＋計算問題除外もロックも未対応だったため削除済み（`startDrillFromSetup`/`buildDrillQueueCustom` を使う）|
 | 答え合わせ（学習画面） | `checkAnswers` |
 | 出題キュー構築 | `buildQueue` / `buildDrillQueue` |
 | 永続化 | `saveQuestions(skipImageWrite)` / `loadStoredQuestions` / `saveProgress` |
