@@ -14,10 +14,8 @@ let editingExplanationImage  = null; // 編集中の解説画像（base64 or nul
 let editingChoiceImages      = {};   // 編集中の選択肢画像 { [choiceId]: base64 }
 let editingChoiceWidths      = {};   // 編集中の選択肢画像幅 { [choiceId]: number|null }
 let _editChoiceImgFocus      = null; // 画像ペースト先の選択肢ID
-// ── 答え合わせ画面のインライン編集（モーダルを出さず、その場で上書き修正）──
+// ── 答え合わせ画面のインライン編集（モーダルを出さず、表示中の要素をその場で上書き）──
 let inlineEditMode      = false;  // インライン編集モードON/OFF（ON中はマーカー作成を停止）
-let inlineEditData      = null;   // 編集中の作業コピー { qId, blocks[], choices[], explanationImage }
-let _inlinePasteFocus   = 'body'; // 画像ペースト先: 'body' | choiceId
 let qlistSelectMode     = false;
 let selectedQIds        = new Set();
 let createChoicesList   = []; // [{text, isCorrect}]
@@ -9056,53 +9054,56 @@ function _refreshStudyAfterEdit(updatedQ) {
 }
 
 // ==================== 答え合わせ画面のインライン編集 ====================
-// モーダルを出さず、答え合わせ画面のテキストを textarea に置き換えてその場で上書き修正する。
-// 生テキスト（[r]…[/r] や改行そのまま）を編集するため、赤文字マークアップや画像を壊さない。
+// モーダルを出さず、答え合わせ画面の **表示中の要素をそのまま編集可能（contenteditable）** にする。
+// レイアウトも赤文字表示も変えずに文字だけ上書きできる。保存時に赤文字spanを [r]…[/r] へ復元する。
+// 正誤(○/×)・画像・タグ・選択肢の追加削除などの構造編集は「詳細編集」モーダル（openEditModal）側。
 
-// 画像ファイルを1つ選ばせて data:URL でコールバック（専用ボタン用）
-function _pickImageFile(cb) {
-  const inp = document.createElement('input');
-  inp.type = 'file';
-  inp.accept = 'image/*';
-  inp.style.display = 'none';
-  document.body.appendChild(inp);
-  inp.addEventListener('change', () => {
-    const f = inp.files && inp.files[0];
-    if (f && f.type.startsWith('image/')) {
-      const r = new FileReader();
-      r.onload = e => cb(e.target.result);
-      r.readAsDataURL(f);
-    }
-    inp.remove();
-  });
-  inp.click();
+// 表示中の要素を編集可能にする（レイアウト保持のため中身は再描画しない）
+function _makeInlineEditable(el) {
+  if (!el) return;
+  el.setAttribute('contenteditable', 'true');
+  el.classList.add('inline-editable');
+  el.spellcheck = false;
 }
 
-// textarea を内容量に合わせて自動リサイズ
-function _inlineAutoGrow(ta) {
-  ta.style.height = 'auto';
-  ta.style.height = Math.min(ta.scrollHeight + 2, 700) + 'px';
-}
-
-function _inlineFieldLabel(text) {
-  const el = document.createElement('div');
-  el.className = 'inline-edit-field-label';
-  el.textContent = text;
-  return el;
+// contenteditable のDOMを保存用の生テキストへ直列化する。
+// テキスト→そのまま / <br>→改行 / <span class="q-red">→[r]…[/r] / <div>|<p>→改行境界。
+function _serializeEditable(el) {
+  let out = '';
+  const walk = node => {
+    node.childNodes.forEach(ch => {
+      if (ch.nodeType === Node.TEXT_NODE) {
+        out += ch.textContent;
+      } else if (ch.nodeType === Node.ELEMENT_NODE) {
+        const tag = ch.tagName;
+        if (tag === 'BR') {
+          out += '\n';
+        } else if (ch.classList && ch.classList.contains('q-red')) {
+          out += '[r]'; walk(ch); out += '[/r]';
+        } else if (tag === 'DIV' || tag === 'P') {
+          if (out && !out.endsWith('\n')) out += '\n';   // ブロック要素は改行境界
+          walk(ch);
+        } else {
+          walk(ch);
+        }
+      }
+    });
+  };
+  walk(el);
+  return out;
 }
 
 // インライン編集を破棄してフラグを畳む（画面離脱・セッション移動時の保険）
 function _resetInlineEditState() {
-  if (!inlineEditMode && !inlineEditData) return;
+  if (!inlineEditMode) return;
   inlineEditMode = false;
-  inlineEditData = null;
   document.body.classList.remove('inline-editing');
-  document.removeEventListener('paste', handleInlineEditPaste);
+  document.removeEventListener('paste', handleInlineEditPaste, true);
 }
 
 // 「この問題を修正」ボタン：インライン編集ON/OFFトグル（答え合わせ後のみ）
 function toggleInlineEdit() {
-  if (!state.checked) return;         // 答え合わせ後だけ編集可
+  if (!state.checked) return;                 // 答え合わせ後だけ編集可
   if (inlineEditMode) exitInlineEdit(true);   // ONなら保存して終了
   else enterInlineEdit();
 }
@@ -9111,68 +9112,62 @@ function enterInlineEdit() {
   const q = state.queue[state.queueIndex];
   if (!q) return;
   inlineEditMode = true;
-  _inlinePasteFocus = 'body';
-  // 作業コピー（保存するまで q 本体は変更しない）
-  inlineEditData = {
-    qId: q.id,
-    blocks: getQuestionBlocks(q).map(b => ({ ...b })),
-    choices: (q.choices || []).map(c => ({
-      id: c.id,
-      text: c.text || '',
-      isCorrect: !!c.isCorrect,
-      explanation: c.explanation || '',
-      image: c.image || null,
-      imageWidth: c.imageWidth || null,
-    })),
-  };
-  if (inlineEditData.blocks.length === 0) inlineEditData.blocks.push({ type: 'text', content: '' });
   document.body.classList.add('inline-editing');
-  renderInlineEditBody();
-  renderInlineEditChoices(q);
+  // 表示中の要素をそのまま編集可能にする（レイアウト・赤文字はそのまま）
+  document.querySelectorAll('#question-blocks .question-text').forEach(_makeInlineEditable);
+  document.querySelectorAll('#choices-list .choice-item-text').forEach(_makeInlineEditable);
+  document.querySelectorAll('#choices-list .choice-explanation').forEach(_makeInlineEditable);
   updateInlineEditUI();
-  document.addEventListener('paste', handleInlineEditPaste);
+  document.addEventListener('paste', handleInlineEditPaste, true);   // 貼り付けはプレーンテキスト化
 }
 
 function exitInlineEdit(save) {
   let updated = state.queue[state.queueIndex];
   if (save) updated = saveInlineEdit() || updated;
   inlineEditMode = false;
-  inlineEditData = null;
   document.body.classList.remove('inline-editing');
-  document.removeEventListener('paste', handleInlineEditPaste);
+  document.removeEventListener('paste', handleInlineEditPaste, true);
   updateInlineEditUI();
-  _refreshStudyAfterEdit(updated);   // 答え合わせ表示を再構築（保存時は最新内容で）
+  _refreshStudyAfterEdit(updated);   // 答え合わせ表示を再構築（contenteditableも解除される）
 }
 
-// 作業コピーを q 本体へ書き戻して保存。差し替えた q を返す。
+// 編集中のDOMから生テキストを読み取り、q 本体へ書き戻して保存。差し替えた q を返す。
 function saveInlineEdit() {
-  if (!inlineEditData) return null;
-  syncInlineEditFromDOM();
-  const idx = state.questions.findIndex(x => x.id === inlineEditData.qId);
+  const cur = state.queue[state.queueIndex];
+  if (!cur) return null;
+  const idx = state.questions.findIndex(x => x.id === cur.id);
   if (idx === -1) return null;
   const q = { ...state.questions[idx] };
 
-  // 問題文ブロック（空テキストは捨てる）
-  const blocks = inlineEditData.blocks
-    .filter(b => (b.type === 'text' && b.content && b.content.trim()) || (b.type === 'image' && b.src))
-    .map(b => b.type === 'text' ? { type: 'text', content: b.content.trim() } : { type: 'image', src: b.src });
-  q.questionBlocks = blocks.length ? blocks : undefined;
-  const firstText = blocks.find(b => b.type === 'text');
+  // 問題文：表示順に .question-text を読み、テキストブロックへ反映（画像ブロックはそのまま）
+  const textEls = [...document.querySelectorAll('#question-blocks .question-text')];
+  let ti = 0;
+  let newBlocks = getQuestionBlocks(state.questions[idx]).map(b => {
+    if (b.type === 'text') {
+      const el = textEls[ti++];
+      return { type: 'text', content: el ? _serializeEditable(el).replace(/\s+$/, '') : b.content };
+    }
+    return { ...b };
+  });
+  newBlocks = newBlocks.filter(b => (b.type === 'text' && b.content && b.content.trim()) || (b.type === 'image' && b.src));
+  q.questionBlocks = newBlocks.length ? newBlocks : undefined;
+  const firstText = newBlocks.find(b => b.type === 'text');
   q.questionText = firstText ? firstText.content : (q.questionText || '');
-  delete q.image; // 旧フィールド
 
-  // 選択肢（id で対応付けて text / isCorrect / explanation / image を反映）
+  // 選択肢：DOM上の .choice-item-text / .choice-explanation を読み取り（表示されている分だけ更新）
   q.choices = (q.choices || []).map(orig => {
-    const w = inlineEditData.choices.find(c => c.id === orig.id);
-    if (!w) return orig;
-    const nc = { ...orig, text: (w.text || '').trim(), isCorrect: !!w.isCorrect, explanation: (w.explanation || '').trim() };
-    if (w.image) nc.image = w.image; else delete nc.image;
-    if (w.image && w.imageWidth) nc.imageWidth = w.imageWidth; else delete nc.imageWidth;
+    const item = document.querySelector(`#choices-list .choice-item[data-cid="${orig.id}"]`);
+    if (!item) return orig;
+    const nc = { ...orig };
+    const tEl = item.querySelector('.choice-item-text');
+    if (tEl) nc.text = _serializeEditable(tEl).trim();
+    const eEl = item.querySelector('.choice-explanation');
+    if (eEl) nc.explanation = _serializeEditable(eEl).trim();
     return nc;
   });
 
   state.questions[idx] = q;
-  saveQuestions();       // 画像は data:→idb: へ自動退避
+  saveQuestions();
   buildFilters();
   // 出題キュー・間違いリストの参照を差し替え（再出題時に最新版が使われるように）
   const qi = state.queue.findIndex(item => item.id === q.id);
@@ -9182,214 +9177,26 @@ function saveInlineEdit() {
   return q;
 }
 
-// 問題文テキストエリアの最新値を作業コピーへ同期（選択肢は input で逐次同期済み）
-function syncInlineEditFromDOM() {
-  document.querySelectorAll('#question-blocks textarea[data-inline-body]').forEach(ta => {
-    const i = parseInt(ta.dataset.inlineBody, 10);
-    if (!isNaN(i) && inlineEditData.blocks[i] && inlineEditData.blocks[i].type === 'text') {
-      inlineEditData.blocks[i].content = ta.value;
-    }
-  });
-}
-
-// 問題文ブロックの編集UIを #question-blocks に描画
-function renderInlineEditBody() {
-  const container = document.getElementById('question-blocks');
-  if (!container) return;
-  container.classList.remove('hidden');
-  container.innerHTML = '';
-  document.getElementById('question-text')?.classList.add('hidden');
-  document.getElementById('question-image-area')?.classList.add('hidden');
-
-  const box = document.createElement('div');
-  box.className = 'inline-edit-box';
-  box.appendChild(_inlineFieldLabel('📝 問題文（編集中）'));
-
-  inlineEditData.blocks.forEach((block, idx) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'inline-edit-block';
-    if (block.type === 'text') {
-      const toolbar = _makeRichToolbar();
-      const ta = document.createElement('textarea');
-      ta.className = 'inline-edit-textarea';
-      ta.rows = 3;
-      ta.value = block.content || '';
-      ta.dataset.inlineBody = String(idx);
-      ta.placeholder = '問題文（[r]赤文字[/r] で強調）';
-      ta.addEventListener('input', () => { inlineEditData.blocks[idx].content = ta.value; _inlineAutoGrow(ta); });
-      ta.addEventListener('focus', () => { _inlinePasteFocus = 'body'; });
-      toolbar.querySelector('.rtb-red').addEventListener('click', () => insertMarkup(ta, '[r]', '[/r]'));
-      wrap.append(toolbar, ta);
-      setTimeout(() => _inlineAutoGrow(ta), 0);
-    } else if (block.type === 'image') {
-      const img = document.createElement('img');
-      img.className = 'inline-edit-img';
-      img.src = block.src;
-      img.alt = '問題図';
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'inline-edit-imgdel';
-      del.textContent = '🗑 この画像を削除';
-      del.addEventListener('click', () => { inlineEditData.blocks.splice(idx, 1); renderInlineEditBody(); });
-      wrap.append(img, del);
-    }
-    box.appendChild(wrap);
-  });
-
-  const btnRow = document.createElement('div');
-  btnRow.className = 'inline-edit-btnrow';
-  const addImg = document.createElement('button');
-  addImg.type = 'button';
-  addImg.className = 'inline-edit-addimg';
-  addImg.textContent = '🖼 画像を追加';
-  addImg.addEventListener('click', () => _pickImageFile(src => { inlineEditData.blocks.push({ type: 'image', src }); renderInlineEditBody(); }));
-  const addTxt = document.createElement('button');
-  addTxt.type = 'button';
-  addTxt.className = 'inline-edit-addimg';
-  addTxt.textContent = '＋ テキスト欄';
-  addTxt.addEventListener('click', () => { inlineEditData.blocks.push({ type: 'text', content: '' }); renderInlineEditBody(); });
-  btnRow.append(addImg, addTxt);
-  box.appendChild(btnRow);
-  container.appendChild(box);
-}
-
-// 選択肢の編集UIを #choices-list に描画
-function renderInlineEditChoices(q) {
-  const list = document.getElementById('choices-list');
-  if (!list) return;
-  list.innerHTML = '';
-  const onePick = isOnePickQuestion(q);
-
-  inlineEditData.choices.forEach((w, i) => {
-    const item = document.createElement('div');
-    item.className = 'choice-item inline-edit-choice';
-    item.dataset.cid = w.id;
-    item.addEventListener('focusin', () => { _inlinePasteFocus = w.id; });
-
-    const lbl = document.createElement('div');
-    lbl.className = 'inline-edit-choice-label';
-    lbl.textContent = (CHOICE_LABELS[i] || String(i + 1)) + '.';
-    item.appendChild(lbl);
-
-    // 正誤トグル
-    item.appendChild(_inlineCorrectToggle(w, onePick, q));
-
-    // 選択肢テキスト
-    item.appendChild(_inlineFieldLabel('選択肢の文章'));
-    const tTool = _makeRichToolbar();
-    const tTa = document.createElement('textarea');
-    tTa.className = 'inline-edit-textarea';
-    tTa.rows = 2;
-    tTa.value = w.text || '';
-    tTa.placeholder = '選択肢の文章（[r]赤文字[/r]）';
-    tTa.addEventListener('input', () => { w.text = tTa.value; _inlineAutoGrow(tTa); });
-    tTool.querySelector('.rtb-red').addEventListener('click', () => insertMarkup(tTa, '[r]', '[/r]'));
-    item.append(tTool, tTa);
-    setTimeout(() => _inlineAutoGrow(tTa), 0);
-
-    // 選択肢画像
-    item.appendChild(_inlineChoiceImageEl(w, q));
-
-    // 解説
-    item.appendChild(_inlineFieldLabel('解説'));
-    const eTool = _makeRichToolbar();
-    const eTa = document.createElement('textarea');
-    eTa.className = 'inline-edit-textarea';
-    eTa.rows = 2;
-    eTa.value = w.explanation || '';
-    eTa.placeholder = '解説（[r]赤文字[/r]）';
-    eTa.addEventListener('input', () => { w.explanation = eTa.value; _inlineAutoGrow(eTa); });
-    eTool.querySelector('.rtb-red').addEventListener('click', () => insertMarkup(eTa, '[r]', '[/r]'));
-    item.append(eTool, eTa);
-    setTimeout(() => _inlineAutoGrow(eTa), 0);
-
-    list.appendChild(item);
-  });
-}
-
-function _inlineCorrectToggle(w, onePick, q) {
-  const row = document.createElement('div');
-  row.className = 'inline-edit-correct-row';
-  if (onePick) {
-    // 1択問題：正解は1つ。押すと自分を正解にして他を外す
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'inline-correct-btn' + (w.isCorrect ? ' is-on' : '');
-    btn.textContent = w.isCorrect ? '⭐ 正解' : '正解にする';
-    btn.addEventListener('click', () => {
-      inlineEditData.choices.forEach(c => { c.isCorrect = (c.id === w.id); });
-      renderInlineEditChoices(q);
-    });
-    row.append(_inlineFieldLabel('この選択肢が'), btn);
-  } else {
-    // 各選択肢○✕問題：記述が正しいか誤りか
-    const btnT = document.createElement('button');
-    const btnF = document.createElement('button');
-    const sync = () => {
-      btnT.className = 'inline-correct-btn' + (w.isCorrect === true ? ' is-on' : '');
-      btnF.className = 'inline-correct-btn' + (w.isCorrect === false ? ' is-on is-off' : '');
-    };
-    btnT.type = 'button'; btnT.textContent = '○ 正しい';
-    btnF.type = 'button'; btnF.textContent = '✕ 誤り';
-    btnT.addEventListener('click', () => { w.isCorrect = true;  sync(); });
-    btnF.addEventListener('click', () => { w.isCorrect = false; sync(); });
-    sync();
-    row.append(_inlineFieldLabel('この記述は'), btnT, btnF);
-  }
-  return row;
-}
-
-function _inlineChoiceImageEl(w, q) {
-  const box = document.createElement('div');
-  box.className = 'inline-edit-choice-img';
-  if (w.image) {
-    const img = document.createElement('img');
-    img.className = 'inline-edit-img';
-    img.src = w.image;
-    if (w.imageWidth) img.style.width = w.imageWidth + 'px';
-    img.alt = '選択肢画像';
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'inline-edit-imgdel';
-    del.textContent = '🗑 画像を削除';
-    del.addEventListener('click', () => { w.image = null; w.imageWidth = null; renderInlineEditChoices(q); });
-    box.append(img, del);
-  } else {
-    const add = document.createElement('button');
-    add.type = 'button';
-    add.className = 'inline-edit-addimg';
-    add.textContent = '🖼 画像を追加';
-    add.addEventListener('click', () => _pickImageFile(src => { w.image = src; renderInlineEditChoices(q); }));
-    box.appendChild(add);
-  }
-  return box;
-}
-
-// 編集中に画像をペースト（Ctrl+V）：直近フォーカスした問題文/選択肢へ入れる
+// 編集中の貼り付けは、書式付きHTMLを避けてプレーンテキストだけ挿入する（直列化を壊さない）
 function handleInlineEditPaste(e) {
   if (!inlineEditMode) return;
-  const items = e.clipboardData && e.clipboardData.items;
-  if (!items) return;
-  for (const it of items) {
-    if (it.type.startsWith('image/')) {
-      e.preventDefault();
-      const r = new FileReader();
-      r.onload = ev => _addInlinePastedImage(ev.target.result);
-      r.readAsDataURL(it.getAsFile());
-      return;
-    }
+  const el = e.target && e.target.closest && e.target.closest('.inline-editable');
+  if (!el) return;
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const node = document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else {
+    el.appendChild(document.createTextNode(text));
   }
-  // 画像でなければ通常のテキスト貼り付けに任せる（textareaへ）
-}
-
-function _addInlinePastedImage(src) {
-  const q = state.queue[state.queueIndex];
-  if (_inlinePasteFocus && _inlinePasteFocus !== 'body') {
-    const w = inlineEditData.choices.find(c => c.id === _inlinePasteFocus);
-    if (w) { w.image = src; renderInlineEditChoices(q); return; }
-  }
-  inlineEditData.blocks.push({ type: 'image', src });
-  renderInlineEditBody();
 }
 
 // 編集モードのボタン表示・他操作の有効/無効を更新
@@ -11099,8 +10906,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (Math.abs(e.touches[0].clientY - _studyTouchStartY) > 8) _studyTouchScrolled = true;
   }, { passive: true });
   _studyScreen.addEventListener('touchend', e => {
+    if (inlineEditMode) return;   // 編集中はタップ＝キャレット移動なので「次へ」を発火させない
     if (!state.checked || _studyTouchScrolled) return;
-    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], [contenteditable="true"]';
     if (e.target.closest(INTERACTIVE)) return;
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'instant' });
