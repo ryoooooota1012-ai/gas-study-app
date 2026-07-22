@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260711j">
+  <link rel="stylesheet" href="css/style.css?v=20260711r">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -613,7 +613,9 @@
       <div id="session-acc" class="session-acc"></div>
       <button id="btn-next" class="btn btn-primary btn-full">次の問題へ →</button>
       <button id="btn-edit-study-q" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;">✏️ この問題を修正</button>
+      <button id="btn-cancel-inline-edit" class="btn btn-ghost btn-sm hidden" style="margin-top:4px;width:100%;">✕ 編集をキャンセル（保存しない）</button>
       <div style="display:flex;gap:6px;margin-top:4px;">
+        <button id="btn-detail-edit-study-q" class="btn btn-ghost btn-sm" style="flex:1;">⚙️ 詳細編集</button>
         <button id="btn-report-study-q" class="btn btn-ghost btn-sm" style="flex:1;">📋 問題を報告</button>
         <button id="btn-verify-ai" class="btn btn-ghost btn-sm" style="flex:1;">📋 AI検証プロンプト</button>
       </div>
@@ -1541,7 +1543,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260711q"></script>
+<script src="js/app.js?v=20260711r"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

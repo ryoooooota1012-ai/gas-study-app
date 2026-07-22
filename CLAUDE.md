@@ -142,7 +142,8 @@ window.DEFAULT_QUESTIONS = {
 | 答え合わせ（学習画面） | `checkAnswers` |
 | 出題キュー構築 | `buildQueue` / `buildDrillQueue` |
 | 永続化 | `saveQuestions(skipImageWrite)` / `loadStoredQuestions` / `saveProgress` |
-| 問題編集モーダル | `openEditModal` / `saveEditModal` |
+| 問題編集モーダル | `openEditModal` / `saveEditModal`（問題一覧・壁打ち・「⚙️ 詳細編集」から。正誤/タグ/計算モード/選択肢の追加削除など構造編集用）|
+| **答え合わせ画面のインライン編集** | 「✏️ この問題を修正」で `toggleInlineEdit`。モーダルを出さず、答え合わせ画面のテキストを **textarea に置換してその場で上書き**する（生テキスト＝`[r]…[/r]`・改行そのままを編集）。`enterInlineEdit`（作業コピー `inlineEditData={qId,blocks,choices}` を作る・q本体は保存まで不変）／`exitInlineEdit(save)`／`saveInlineEdit`（q へ書き戻し `saveQuestions`→`buildFilters`→queue差し替え→`_refreshStudyAfterEdit` で再描画・進捗も `_recorrectStudyProgressAfterEdit` で訂正）。`renderInlineEditBody`（問題文ブロック＝テキスト欄＋画像＋追加ボタン）／`renderInlineEditChoices`（選択肢ごとに 正誤トグル`_inlineCorrectToggle`＝各○✕は正しい/誤り・1択問題はラジオ、テキスト、画像`_inlineChoiceImageEl`、解説）。画像追加は専用ボタン`_pickImageFile`＋`handleInlineEditPaste`（Ctrl+V・`_inlinePasteFocus` が直近フォーカスした問題文/選択肢を記憶）。**編集中(`inlineEditMode`)はドラッグでのマーカー作成/削除を停止**（mouseup/dblclickの先頭で `if(inlineEditMode) return`）し、ナビ/マーカー/ブックマークも無効化。画面離脱時は `showScreen` 冒頭の `_resetInlineEditState()` で破棄。⚠️ **マーカー系ハンドラを足すときは必ず `inlineEditMode` ガードを入れること** |
 | リッチテキスト描画 | `renderText`（HTMLエスケープ + `[r]..[/r]`→赤字 + `\n`→`<br>`） |
 | マーカー | `_applyHighlights` / `_applyDrillHighlights` / `_autoRevealMarkersOnCheck`（答え合わせ時に自動表示）/ `_clearMarkElements`（永続mark除去）/ `_clearTempMarks`（一時mark除去）。**再アンカー**＝`_visibleText(root)`（テキストノードのみ連結＝オフセット基準の文字列）/ `_anchorHighlight(el, h)`（保存した`h.text`＝マーク実文字列を現在のテキストから探して`start/end`を補正・複数出現は保存offsetに最も近い方・`changed`時は呼出側が`saveHighlights()`で自己修復・`h.text`無い旧データは現在位置からバックフィル）。作成時は`_visibleText(targetEl).slice(start,end)`で`text`も保存 |
 | フィルター進捗バー | `computeFilterProgress`（**問題単位**で集計。問題の連続正解数=全採点単位の最小値。5択問題なら全5選択肢がN連続して初めてその問題がN連続とみなす）/ `filterProgressHTML` |

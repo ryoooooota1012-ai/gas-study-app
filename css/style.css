@@ -4191,3 +4191,110 @@ kbd {
   .modal-box { max-height: 80vh !important; }
   /* 壁打ち設定モーダルはグローバルルールで対応済み → 上書き不要 */
 }
+
+/* ==================== インライン編集（答え合わせ画面での上書き修正） ==================== */
+/* 編集中はカード全体を編集モードの色枠で示す */
+body.inline-editing .card {
+  outline: 2px dashed var(--accent, #6366f1);
+  outline-offset: 2px;
+}
+.inline-edit-active {
+  background: var(--accent, #6366f1) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+.inline-edit-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--bg-input, rgba(127,127,127,.06));
+  margin-bottom: 8px;
+}
+.inline-edit-field-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  margin: 8px 0 3px;
+}
+.inline-edit-block { margin-bottom: 8px; }
+.inline-edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: .95rem;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: var(--bg, #1a1a2e);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  resize: vertical;
+  overflow: hidden;
+}
+.inline-edit-textarea:focus {
+  outline: none;
+  border-color: var(--accent, #6366f1);
+}
+.inline-edit-img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+  margin: 4px 0;
+}
+.inline-edit-imgdel,
+.inline-edit-addimg {
+  font-size: .8rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input, rgba(127,127,127,.08));
+  color: var(--text-2);
+  cursor: pointer;
+}
+.inline-edit-addimg:hover,
+.inline-edit-imgdel:hover { border-color: var(--accent, #6366f1); color: var(--text-1); }
+.inline-edit-btnrow { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+/* 選択肢の編集カード */
+.inline-edit-choice {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: var(--bg-input, rgba(127,127,127,.04));
+}
+.inline-edit-choice-label {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.inline-edit-choice-img { margin: 6px 0; }
+.inline-edit-correct-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.inline-edit-correct-row .inline-edit-field-label { margin: 0 2px 0 0; }
+.inline-correct-btn {
+  font-size: .82rem;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.inline-correct-btn.is-on {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+  font-weight: 700;
+}
+.inline-correct-btn.is-on.is-off {
+  background: #ef4444;
+  border-color: #ef4444;
+}
