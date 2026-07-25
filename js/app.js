@@ -10392,12 +10392,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const startEl = range.startContainer.nodeType === Node.TEXT_NODE
       ? range.startContainer.parentElement
       : range.startContainer;
-
-    // 既存マーカー要素の内側でのmouseupはスキップ
-    if (startEl.closest('mark.q-highlight, mark.q-highlight-red')) {
-      sel.removeAllRanges();
-      return;
-    }
+    // ※以前は「開始点が既存マーカー内ならスキップ」していたが、それだと半分マークした後に
+    //   先頭が赤マーク内に入り、全体を選び直しても広げられなくなる。重なりは下で融合するので撤廃。
 
     // どちらの画面でドラッグしたかは **DOMの所属で判定** する。
     // state.drillAnswered 等のフラグはセッションをまたいで残ることがあり
@@ -10451,16 +10447,31 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const end   = _getTextOffset(targetEl, range.endContainer,   range.endOffset);
     if (start >= end) { sel.removeAllRanges(); return; }
 
-    if (!highlightsData[q.id]) highlightsData[q.id] = [];
-    const overlaps = highlightsData[q.id].some(h =>
-      h.choiceId === choiceId && h.area === area && h.start < end && h.end > start
-    );
     sel.removeAllRanges();
-    if (overlaps) return;
+    if (!highlightsData[q.id]) highlightsData[q.id] = [];
 
+    // 同じ選択肢・同じ領域(area)の既存マーカーのうち、今回の範囲と重なる／隣接するものは
+    // 1つに融合(union)する。これにより「半分マーク→全体を選び直し」で赤太文字が全体に広がる。
+    // （重なりを無視して破棄していた旧仕様が「半分までしか塗れない」原因だった）
+    const sameTarget = h => h.choiceId === choiceId && (h.area || 'choice') === area;
+    let mStart = start, mEnd = end, changed = true;
+    while (changed) {
+      changed = false;
+      for (const h of highlightsData[q.id]) {
+        if (h._merge || !sameTarget(h)) continue;
+        if (h.start <= mEnd && h.end >= mStart) {   // 重なり or 端が接する
+          mStart = Math.min(mStart, h.start);
+          mEnd   = Math.max(mEnd,   h.end);
+          h._merge = true;
+          changed = true;
+        }
+      }
+    }
+    const kept = highlightsData[q.id].filter(h => !h._merge);
     // マークした実文字列も保存（表示時に再アンカーしてズレを防ぐ）
-    const text = _visibleText(targetEl).slice(start, end);
-    highlightsData[q.id].push({ id: crypto.randomUUID(), choiceId, area, start, end, text });
+    const text = _visibleText(targetEl).slice(mStart, mEnd);
+    kept.push({ id: crypto.randomUUID(), choiceId, area, start: mStart, end: mEnd, text });
+    highlightsData[q.id] = kept;
     markerDisplayOn = true;   // 作成したマーカー（黄色含む）が必ず見えるよう表示ON
     saveHighlights();
     if (inDrill) {
