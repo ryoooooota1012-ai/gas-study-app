@@ -10092,11 +10092,14 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   document.addEventListener('keydown', e => {
     const screen = document.getElementById('screen-study');
     if (!screen || screen.classList.contains('hidden')) return;
+    // インライン編集中は問題移動・選択などのショートカットを一切無効化。
+    // ←→はブラウザ既定のキャレット移動になり、編集を抜けるまで問題は動かない。
+    if (inlineEditMode) return;
     // モーダルが開いているときは無視
     if (document.querySelector('.modal-overlay:not(.hidden)')) return;
-    // input/textarea フォーカス中は無視
+    // input/textarea/contenteditable フォーカス中は無視
     const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable) return;
 
     const q = state.queue[state.queueIndex];
     if (!q) return;
