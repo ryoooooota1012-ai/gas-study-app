@@ -322,25 +322,27 @@ function _anchorHighlight(el, h) {
   if (!h.text) {
     if (h.start < h.end && h.end <= full.length) {
       const cur = full.slice(h.start, h.end);
-      if (cur) { h.text = cur; return { start: h.start, end: h.end, changed: true }; }
+      if (cur) { h.text = cur; return { start: h.start, end: h.end, changed: true, valid: true }; }
     }
-    return { start: h.start, end: h.end, changed: false };
+    // 範囲外＝テキストが短くなった等で復元不能。描画もできず消せない「幽霊」になるので無効扱い。
+    return { start: h.start, end: h.end, changed: false, valid: false };
   }
   // 保存オフセットのままで一致すれば補正不要
-  if (full.slice(h.start, h.end) === h.text) return { start: h.start, end: h.end, changed: false };
+  if (full.slice(h.start, h.end) === h.text) return { start: h.start, end: h.end, changed: false, valid: true };
   // 現在のテキストから h.text の全出現を走査し、保存 start に最も近いものを採用
   let from = 0, i, best = -1;
   while ((i = full.indexOf(h.text, from)) !== -1) {
     if (best === -1 || Math.abs(i - h.start) < Math.abs(best - h.start)) best = i;
     from = i + 1;
   }
-  if (best === -1) return { start: h.start, end: h.end, changed: false }; // マーク文字列自体が消えた→従来位置にフォールバック
+  // マーク文字列自体が消えた（編集で書き換えられた）→ 復元先が無いので無効扱い
+  if (best === -1) return { start: h.start, end: h.end, changed: false, valid: false };
   if (best !== h.start) {
     h.start = best;
     h.end   = best + h.text.length;
-    return { start: h.start, end: h.end, changed: true };
+    return { start: h.start, end: h.end, changed: true, valid: true };
   }
-  return { start: h.start, end: h.end, changed: false };
+  return { start: h.start, end: h.end, changed: false, valid: true };
 }
 
 /**
@@ -406,6 +408,7 @@ function _applyHighlights(q) {
   if (!q) return;
 
   let dirty = false;
+  const ghosts = [];   // 現在のテキストに復元できないマーカー（描画できず削除もできない幽霊）
   (highlightsData[q.id] || []).forEach(h => {
     const area      = h.area || 'choice';
     // 解説の赤マーカーは常時表示。選択肢の黄色マーカーは markerDisplayOn 時のみ。
@@ -413,12 +416,19 @@ function _applyHighlights(q) {
     const selector  = area === 'explanation' ? '.choice-explanation' : '.choice-item-text';
     const markClass = area === 'explanation' ? 'q-highlight-red'     : 'q-highlight';
     const el = document.querySelector(`#choices-list [data-cid="${h.choiceId}"] ${selector}`);
+    // el が無い＝その選択肢が未描画（解説非表示など）。判定できないので手を付けない。
     if (el) {
       const a = _anchorHighlight(el, h);   // 編集で前方がずれても実文字列で位置補正
+      if (!a.valid) { ghosts.push(h); return; }   // 幽霊は描画せず破棄対象へ
       dirty = dirty || a.changed;
       _applyHighlightRange(el, a.start, a.end, h.id, markClass);
     }
   });
+  if (ghosts.length) {   // 幽霊を除去（残すとドラッグ時に融合して新規マーカーまで不可視化する）
+    highlightsData[q.id] = (highlightsData[q.id] || []).filter(h => !ghosts.includes(h));
+    if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+    dirty = true;
+  }
   if (dirty) saveHighlights();   // 補正結果を永続化して自己修復
 }
 
@@ -431,6 +441,42 @@ function _updateMarkerBtn() {
   btn.classList.toggle('marker-on',  markerDisplayOn);
   btn.classList.toggle('marker-has', hasMarks);
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
+  // 「マーカーを全消去」ボタンはマーカーがある問題でのみ表示
+  document.getElementById('btn-clear-marks-study')?.classList.toggle('hidden', !hasMarks);
+}
+
+/**
+ * 現在の問題（学習画面）のマーカーをまとめて消す。
+ * ずれた位置に残ったマーカーを個別に消すのが大変なとき用。確認ダイアログを挟む。
+ */
+function clearMarksForCurrentQuestion() {
+  const q = (state.queueIndex < state.queue.length) ? state.queue[state.queueIndex] : null;
+  if (!q) return;
+  const n = (highlightsData[q.id] || []).length;
+  if (n === 0) return;
+  if (!confirm(`この問題のマーカー${n}件（赤太文字・黄色）をすべて消去します。\nこの操作は元に戻せません。よろしいですか？\n\n※問題文に [r]…[/r] で登録した赤字は消えません。`)) return;
+  delete highlightsData[q.id];
+  saveHighlights();
+  delete tempMarkers[q.id];
+  _applyHighlights(q);
+  applyTempMarkers(q);
+  _updateMarkerBtn();
+}
+
+/** 現在の選択肢（壁打ち画面）のマーカーをまとめて消す */
+function clearMarksForCurrentDrillChoice() {
+  const di = state.drillQueue?.[state.drillIndex];
+  if (!di) return;
+  const q = di.question, c = di.choice;
+  const all = highlightsData[q.id] || [];
+  const mine = all.filter(h => h.choiceId === c.id);
+  if (mine.length === 0) return;
+  if (!confirm(`この選択肢のマーカー${mine.length}件（赤太文字・黄色）をすべて消去します。\nこの操作は元に戻せません。よろしいですか？\n\n※問題文に [r]…[/r] で登録した赤字は消えません。`)) return;
+  highlightsData[q.id] = all.filter(h => h.choiceId !== c.id);
+  if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+  saveHighlights();
+  _applyDrillHighlights(q, c);
+  _updateDrillMarkerBtn(q, c);
 }
 
 /** 答え合わせ時：マーキングがある問題なら自動でマーカーを表示する */
@@ -451,23 +497,31 @@ function _applyDrillHighlights(q, c) {
   if (expEl)  _clearMarkElements(expEl);
   if (!q || !c) return;
   let dirty = false;
+  const ghosts = [];   // 復元できないマーカー（描画も削除もできない）は破棄する
   (highlightsData[q.id] || []).filter(h => h.choiceId === c.id).forEach(h => {
     const area = h.area || 'choice';
     if (area !== 'explanation' && !markerDisplayOn) return;
     if (area === 'explanation') {
       if (expEl && !expEl.classList.contains('hidden')) {
         const a = _anchorHighlight(expEl, h);
+        if (!a.valid) { ghosts.push(h); return; }
         dirty = dirty || a.changed;
         _applyHighlightRange(expEl, a.start, a.end, h.id, 'q-highlight-red');
       }
     } else {
       if (textEl) {
         const a = _anchorHighlight(textEl, h);
+        if (!a.valid) { ghosts.push(h); return; }
         dirty = dirty || a.changed;
         _applyHighlightRange(textEl, a.start, a.end, h.id, 'q-highlight');
       }
     }
   });
+  if (ghosts.length) {
+    highlightsData[q.id] = (highlightsData[q.id] || []).filter(h => !ghosts.includes(h));
+    if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+    dirty = true;
+  }
   if (dirty) saveHighlights();
 }
 
@@ -479,6 +533,8 @@ function _updateDrillMarkerBtn(q, c) {
   btn.classList.toggle('marker-on',  markerDisplayOn);
   btn.classList.toggle('marker-has', hasMarks);
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
+  // 「マーカーを全消去」ボタンはマーカーがある選択肢でのみ表示（答え合わせ後のみ意味を持つ）
+  document.getElementById('btn-clear-marks-drill')?.classList.toggle('hidden', !hasMarks);
 }
 
 // ===== 一時マーカー（薄黄緑）— 回答検討用。保存しない／セッション中のみ保持 =====
@@ -10453,7 +10509,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     // 同じ選択肢・同じ領域(area)の既存マーカーのうち、今回の範囲と重なる／隣接するものは
     // 1つに融合(union)する。これにより「半分マーク→全体を選び直し」で赤太文字が全体に広がる。
     // （重なりを無視して破棄していた旧仕様が「半分までしか塗れない」原因だった）
-    const sameTarget = h => h.choiceId === choiceId && (h.area || 'choice') === area;
+    // ただし範囲外（現在のテキスト長を超える）マーカーは融合対象にしない。取り込むと
+    // 融合結果まで範囲外になり、描画されない＝ドラッグしても赤くならない状態になるため。
+    const fullLen  = _visibleText(targetEl).length;
+    const inBounds = h => h.start >= 0 && h.end <= fullLen && h.start < h.end;
+    const sameTarget = h => h.choiceId === choiceId && (h.area || 'choice') === area && inBounds(h);
     let mStart = start, mEnd = end, changed = true;
     while (changed) {
       changed = false;
@@ -10467,7 +10527,15 @@ document.addEventListener('DOMContentLoaded', async () => { try {
         }
       }
     }
-    const kept = highlightsData[q.id].filter(h => !h._merge);
+    mStart = Math.max(0, mStart);
+    mEnd   = Math.min(fullLen, mEnd);
+    if (mStart >= mEnd) return;
+    // 融合対象にしなかった範囲外マーカーはここで一緒に捨てる（残しても描画・削除ができない）
+    const kept = highlightsData[q.id].filter(h => {
+      if (h._merge) return false;
+      if (h.choiceId === choiceId && (h.area || 'choice') === area && !inBounds(h)) return false;
+      return true;
+    });
     // マークした実文字列も保存（表示時に再アンカーしてズレを防ぐ）
     const text = _visibleText(targetEl).slice(mStart, mEnd);
     kept.push({ id: crypto.randomUUID(), choiceId, area, start: mStart, end: mEnd, text });
@@ -10901,7 +10969,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   }, { passive: true });
   _drillScreen.addEventListener('touchend', e => {
     if (!state.drillAnswered || _drillTouchScrolled) return;
-    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"]';
+    // 学習画面と同じく、マーカー上のタップは次へ送りの対象外（ダブルタップ削除を可能にする）
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], mark.q-highlight, mark.q-highlight-red, mark.temp-hl';
     if (e.target.closest(INTERACTIVE)) return;
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -10922,7 +10991,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   _studyScreen.addEventListener('touchend', e => {
     if (inlineEditMode) return;   // 編集中はタップ＝キャレット移動なので「次へ」を発火させない
     if (!state.checked || _studyTouchScrolled) return;
-    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], [contenteditable="true"]';
+    // mark（マーカー）を除外しないと、1タップ目で「次へ」が発動してダブルタップ削除が
+    // 原理的にできなくなる。マーカー上のタップは次へ送りの対象外にする。
+    const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], [contenteditable="true"], mark.q-highlight, mark.q-highlight-red, mark.temp-hl';
     if (e.target.closest(INTERACTIVE)) return;
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -10968,6 +11039,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const q = state.queue[state.queueIndex];
     if (q) openEditModal(q.id);   // 従来の詳細編集モーダル
   });
+  document.getElementById('btn-clear-marks-study')?.addEventListener('click', clearMarksForCurrentQuestion);
+  document.getElementById('btn-clear-marks-drill')?.addEventListener('click', clearMarksForCurrentDrillChoice);
   document.getElementById('btn-report-study-q').addEventListener('click', () => {
     const q = state.queue[state.queueIndex];
     if (!q) return;
