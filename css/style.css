@@ -42,10 +42,10 @@ html {
 }
 
 body {
-  /* Mac/iOS→ヒラギノ、Windows→游ゴシック Medium、無ければメイリオ。
-     'Yu Gothic'(Regular) はブラウザで細く描画され、ダークテーマだと小さい文字が
-     薄れて読みにくいため、Medium を先に指定する。 */
-  font-family: 'Hiragino Sans', 'Yu Gothic Medium', 'Yu Gothic', 'Meiryo', sans-serif;
+  /* Mac/iOS→ヒラギノ、Windows→メイリオ。
+     游ゴシック(Medium含む)も試したが、字面が小さく線も細いため
+     ダークテーマの本アプリではメイリオの方が読みやすいと判断して据え置き。 */
+  font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
   background: var(--bg);
   color: var(--text-1);
   min-height: 100vh;
