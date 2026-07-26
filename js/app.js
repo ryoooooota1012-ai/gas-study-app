@@ -1544,7 +1544,9 @@ function matchesSearch(q, query) {
 function getFilteredQuestions() {
   return state.questions.filter(q => {
     const calcOk = !state.calcFilter || q.questionType === 'calculation';
-    const catOk  = state.calcFilter || state.activeCategories.size === 0 || state.activeCategories.has(q.category);
+    // 計算問題モードでもカテゴリ（基礎／ガス技術：供給 等）で絞り込めるようにする。
+    // 以前は calcFilter 時に catOk を常に true にしていたため、計算問題は科目で分けられなかった。
+    const catOk  = state.activeCategories.size === 0 || state.activeCategories.has(q.category);
     const yearOk = state.activeYears.size === 0    || (q.year    && state.activeYears.has(q.year));
     const secOk  = state.activeSections.size === 0 || (q.section && state.activeSections.has(q.section));
     const tagOk  = state.activeTags.size === 0 || (q.tags || []).some(t => state.activeTags.has(t));
@@ -2785,8 +2787,9 @@ function renderTopFilterCard() {
     tabRow.appendChild(tab);
   });
 
-  // クリア＆出題開始ボタン
-  const hasFilter = state.activeYears.size > 0 || state.activeSections.size > 0;
+  // クリア＆出題開始ボタン（計算問題モードでは科目チップだけの選択でも表示する）
+  const hasFilter = state.activeYears.size > 0 || state.activeSections.size > 0
+    || (state.calcFilter && state.activeCategories.size > 0);
   if (hasFilter) {
     const rightGroup = document.createElement('div');
     rightGroup.style.cssText = 'margin-left:auto;display:flex;gap:6px;align-items:center;position:relative;';
@@ -2797,6 +2800,7 @@ function renderTopFilterCard() {
     clearBtn.addEventListener('click', () => {
       state.activeYears.clear();
       state.activeSections.clear();
+      if (state.calcFilter) state.activeCategories.clear();   // 科目チップも一緒に解除
       topFilterStartOpen = false;
       updateHomeStats();
       renderTopFilterCard();
@@ -2871,13 +2875,47 @@ function renderTopFilterCard() {
   }
   sub.appendChild(tabRow);
 
+  // ── 計算問題モード：科目（カテゴリ）で絞り込むチップ行 ──
+  // 計算問題は「基礎」「ガス技術：供給」等にまたがるため、年度／分野とは別に科目でも絞れるようにする。
+  // タブではなく常時表示のチップにして、科目と年度を同時に見ながら選べるようにしている。
+  if (state.calcFilter) {
+    const calcCats = [...new Set(
+      state.questions.filter(q => q.questionType === 'calculation').map(q => q.category).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'ja'));
+    if (calcCats.length > 1) {   // 1科目しかないなら出す意味がない
+      const catRow = document.createElement('div');
+      catRow.className = 'top-filter-catrow';
+      const lbl = document.createElement('span');
+      lbl.className = 'top-filter-catrow-label';
+      lbl.textContent = '📚 科目';
+      catRow.appendChild(lbl);
+      calcCats.forEach(cat => {
+        const n = state.questions.filter(q => q.questionType === 'calculation' && q.category === cat).length;
+        const chip = document.createElement('button');
+        chip.className = 'top-filter-catchip' + (state.activeCategories.has(cat) ? ' active' : '');
+        chip.textContent = `${displayCategoryName(cat)}（${n}）`;
+        chip.addEventListener('click', () => {
+          if (state.activeCategories.has(cat)) state.activeCategories.delete(cat);
+          else state.activeCategories.add(cat);
+          updateHomeStats();
+          renderTopFilterCard();
+        });
+        catRow.appendChild(chip);
+      });
+      sub.appendChild(catRow);
+    }
+  }
+
   // アイテムリスト
   const items = document.createElement('div');
   items.className = 'top-filter-items';
 
   // 対象問題：計算問題モードなら計算問題のみ、通常は選択カテゴリ（計算問題は集計・出題から除外）
+  // 計算問題モードでカテゴリを選んでいる場合は、年度・分野の件数もそのカテゴリに絞って集計する。
   const srcQs = state.calcFilter
-    ? state.questions.filter(q => q.questionType === 'calculation')
+    ? state.questions.filter(q =>
+        q.questionType === 'calculation' &&
+        (state.activeCategories.size === 0 || state.activeCategories.has(q.category)))
     : state.questions.filter(q => q.category === topFilterOpenCat && !isCalcQuestion(q));
 
   // 名前列の幅を「全カテゴリの年度名・分野名」の中で最も長いものに固定する。

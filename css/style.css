@@ -2773,6 +2773,37 @@ body.tier-border-diamond .card {
   border-color: var(--primary);
   color: var(--primary-light);
 }
+/* 計算問題モードの「科目で絞り込む」チップ行（基礎／ガス技術：供給 等） */
+.top-filter-catrow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.top-filter-catrow-label {
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--text-3);
+  margin-right: 2px;
+}
+.top-filter-catchip {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+}
+.top-filter-catchip:hover { border-color: var(--primary); color: var(--text-1); }
+.top-filter-catchip.active {
+  background: var(--primary-bg);
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
 .top-filter-items {
   display: flex;
   flex-direction: column;
