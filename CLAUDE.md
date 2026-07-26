@@ -96,7 +96,9 @@ window.DEFAULT_QUESTIONS = {
     choices: [{
       id, text, isCorrect, explanation,
       image,                 // data:URL（メモリ上）/ idb:参照（localStorage上）
-      imageWidth             // 選択肢画像の表示幅(px)。角ドラッグでリサイズ・保存
+      imageWidth,            // 選択肢画像の表示幅(px)。角ドラッグでリサイズ・保存
+      explanationImage,      // その選択肢の「解説」に添付する画像（選択肢ごと。問題全体の explanationImage とは別物）
+      explanationImageWidth  // 解説画像の表示幅(px)。編集モーダルの数値入力のみ（リサイズハンドルなし）
     }]
   }]
 }
@@ -121,7 +123,7 @@ window.DEFAULT_QUESTIONS = {
 ### IndexedDB（画像）
 
 - DB `gas_study_db` / ストア `images`。ヘルパー: `idbGet` / `idbSet` / `idbResolveImage`、参照プレフィックス `IDB_REF = 'idb:'`。
-- 画像キー: `q_{id}_exp`（解説）, `q_{id}_b{i}`（本文ブロック）, `q_{id}_c{ci}`（選択肢）。
+- 画像キー: `q_{id}_exp`（問題全体の解説）, `q_{id}_b{i}`（本文ブロック）, `q_{id}_c{ci}`（選択肢）, `q_{id}_ce{ci}`（**選択肢ごとの解説画像**）。
 - `saveQuestions()` が data:URL を `idb:` 参照へ退避して localStorage に保存し、画像本体を IDB へ非同期書き込み。`loadStoredQuestions()` が読み込み時に `idb:` 参照を data:URL へ復元。
 - `saveQuestions(true)` は **画像のIDB再書き込みをスキップ**（`imageWidth` など画像以外の軽微な変更用）。
 
@@ -151,6 +153,7 @@ window.DEFAULT_QUESTIONS = {
 | 計算問題フィルター（ホーム） | `#top-filter-card` の「🔢 計算問題（N問）」ボタン=`onCalcFilterClick`（`state.calcFilter`）。計算問題は **基礎／ガス技術：供給 等の複数科目にまたがる** ため、年度／分野タブに加えて**科目チップ行**（`.top-filter-catrow` / `.top-filter-catchip`・複数選択可・`state.activeCategories` を使用）を常時表示し、科目と年度を同時に見ながら絞れるようにしている。選択すると年度・分野行の件数(`srcQs`)も連動して絞られる。⚠️ `getFilteredQuestions` の `catOk` は以前 `state.calcFilter \|\| …` で**計算問題モード時にカテゴリ判定を素通り**させていた（＝科目で分けられなかった）。現在は素通りさせないので、**計算問題モードに入る/出るときは `activeCategories` を必ずクリアすること**（`onCalcFilterClick`／`onTopFilterCatClick` で実施済み）。「絞り込みクリア」も計算問題モードでは `activeCategories` を消す |
 | 直前フィルター目印 | `lastUsedFilterYears` / `lastUsedFilterSections` / `lastUsedFilterCat`（グローバルSet）。`startSession()` 開始時にスナップショット保存。ホーム帰還時に `activeYears/Sections` をクリア。`renderTopFilterCard()` で `.last-used` クラスを付与し右上のオレンジドット（`::after`）で表示 |
 | 選択肢画像リサイズ | `_addResizeHandle` / `_saveChoiceImageWidth` |
+| **解説画像（選択肢ごと）** | `choice.explanationImage` / `explanationImageWidth`。編集モーダルの各選択肢カードで**解説テキストエリアの直下**に貼り付けゾーン（`.edit-choice-exp-img-area` + `_makeImgPasteZone(cid,'exp')`）。プレビューは `_renderChoiceImgPreview(area, cid, 'exp')`（`kind` で `editingChoiceExpImages`/`editingChoiceExpWidths` を切替）。ペースト先は `_editChoiceImgFocus = {cid, kind}`（**旧: cid の文字列だったので触るときは注意**）。保存は `_applyEditedExpImage(choice, cid)`（通常モード・シングルモード両方で呼ぶ）。表示は `makeChoiceExpImage(c)`（学習の答え合わせ4箇所・`openViewModal`）/ `_setDrillExpImage(c)`（壁打ち・`#drill-exp-img-wrap`）/ `_setCdmExpImage(c)`（振り返り・`#cdm-exp-img`）。**問題全体の `q.explanationImage`（トグルボタンで開閉）とは別物**で、こちらは常時表示。⚠️ **画像要素は必ず `.choice-explanation` の「兄弟」として置くこと**（中に入れるとマーカーの文字オフセット `_visibleText` が狂って赤太文字がずれる） |
 | タグ並び替え・行グループ | `sortTagsJa`（**数字→英字→50音**・先頭#無視）。`foldKanaChar(ch)`＝かなを清音ひらがなに畳む(ガ→か)・かな以外はnull。`tagGroupKey(tag)`＝頭文字グループ（数字→'0-9'／英字→'A-Z'／かな→畳んだ頭文字／漢字→読みキャッシュ`tagReadings`があればその頭文字・無ければ暫定でその文字）。`tagGyo(tag)`＝`_GYO_MAP`で「あ行/か行…/その他」に。`renderTagStudyArea`は`TAG_GYO_ORDER`順に**行見出し+チップの縦グループ**（`.tag-study-group`/`.tag-study-group-label`/`.tag-study-group-chips`）で描画。検索絞り込み中は表示チップ0の行を隠す |
 | 漢字タグの読み（ふりがな） | `tagReadings`（`gas_tag_readings_v1`・{タグ本体:読み（ふりがな）}）。**kuromoji自動解析は廃止**（起動フリーズ＋実機で解析が進まなかったため）。読みは**手動登録**：`setTagReading(tag, reading)`（空で削除）／`tagNeedsReading(tag)`（漢字始まり等＝数字/英字/かな以外）。`tagGroupKey`は読みの頭文字を`foldKanaChar`で畳んで行分類（未登録→その他）。登録UIは2箇所：①タグ出題エリアで**タグを選択→「🖊 読みを編集」**（`tagReadingPanelOpen`でパネル開閉・Enterで再描画反映・blurは保存のみ）②壁打ち（答え合わせ）画面のタグ追加に**「よみ」入力欄**（`drill-tag-reading-input`）、`_drillAddTag`が読みも登録。既存タグチップは`#タグ（よみ）`表示・タップで タグ名＋読み を入力欄へ読込。バックアップ対象キーにも追加済み |
 | 連続学習日数（ストリーク） | `computeStreak`（ヘッダー `#hd-streak` とカレンダーの両方で使用） |

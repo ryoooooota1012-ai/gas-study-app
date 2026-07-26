@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260711y">
+  <link rel="stylesheet" href="css/style.css?v=20260726a">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -703,6 +703,9 @@
       <div id="drill-result-label" class="drill-result-label"></div>
       <div id="drill-answer-reveal" class="drill-answer-reveal"></div>
       <div id="drill-explanation" class="choice-explanation hidden"></div>
+      <div id="drill-exp-img-wrap" class="choice-exp-img-wrap hidden">
+        <img id="drill-exp-image" class="choice-exp-image" alt="解説図">
+      </div>
       <div id="drill-session-acc" class="session-acc" style="margin-top:10px;"></div>
       <!-- タグセクション -->
       <div id="drill-tags-section" style="margin-top:10px;">
@@ -808,6 +811,7 @@
       <div id="cdm-choice" class="cdm-choice"></div>
       <div id="cdm-result" class="cdm-result-line"></div>
       <div id="cdm-explanation" class="cdm-explanation"></div>
+      <div id="cdm-exp-img"></div>
       <div id="cdm-tags" class="cdm-tags-area"></div>
     </div>
     <div class="modal-footer">
@@ -1545,7 +1549,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260711y"></script>
+<script src="js/app.js?v=20260726a"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

@@ -13,7 +13,9 @@ let editingBlocks            = [];   // 編集中のブロック [{type:'text',c
 let editingExplanationImage  = null; // 編集中の解説画像（base64 or null）
 let editingChoiceImages      = {};   // 編集中の選択肢画像 { [choiceId]: base64 }
 let editingChoiceWidths      = {};   // 編集中の選択肢画像幅 { [choiceId]: number|null }
-let _editChoiceImgFocus      = null; // 画像ペースト先の選択肢ID
+let editingChoiceExpImages   = {};   // 編集中の「選択肢の解説」画像 { [choiceId]: base64 }
+let editingChoiceExpWidths   = {};   // 編集中の解説画像幅 { [choiceId]: number|null }
+let _editChoiceImgFocus      = null; // 画像ペースト先 { cid, kind:'choice'|'exp' } or null
 // ── 答え合わせ画面のインライン編集（モーダルを出さず、表示中の要素をその場で上書き）──
 let inlineEditMode      = false;  // インライン編集モードON/OFF（ON中はマーカー作成を停止）
 let qlistSelectMode     = false;
@@ -728,8 +730,11 @@ async function loadStoredQuestions() {
       }
       if (Array.isArray(q.choices)) {
         r.choices = await Promise.all(q.choices.map(async c => {
-          if (!c.image) return c;
-          return { ...c, image: await idbResolveImage(c.image) };
+          if (!c.image && !c.explanationImage) return c;
+          const nc = { ...c };
+          if (c.image)            nc.image            = await idbResolveImage(c.image);
+          if (c.explanationImage) nc.explanationImage = await idbResolveImage(c.explanationImage);
+          return nc;
         }));
       }
       return r;
@@ -738,7 +743,8 @@ async function loadStoredQuestions() {
     const hasLegacy = data.some(q =>
       q.explanationImage?.startsWith('data:') ||
       (Array.isArray(q.blocks) && q.blocks.some(b => b.type === 'image' && b.src?.startsWith('data:'))) ||
-      (Array.isArray(q.choices) && q.choices.some(c => c.image?.startsWith('data:')))
+      (Array.isArray(q.choices) && q.choices.some(c =>
+        c.image?.startsWith('data:') || c.explanationImage?.startsWith('data:')))
     );
     if (hasLegacy) saveQuestions();
     return true;
@@ -761,11 +767,13 @@ function saveQuestions(skipImageWrite = false) {
       );
     }
     if (Array.isArray(q.choices)) {
-      s.choices = q.choices.map((c, ci) =>
-        c.image?.startsWith('data:')
-          ? { ...c, image: IDB_REF + 'q_' + q.id + '_c' + ci }
-          : c
-      );
+      s.choices = q.choices.map((c, ci) => {
+        if (!c.image?.startsWith('data:') && !c.explanationImage?.startsWith('data:')) return c;
+        const sc = { ...c };
+        if (c.image?.startsWith('data:'))            sc.image            = IDB_REF + 'q_' + q.id + '_c'  + ci;
+        if (c.explanationImage?.startsWith('data:')) sc.explanationImage = IDB_REF + 'q_' + q.id + '_ce' + ci;
+        return sc;
+      });
     }
     return s;
   });
@@ -798,6 +806,8 @@ function saveQuestions(skipImageWrite = false) {
         for (let ci = 0; ci < q.choices.length; ci++) {
           if (q.choices[ci].image?.startsWith('data:'))
             await idbSet('q_' + q.id + '_c' + ci, q.choices[ci].image);
+          if (q.choices[ci].explanationImage?.startsWith('data:'))
+            await idbSet('q_' + q.id + '_ce' + ci, q.choices[ci].explanationImage);
         }
       }
     }
@@ -4479,7 +4489,10 @@ function checkAnswers() {
           aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
           setTimeout(() => { aiBtn.textContent = orig; }, 3000);
         });
-        resultRow.append(lbl, exp, aiBtn);
+        resultRow.append(lbl, exp);
+        const expImg = makeChoiceExpImage(c);
+        if (expImg) resultRow.appendChild(expImg);
+        resultRow.appendChild(aiBtn);
         item.appendChild(resultRow);
       } else if (c.id === userChoiceId) {
         item.classList.add('result-incorrect');
@@ -4502,7 +4515,10 @@ function checkAnswers() {
           aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
           setTimeout(() => { aiBtn.textContent = orig; }, 3000);
         });
-        resultRow.append(lbl, exp, aiBtn);
+        resultRow.append(lbl, exp);
+        const expImg = makeChoiceExpImage(c);
+        if (expImg) resultRow.appendChild(expImg);
+        resultRow.appendChild(aiBtn);
         item.appendChild(resultRow);
       } else if (isSingleSelectQuestion(q)) {
         // 1択問題：選ばなかった（誤りの）選択肢にも解説を表示
@@ -4525,7 +4541,10 @@ function checkAnswers() {
           aiBtn.textContent = '✅ 解説プロンプトをコピーしました';
           setTimeout(() => { aiBtn.textContent = orig; }, 3000);
         });
-        resultRow.append(lbl, exp, aiBtn);
+        resultRow.append(lbl, exp);
+        const expImg = makeChoiceExpImage(c);
+        if (expImg) resultRow.appendChild(expImg);
+        resultRow.appendChild(aiBtn);
         item.appendChild(resultRow);
       }
     });
@@ -4649,7 +4668,10 @@ function checkAnswers() {
       setTimeout(() => { aiBtn.textContent = orig; }, 3000);
     });
 
-    resultRow.append(lbl, exp, aiBtn);
+    resultRow.append(lbl, exp);
+    const expImg = makeChoiceExpImage(c);
+    if (expImg) resultRow.appendChild(expImg);
+    resultRow.appendChild(aiBtn);
     item.appendChild(resultRow);
   });
 
@@ -5300,6 +5322,7 @@ function openChoiceDetailModal(histEntry, cr) {
     }
     document.getElementById('cdm-explanation').innerHTML =
       renderText(corrChoice?.explanation || selChoice?.explanation || '（解説なし）');
+    _setCdmExpImage(corrChoice?.explanationImage ? corrChoice : selChoice);
   } else {
     // 通常問題の表示
     const c     = cr.choice;
@@ -5317,6 +5340,7 @@ function openChoiceDetailModal(histEntry, cr) {
       `<span class="cdm-detail">　あなた: ${userAns}　／　正解: ${correct}</span>`;
 
     document.getElementById('cdm-explanation').innerHTML = renderText(c.explanation || '（解説なし）');
+    _setCdmExpImage(c);
   }
 
   renderCdmTags(q);
@@ -5792,6 +5816,7 @@ function renderDrillChoice() {
     } else {
       expEl.classList.add('hidden');
     }
+    _setDrillExpImage(c);
 
     const { total, correct } = state.drillStats;
     document.getElementById('drill-session-acc').textContent =
@@ -5868,6 +5893,7 @@ function answerDrill(userSaysCorrect) {
   } else {
     expEl.classList.add('hidden');
   }
+  _setDrillExpImage(c);
 
   // 過去3回ドット更新
   const dotsEl = document.getElementById('drill-history-dots');
@@ -8390,6 +8416,8 @@ function saveEditSilent() {
         isCorrect:   card.querySelector('.edit-maru')?.classList.contains('selected') ?? q.choices[editingChoiceIndex].isCorrect,
         explanation: card.querySelector('.edit-choice-exp-input')?.value.trim() ?? q.choices[editingChoiceIndex].explanation,
       };
+      // 貼り付けたばかりの解説画像が ←→ 移動で消えないように反映する
+      _applyEditedExpImage(q.choices[editingChoiceIndex], q.choices[editingChoiceIndex].id);
     }
   } else {
     cards.forEach((card, i) => {
@@ -8400,6 +8428,8 @@ function saveEditSilent() {
         isCorrect:   card.querySelector('.edit-maru')?.classList.contains('selected') ?? q.choices[i].isCorrect,
         explanation: card.querySelector('.edit-choice-exp-input')?.value.trim() ?? q.choices[i].explanation,
       };
+      // 貼り付けたばかりの解説画像が ←→ 移動で消えないように反映する
+      _applyEditedExpImage(q.choices[i], q.choices[i].id);
     });
   }
   state.questions[idx] = q;
@@ -8464,6 +8494,8 @@ function openViewModal(qId) {
       expEl.textContent = c.explanation;
       choiceEl.appendChild(expEl);
     }
+    const expImg = makeChoiceExpImage(c);
+    if (expImg) choiceEl.appendChild(expImg);
     body.appendChild(choiceEl);
   });
 
@@ -8729,24 +8761,102 @@ function renderEditBlocks() {
   });
 }
 
-function _renderChoiceImgPreview(area, cid) {
+/**
+ * 選択肢の解説に添付された画像の表示要素を作る（無ければ null）。
+ * 注意: 必ず .choice-explanation の「兄弟」として差し込むこと。
+ * 中に入れるとマーカー（赤太文字）の文字オフセット計算が狂う。
+ */
+function makeChoiceExpImage(c) {
+  if (!c?.explanationImage) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'choice-exp-img-wrap';
+  if (c.explanationImageWidth) wrap.style.width = c.explanationImageWidth + 'px';
+  const img = document.createElement('img');
+  img.src = c.explanationImage;
+  img.className = 'choice-exp-image';
+  img.alt = '解説図';
+  img.loading = 'lazy';
+  wrap.appendChild(img);
+  return wrap;
+}
+
+// 振り返り（選択肢詳細モーダル）の解説画像を差し替える
+function _setCdmExpImage(c) {
+  const area = document.getElementById('cdm-exp-img');
+  if (!area) return;
+  area.innerHTML = '';
+  const el = makeChoiceExpImage(c);
+  if (el) area.appendChild(el);
+}
+
+// 壁打ち画面の解説画像を現在の選択肢に合わせて更新する
+function _setDrillExpImage(c) {
+  const wrap = document.getElementById('drill-exp-img-wrap');
+  const img  = document.getElementById('drill-exp-image');
+  if (!wrap || !img) return;
+  if (c?.explanationImage) {
+    img.src = c.explanationImage;
+    wrap.style.width = c.explanationImageWidth ? c.explanationImageWidth + 'px' : '';
+    wrap.classList.remove('hidden');
+  } else {
+    img.removeAttribute('src');
+    wrap.style.width = '';
+    wrap.classList.add('hidden');
+  }
+}
+
+// 編集モーダルの解説画像（選択肢ごと）を保存対象の選択肢オブジェクトへ反映する
+function _applyEditedExpImage(choice, cid) {
+  if (editingChoiceExpImages[cid]) {
+    choice.explanationImage = editingChoiceExpImages[cid];
+  } else {
+    delete choice.explanationImage;
+  }
+  if (editingChoiceExpWidths[cid] != null) {
+    choice.explanationImageWidth = editingChoiceExpWidths[cid];
+  } else {
+    delete choice.explanationImageWidth;
+  }
+}
+
+// 編集モーダルの「クリック→Ctrl+V」画像貼り付けゾーンを作る
+function _makeImgPasteZone(cid, kind) {
+  const zone = document.createElement('div');
+  zone.className = 'edit-choice-img-paste-zone';
+  zone.tabIndex = 0;
+  zone.textContent = kind === 'exp'
+    ? '📋 解説に画像を貼り付け（クリック → Ctrl+V）'
+    : '📋 ここをクリック → Ctrl+V で画像を貼り付け';
+  zone.addEventListener('click', () => {
+    _editChoiceImgFocus = { cid, kind };
+    document.querySelectorAll('.edit-choice-img-paste-zone').forEach(z => z.classList.remove('focused'));
+    zone.classList.add('focused');
+    zone.focus();
+  });
+  return zone;
+}
+
+// kind='choice' … 選択肢本文に付ける画像 / kind='exp' … その選択肢の解説に付ける画像
+function _renderChoiceImgPreview(area, cid, kind = 'choice') {
+  const imgStore   = kind === 'exp' ? editingChoiceExpImages : editingChoiceImages;
+  const widthStore = kind === 'exp' ? editingChoiceExpWidths : editingChoiceWidths;
   const old = area.querySelector('.edit-choice-img-preview');
   if (old) old.remove();
-  const src = editingChoiceImages[cid];
+  const src = imgStore[cid];
   if (!src) return;
   const wrap = document.createElement('div');
   wrap.className = 'edit-choice-img-preview';
   const img = document.createElement('img');
   img.src = src;
   img.className = 'edit-choice-img-thumb';
-  img.alt = '選択肢画像';
+  img.alt = kind === 'exp' ? '解説画像' : '選択肢画像';
   const delBtn = document.createElement('button');
   delBtn.type = 'button';
   delBtn.className = 'edit-choice-img-del';
   delBtn.textContent = '🗑 削除';
   delBtn.addEventListener('click', () => {
-    delete editingChoiceImages[cid];
-    delete editingChoiceWidths[cid];
+    delete imgStore[cid];
+    delete widthStore[cid];
     wrap.remove();
   });
   const widthWrap = document.createElement('div');
@@ -8760,11 +8870,11 @@ function _renderChoiceImgPreview(area, cid) {
   widthInput.min = '50';
   widthInput.max = '800';
   widthInput.placeholder = '自動';
-  const curW = editingChoiceWidths[cid];
+  const curW = widthStore[cid];
   if (curW) widthInput.value = curW;
   widthInput.addEventListener('input', () => {
     const v = parseInt(widthInput.value, 10);
-    editingChoiceWidths[cid] = isNaN(v) ? null : v;
+    widthStore[cid] = isNaN(v) ? null : v;
   });
   widthWrap.append(widthLabel, widthInput);
   wrap.append(img, widthWrap, delBtn);
@@ -8836,14 +8946,15 @@ function handleEditImagePaste(e) {
   for (const item of items) {
     if (item.type.startsWith('image/')) {
       e.preventDefault();
-      // 選択肢の画像ゾーンがフォーカスされている場合はそちらに貼り付け
+      // 選択肢／解説の画像ゾーンがフォーカスされている場合はそちらに貼り付け
       if (_editChoiceImgFocus) {
-        const cid = _editChoiceImgFocus;
+        const { cid, kind } = _editChoiceImgFocus;
         const reader = new FileReader();
         reader.onload = ev => {
-          editingChoiceImages[cid] = ev.target.result;
-          const area = document.querySelector(`.edit-choice-img-area[data-cid="${cid}"]`);
-          if (area) _renderChoiceImgPreview(area, cid);
+          (kind === 'exp' ? editingChoiceExpImages : editingChoiceImages)[cid] = ev.target.result;
+          const sel = kind === 'exp' ? '.edit-choice-exp-img-area' : '.edit-choice-img-area';
+          const area = document.querySelector(`${sel}[data-cid="${cid}"]`);
+          if (area) _renderChoiceImgPreview(area, cid, kind);
         };
         reader.readAsDataURL(item.getAsFile());
         break;
@@ -8939,10 +9050,14 @@ function openEditModal(qId, choiceIndex, fromList) {
   // 選択肢画像初期化
   editingChoiceImages = {};
   editingChoiceWidths = {};
+  editingChoiceExpImages = {};
+  editingChoiceExpWidths = {};
   _editChoiceImgFocus = null;
   (q.choices || []).forEach(c => {
     if (c.image) editingChoiceImages[c.id] = c.image;
     if (c.imageWidth) editingChoiceWidths[c.id] = c.imageWidth;
+    if (c.explanationImage) editingChoiceExpImages[c.id] = c.explanationImage;
+    if (c.explanationImageWidth) editingChoiceExpWidths[c.id] = c.explanationImageWidth;
   });
   const expImgSection = document.getElementById('edit-exp-image-section');
   if (expImgSection) expImgSection.style.display = singleMode ? 'none' : '';
@@ -9011,20 +9126,18 @@ function openEditModal(qId, choiceIndex, fromList) {
     const choiceImgArea = document.createElement('div');
     choiceImgArea.className = 'edit-choice-img-area';
     choiceImgArea.dataset.cid = c.id;
-    const imgPasteZone = document.createElement('div');
-    imgPasteZone.className = 'edit-choice-img-paste-zone';
-    imgPasteZone.tabIndex = 0;
-    imgPasteZone.textContent = '📋 ここをクリック → Ctrl+V で画像を貼り付け';
-    imgPasteZone.addEventListener('click', () => {
-      _editChoiceImgFocus = c.id;
-      document.querySelectorAll('.edit-choice-img-paste-zone').forEach(z => z.classList.remove('focused'));
-      imgPasteZone.classList.add('focused');
-      imgPasteZone.focus();
-    });
+    const imgPasteZone = _makeImgPasteZone(c.id, 'choice');
     choiceImgArea.appendChild(imgPasteZone);
-    _renderChoiceImgPreview(choiceImgArea, c.id);
+    _renderChoiceImgPreview(choiceImgArea, c.id, 'choice');
 
-    card.append(hdr, textToolbar, textInput, choiceImgArea, correctRow, expLabel, expToolbar, expInput);
+    // 解説画像エリア（解説文の直下に貼り付け）
+    const expImgArea = document.createElement('div');
+    expImgArea.className = 'edit-choice-exp-img-area';
+    expImgArea.dataset.cid = c.id;
+    expImgArea.appendChild(_makeImgPasteZone(c.id, 'exp'));
+    _renderChoiceImgPreview(expImgArea, c.id, 'exp');
+
+    card.append(hdr, textToolbar, textInput, choiceImgArea, correctRow, expLabel, expToolbar, expInput, expImgArea);
     container.appendChild(card);
   });
 
@@ -9398,6 +9511,7 @@ function saveEditModal() {
       } else {
         delete q.choices[editingChoiceIndex].imageWidth;
       }
+      _applyEditedExpImage(q.choices[editingChoiceIndex], cid);
     }
   } else {
     // 通常モード: 全選択肢を更新
@@ -9423,6 +9537,7 @@ function saveEditModal() {
       } else {
         delete q.choices[i].imageWidth;
       }
+      _applyEditedExpImage(q.choices[i], cid);
     });
   }
 
@@ -9452,6 +9567,8 @@ function saveEditModal() {
   editingChoiceIndex = null;
   editingChoiceImages = {};
   editingChoiceWidths = {};
+  editingChoiceExpImages = {};
+  editingChoiceExpWidths = {};
   _editChoiceImgFocus = null;
   if (!document.getElementById('screen-stats').classList.contains('hidden')) {
     _renderStatsImpl();
@@ -11688,6 +11805,8 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     editingChoiceIndex  = null;
     editingChoiceImages = {};
     editingChoiceWidths = {};
+    editingChoiceExpImages = {};
+    editingChoiceExpWidths = {};
     _editChoiceImgFocus = null;
   };
   document.getElementById('modal-edit-close').addEventListener('click', closeEditModal);

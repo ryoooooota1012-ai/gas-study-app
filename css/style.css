@@ -586,7 +586,9 @@ pre {
 .edit-paste-hint { font-size: .72rem; color: var(--text-3); }
 
 /* ===== Edit Choice Image ===== */
-.edit-choice-img-area { display: flex; flex-direction: column; gap: 6px; }
+.edit-choice-img-area,
+.edit-choice-exp-img-area { display: flex; flex-direction: column; gap: 6px; }
+.edit-choice-exp-img-area { margin-top: 6px; }
 .edit-choice-img-paste-zone {
   border: 1.5px dashed var(--border);
   border-radius: 8px;
@@ -963,6 +965,23 @@ pre {
   color: var(--text-2);
   border-left: 3px solid var(--warn-border);
   padding-left: 10px;
+}
+/* 解説に添付した画像。解説文の枠線に揃えて少し内側に置く
+   （.choice-explanation の中には入れない＝マーカーの文字位置がずれるため） */
+.choice-exp-img-wrap {
+  margin: 8px 0 0 13px;
+  max-width: 100%;
+}
+.choice-exp-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 6px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
 }
 
 .session-acc {
