@@ -10594,6 +10594,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   // 作成時に表示をONにするので、「－」でOFFにした後でも追加マーカーを引ける）
   document.addEventListener('mouseup', e => {
     if (inlineEditMode) return;   // インライン編集中はドラッグでのマーカー作成を停止
+    // ダブルクリック（＝マーカー削除の操作）は 2回目の click で単語が自動選択され、
+    // mouseup → dblclick の順に発火する。この mouseup をマーカー作成として拾うと
+    // 融合で id が振り直され、直後の dblclick が **古い id** を消しに行って何も消えない。
+    // ＝「ダブルクリックで赤太文字が解除できない」バグになるので、ここで捨てる。
+    if (e.detail >= 2) return;
 
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.rangeCount) return;
@@ -10669,6 +10674,30 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const fullLen  = _visibleText(targetEl).length;
     const inBounds = h => h.start >= 0 && h.end <= fullLen && h.start < h.end;
     const sameTarget = h => h.choiceId === choiceId && (h.area || 'choice') === area && inBounds(h);
+
+    const redraw = () => {
+      if (inDrill) {
+        _applyDrillHighlights(q, state.drillQueue[state.drillIndex].choice);
+        _updateDrillMarkerBtn(q, state.drillQueue[state.drillIndex].choice);
+      } else {
+        _applyHighlights(q);
+        applyTempMarkers(q);
+        _updateMarkerBtn();
+      }
+    };
+
+    // 既存マーカーの **内側だけ** をなぞった場合は「解除」（＝ドラッグでのトグルOFF）。
+    // はみ出して選んだ場合は下の融合処理で拡張になるので、
+    // 「半分マーク→全体を選び直して広げる」は今まで通り動く。
+    const enclosing = highlightsData[q.id].find(h => sameTarget(h) && h.start <= start && h.end >= end);
+    if (enclosing) {
+      highlightsData[q.id] = highlightsData[q.id].filter(h => h !== enclosing);
+      if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+      saveHighlights();
+      redraw();
+      return;
+    }
+
     let mStart = start, mEnd = end, changed = true;
     while (changed) {
       changed = false;
@@ -10697,14 +10726,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     highlightsData[q.id] = kept;
     markerDisplayOn = true;   // 作成したマーカー（黄色含む）が必ず見えるよう表示ON
     saveHighlights();
-    if (inDrill) {
-      _applyDrillHighlights(q, state.drillQueue[state.drillIndex].choice);
-      _updateDrillMarkerBtn(q, state.drillQueue[state.drillIndex].choice);
-    } else {
-      _applyHighlights(q);
-      applyTempMarkers(q);
-      _updateMarkerBtn();
-    }
+    redraw();
   });
 
   // ── マーカーのダブルクリックで削除 ──
