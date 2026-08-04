@@ -79,6 +79,8 @@ Claude Code の `preview_start`（name: `study-app`）で起動できる。`inde
 
 **選択肢に関わる新機能（画像・マーカー等）は `createChoiceItem` と `renderDrillChoice` の両方に実装しないと、片方の画面で表示されません。** 過去に何度もここでバグが出ています。
 
+**問題文・選択肢・解説をテキストとして画面に出すときは必ず `renderText()`（または `renderBlocksToEl()`）を通すこと。`textContent` で直接入れると `[r]…[/r]` が記号のまま表示され、改行も潰れます。** 特に問題文は `q.questionText`（＝先頭テキストブロックのみの後方互換フィールド）ではなく **`getQuestionBlocks(q)` → `renderBlocksToEl()`** を使う。`questionText` だけを見ると2つ目以降のテキストブロックと画像が出ず、「問題を修正しても反映されない」バグになります（壁打ちの問題文が実際にこれでした）。
+
 ---
 
 ## データモデル

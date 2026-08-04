@@ -744,6 +744,10 @@ pre {
   margin-bottom: 16px;
 }
 
+/* 壁打ちの問題文の入れ物。中身は学習画面と同じ .question-text / .question-image-area。
+   最後のブロックの下マージンだけ詰めてカードを間延びさせない */
+.drill-question-blocks > :last-child { margin-bottom: 0; }
+
 /* ===== Choice Items (question format) ===== */
 .choice-item {
   border: 1.5px solid var(--border);

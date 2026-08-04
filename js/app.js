@@ -5291,7 +5291,7 @@ function openChoiceDetailModal(histEntry, cr) {
 
   const qEl = document.getElementById('cdm-question');
   if (q.questionText) {
-    qEl.textContent = q.questionText;
+    qEl.innerHTML = renderText(q.questionText);   // textContent だと [r]…[/r] が記号のまま出る
     qEl.classList.remove('hidden');
   } else {
     qEl.classList.add('hidden');
@@ -5733,12 +5733,19 @@ function renderDrillChoice() {
   const parts = [q.year, q.category, q.source || q.id].filter(Boolean);
   document.getElementById('drill-source').textContent = parts.join('  ／  ');
 
-  // 問題文
+  // 問題文（学習画面と同じブロック描画を使う）
+  // ⚠️ 以前は `qtEl.textContent = q.questionText` で流し込んでいたため、壁打ちだけ
+  //    ・[r]…[/r] が赤太文字にならず記号のまま出る
+  //    ・改行が潰れる
+  //    ・2つ目以降のテキストブロックと画像が表示されない（questionText＝先頭ブロックのみのため）
+  //    ＝「問題を修正しても壁打ちに反映されない」状態になっていた。
   const qtEl = document.getElementById('drill-question-text');
-  if (q.questionText) {
-    qtEl.textContent = q.questionText;
+  const qBlocks = getQuestionBlocks(q);
+  if (qBlocks.length > 0) {
+    renderBlocksToEl(qBlocks, qtEl);
     qtEl.classList.remove('hidden');
   } else {
+    qtEl.innerHTML = '';
     qtEl.classList.add('hidden');
   }
 
