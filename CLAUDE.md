@@ -136,7 +136,8 @@ window.DEFAULT_QUESTIONS = {
 | 機能 | 関数 |
 |------|------|
 | 通常学習の開始 | `startSession(mode, opts)`（`opts.excludeMastered` で3連続正解済み問題を除外）/ `_startSession(mode, filtered, opts)`（`opts.queue` で事前構築キュー、`opts.quickMode` でとりあえず50） |
-| とりあえず50 | `startRandomFifty`（全問から計算/1択・記述・壁打ち除外を除き、壁打ち=1選択肢1答形式で完全ランダム50択。`startDrillWithQueue(queue,'quick50')` で起動） |
+| とりあえず50 | `startRandomFifty`（**年度別の問題のみ**から計算/1択・記述・壁打ち除外を除き、壁打ち=1選択肢1答形式で完全ランダム50択。`startDrillWithQueue(queue,'quick50')` で起動） |
+| **年度別 / 分野別の判定** | `isYearlyQuestion(q)` ＝ `q.year` があり、かつ `分野別…` で始まらない。分野別には年度別とほぼ同内容の問題が重複登録されているため、**ランダム性のある出題（とりあえず50）とキーワード検索は年度別だけを対象にする**。`q.year` に `"分野別：供給"` のような値が入る運用なので、年度の有無だけで判定しないこと（`yearSortKey` も `分野別` を 0 として扱う）。ホームの「📅 年度別過去問 / 📂 分野別過去問」タブ（`topFilterSubMode`）や通常の絞り込み出題は**従来どおり両方が対象**（絞る場合は明示的に指定された時だけ） |
 | 出題ジェネレータ | `openExamGenerator`（`#modal-exam-generator`）。分野選択+シャッフル単位(問題/選択肢)+習熟度割合(多め/普通/少なめ/除外)→模試形式で出題。`generateExamSet`(問題単位=問番号ごとに年度を重み付き抽選し1問)/`generateExamSetByChoice`(選択肢単位=各選択肢位置イロハ…を別年度の同番号問題から合成。合成問題id=`gen-<cat>-q<N>`、選択肢は実idを保持し進捗連動)。`questionBucket`/`choiceBucket`(未挑戦/直近不正解/1〜3連続正解)/`egWeightedPick`。構成は保存しない |
 | マスター判定 | `isQuestionMastered`（全採点単位が3連続正解以上）/ `isFilterMastered`（問題群が全てマスター）。いずれもロック考慮 |
 | **連続正解ロック（5連続で固定）** | 5連続正解に到達した採点単位は progress エントリに `locked:true` が立ち、**以後どれだけ不正解でも連続正解数は5のまま**（一度ダイヤになった年度・分野の表示が下がらない）。`STREAK_LOCK_AT=5` / `entryStreak(p)`（ロック考慮の連続正解数。`locked` 未設定の既存データも履歴が5連続なら5扱いで移行不要）/ `lockIfMastered(p)`（5連続到達でロック付与）。`recordAnswer` は**履歴を積む前後の2回** `lockIfMastered` を呼ぶ（前=既存の5連続データが今回の不正解でロックを取り逃さないため／後=今回5連続に到達した場合）。`_fixLastProgressEntry` も訂正後に再判定。**ロックされるのは連続正解（ティア・マスター・習熟度バケット）だけで、`attempts`/`correct`/`history` は毎回そのまま加算・減算される**（正答率・直近5回ドットは実態を表示）。ロック考慮の入口＝`entryStreak`／`questionProgressEntries`／`questionProgressStreaks`／`bucketFromEntry`／`streakTierFromEntry`。⚠️`questionProgressHistories`・`histStreak`・`bucketFromHistory` は**生履歴でロックを反映しない**ので連続正解判定に使わないこと |

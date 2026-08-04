@@ -3779,6 +3779,7 @@ function startRandomFifty() {
   }
   const queue = [];
   state.questions.forEach(q => {
+    if (!isYearlyQuestion(q)) return;     // 年度別のみ（分野別・年度なしは重複が多いので除外）
     if (q.drillExcluded) return;          // 壁打ち除外指定は出さない
     if (isOnePickQuestion(q)) return;     // 計算・1択選択問題は除外
     if (isFillBlankQuestion(q)) return;
@@ -3787,7 +3788,7 @@ function startRandomFifty() {
     });
   });
   if (queue.length === 0) {
-    alert('出題できる選択肢がありません（計算問題・1択選択問題は除外されます）。');
+    alert('出題できる選択肢がありません（年度別の問題のみが対象です。分野別・計算問題・1択選択問題は除外されます）。');
     return;
   }
   // シャッフルして先頭50択
@@ -4057,6 +4058,15 @@ function isSingleSelectQuestion(q) {
 /** 計算問題 or 1択選択問題（どちらも1択選ぶUI） */
 function isOnePickQuestion(q) {
   return isCalcQuestion(q) || isSingleSelectQuestion(q);
+}
+
+/**
+ * 「年度別」として登録された問題か（`year` が無い / `分野別…` で始まるものは false）。
+ * 分野別には年度別とほぼ同内容の問題が重複して登録されているため、
+ * ランダム出題（とりあえず50）・キーワード検索の対象は年度別だけに絞る。
+ */
+function isYearlyQuestion(q) {
+  return !!q?.year && !String(q.year).startsWith('分野別');
 }
 
 // 問題文から設問の極性を自動判定：誤答型（誤っているものを選ぶ）か正答型か
@@ -7917,7 +7927,7 @@ function keywordMatchedChoices(keyword) {
   if (words.length === 0) return [];
   const items = [];
   state.questions.forEach(q => {
-    if (!q.year || String(q.year).startsWith('分野別')) return; // 年度別のみ
+    if (!isYearlyQuestion(q)) return;   // 年度別のみ
     if (isFillBlankQuestion(q) || isCalcQuestion(q)) return;
     (q.choices || []).forEach((c, i) => {
       const t = (c.text || '').toLowerCase();
