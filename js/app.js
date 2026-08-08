@@ -249,6 +249,83 @@ function saveHighlights() {
   localStorage.setItem(HIGHLIGHTS_KEY, JSON.stringify(highlightsData));
 }
 
+/**
+ * マーカーの保存キーは「表示中の問題id」ではなく **その選択肢を実際に持つ問題のid**。
+ * キーワード出題(`kwset-*`)・出題ジェネレータの選択肢単位(`gen-*`)は
+ * 実問題とは別idの合成問題を作るため、表示中の問題idで保存すると
+ * 通常出題と壁打ちで同じ選択肢のマーカーが共有されない。
+ */
+let _choiceOwnerIdx = null;   // Map(選択肢id -> 実問題id)
+
+/** state.questions を書き換えたら呼ぶ（次回参照時に作り直す） */
+function invalidateChoiceOwnerIndex() { _choiceOwnerIdx = null; }
+
+function _choiceOwnerId(choiceId) {
+  if (!_choiceOwnerIdx) {
+    _choiceOwnerIdx = new Map();
+    (state.questions || []).forEach(q =>
+      (q.choices || []).forEach(c => { if (c && c.id) _choiceOwnerIdx.set(c.id, q.id); })
+    );
+  }
+  return _choiceOwnerIdx.get(choiceId);
+}
+
+/** マーカーの保存キー。実問題が見つからなければ表示中の問題idにフォールバック */
+function hlKey(choiceId, fallbackQid) {
+  return _choiceOwnerId(choiceId) || fallbackQid;
+}
+
+/** その選択肢のマーカー一覧 */
+function hlFor(choiceId, fallbackQid) {
+  return (highlightsData[hlKey(choiceId, fallbackQid)] || []).filter(h => h.choiceId === choiceId);
+}
+
+/** 表示中の問題（合成問題含む）に出るマーカーを [{key, h}] で全部集める */
+function hlEntriesForQuestion(q) {
+  const out = [];
+  ((q && q.choices) || []).forEach(c => {
+    if (!c || !c.id) return;
+    const key = hlKey(c.id, q.id);
+    (highlightsData[key] || []).forEach(h => { if (h.choiceId === c.id) out.push({ key, h }); });
+  });
+  return out;
+}
+
+/** [{key, h}] のマーカーをまとめて削除（空になったバケットも掃除）。保存は呼び出し側で */
+function _hlRemoveEntries(entries) {
+  entries.forEach(({ key, h }) => {
+    if (!highlightsData[key]) return;
+    highlightsData[key] = highlightsData[key].filter(x => x !== h);
+    if (highlightsData[key].length === 0) delete highlightsData[key];
+  });
+}
+
+/**
+ * 旧データの再配置：合成問題id（`kwset-*` / `gen-*`）の下に保存されていたマーカーを
+ * 実問題idのバケットへ移す。実問題が見つからないものはそのまま残す。
+ * **state.questions のロード後に呼ぶこと**（実問題idを引けないと移動できない）。
+ */
+function migrateHighlightsToOwnerQuestion() {
+  invalidateChoiceOwnerIndex();
+  let changed = false;
+  Object.keys(highlightsData).forEach(qid => {
+    const list = highlightsData[qid] || [];
+    const stay = [];
+    list.forEach(h => {
+      const owner = _choiceOwnerId(h.choiceId);
+      if (!owner || owner === qid) { stay.push(h); return; }
+      const dst = (highlightsData[owner] = highlightsData[owner] || []);
+      if (!dst.some(x => x.id === h.id)) dst.push(h);
+      changed = true;
+    });
+    if (stay.length !== list.length) {
+      if (stay.length === 0) delete highlightsData[qid];
+      else highlightsData[qid] = stay;
+    }
+  });
+  if (changed) saveHighlights();
+}
+
 /** container 内の全マーカー mark（黄色・赤）を展開してテキストノードに戻す */
 function _clearMarkElements(container) {
   container.querySelectorAll('mark.q-highlight, mark.q-highlight-red').forEach(mark => {
@@ -411,7 +488,8 @@ function _applyHighlights(q) {
 
   let dirty = false;
   const ghosts = [];   // 現在のテキストに復元できないマーカー（描画できず削除もできない幽霊）
-  (highlightsData[q.id] || []).forEach(h => {
+  // 選択肢ごとに実問題のバケットから引く（合成問題でも実問題のマーカーが出る）
+  hlEntriesForQuestion(q).forEach(({ key, h }) => {
     const area      = h.area || 'choice';
     // 解説の赤マーカーは常時表示。選択肢の黄色マーカーは markerDisplayOn 時のみ。
     if (area !== 'explanation' && !markerDisplayOn) return;
@@ -421,14 +499,13 @@ function _applyHighlights(q) {
     // el が無い＝その選択肢が未描画（解説非表示など）。判定できないので手を付けない。
     if (el) {
       const a = _anchorHighlight(el, h);   // 編集で前方がずれても実文字列で位置補正
-      if (!a.valid) { ghosts.push(h); return; }   // 幽霊は描画せず破棄対象へ
+      if (!a.valid) { ghosts.push({ key, h }); return; }   // 幽霊は描画せず破棄対象へ
       dirty = dirty || a.changed;
       _applyHighlightRange(el, a.start, a.end, h.id, markClass);
     }
   });
   if (ghosts.length) {   // 幽霊を除去（残すとドラッグ時に融合して新規マーカーまで不可視化する）
-    highlightsData[q.id] = (highlightsData[q.id] || []).filter(h => !ghosts.includes(h));
-    if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+    _hlRemoveEntries(ghosts);
     dirty = true;
   }
   if (dirty) saveHighlights();   // 補正結果を永続化して自己修復
@@ -439,7 +516,7 @@ function _updateMarkerBtn() {
   const btn = document.getElementById('btn-marker-toggle');
   if (!btn) return;
   const q = (state.queueIndex < state.queue.length) ? state.queue[state.queueIndex] : null;
-  const hasMarks = q && (highlightsData[q.id] || []).length > 0;
+  const hasMarks = !!(q && hlEntriesForQuestion(q).length);
   btn.classList.toggle('marker-on',  markerDisplayOn);
   btn.classList.toggle('marker-has', hasMarks);
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
@@ -454,10 +531,11 @@ function _updateMarkerBtn() {
 function clearMarksForCurrentQuestion() {
   const q = (state.queueIndex < state.queue.length) ? state.queue[state.queueIndex] : null;
   if (!q) return;
-  const n = (highlightsData[q.id] || []).length;
+  const entries = hlEntriesForQuestion(q);
+  const n = entries.length;
   if (n === 0) return;
   if (!confirm(`この問題のマーカー${n}件（赤太文字・黄色）をすべて消去します。\nこの操作は元に戻せません。よろしいですか？\n\n※問題文に [r]…[/r] で登録した赤字は消えません。`)) return;
-  delete highlightsData[q.id];
+  _hlRemoveEntries(entries);
   saveHighlights();
   delete tempMarkers[q.id];
   _applyHighlights(q);
@@ -470,12 +548,11 @@ function clearMarksForCurrentDrillChoice() {
   const di = state.drillQueue?.[state.drillIndex];
   if (!di) return;
   const q = di.question, c = di.choice;
-  const all = highlightsData[q.id] || [];
-  const mine = all.filter(h => h.choiceId === c.id);
+  const key  = hlKey(c.id, q.id);
+  const mine = hlFor(c.id, q.id);
   if (mine.length === 0) return;
   if (!confirm(`この選択肢のマーカー${mine.length}件（赤太文字・黄色）をすべて消去します。\nこの操作は元に戻せません。よろしいですか？\n\n※問題文に [r]…[/r] で登録した赤字は消えません。`)) return;
-  highlightsData[q.id] = all.filter(h => h.choiceId !== c.id);
-  if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+  _hlRemoveEntries(mine.map(h => ({ key, h })));
   saveHighlights();
   _applyDrillHighlights(q, c);
   _updateDrillMarkerBtn(q, c);
@@ -484,7 +561,7 @@ function clearMarksForCurrentDrillChoice() {
 /** 答え合わせ時：マーキングがある問題なら自動でマーカーを表示する */
 function _autoRevealMarkersOnCheck(q) {
   if (!q) return;
-  const hasMarks = (highlightsData[q.id] || []).length > 0;
+  const hasMarks = hlEntriesForQuestion(q).length > 0;
   if (hasMarks) markerDisplayOn = true;
   _applyHighlights(q);   // 解説の赤マーカーは常時、選択肢の黄色マーカーは markerDisplayOn 時に反映
   applyTempMarkers(q);   // 永続マーカー適用後に一時マーカーを再描画（重ね順: 永続→一時）
@@ -500,28 +577,28 @@ function _applyDrillHighlights(q, c) {
   if (!q || !c) return;
   let dirty = false;
   const ghosts = [];   // 復元できないマーカー（描画も削除もできない）は破棄する
-  (highlightsData[q.id] || []).filter(h => h.choiceId === c.id).forEach(h => {
+  const key = hlKey(c.id, q.id);   // 実問題のバケット（合成問題でも通常出題と共有される）
+  hlFor(c.id, q.id).forEach(h => {
     const area = h.area || 'choice';
     if (area !== 'explanation' && !markerDisplayOn) return;
     if (area === 'explanation') {
       if (expEl && !expEl.classList.contains('hidden')) {
         const a = _anchorHighlight(expEl, h);
-        if (!a.valid) { ghosts.push(h); return; }
+        if (!a.valid) { ghosts.push({ key, h }); return; }
         dirty = dirty || a.changed;
         _applyHighlightRange(expEl, a.start, a.end, h.id, 'q-highlight-red');
       }
     } else {
       if (textEl) {
         const a = _anchorHighlight(textEl, h);
-        if (!a.valid) { ghosts.push(h); return; }
+        if (!a.valid) { ghosts.push({ key, h }); return; }
         dirty = dirty || a.changed;
         _applyHighlightRange(textEl, a.start, a.end, h.id, 'q-highlight');
       }
     }
   });
   if (ghosts.length) {
-    highlightsData[q.id] = (highlightsData[q.id] || []).filter(h => !ghosts.includes(h));
-    if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+    _hlRemoveEntries(ghosts);
     dirty = true;
   }
   if (dirty) saveHighlights();
@@ -531,7 +608,7 @@ function _applyDrillHighlights(q, c) {
 function _updateDrillMarkerBtn(q, c) {
   const btn = document.getElementById('btn-drill-marker-toggle');
   if (!btn) return;
-  const hasMarks = q && c && (highlightsData[q.id] || []).some(h => h.choiceId === c.id);
+  const hasMarks = !!(q && c && hlFor(c.id, q.id).length);
   btn.classList.toggle('marker-on',  markerDisplayOn);
   btn.classList.toggle('marker-has', hasMarks);
   btn.title = markerDisplayOn ? 'マーカーを隠す' : `マーカーを表示${hasMarks ? '（あり）' : ''}`;
@@ -746,6 +823,7 @@ async function loadStoredQuestions() {
       (Array.isArray(q.choices) && q.choices.some(c =>
         c.image?.startsWith('data:') || c.explanationImage?.startsWith('data:')))
     );
+    invalidateChoiceOwnerIndex();   // 選択肢id→実問題id の対応を作り直す（マーカー用）
     if (hasLegacy) saveQuestions();
     return true;
   } catch { return false; }
@@ -753,6 +831,7 @@ async function loadStoredQuestions() {
 
 // skipImageWrite=true: 画像はIDBへ書き戻さない（画像以外の軽微な変更＝表示幅など用）
 function saveQuestions(skipImageWrite = false) {
+  invalidateChoiceOwnerIndex();   // 選択肢の追加・削除に追従（マーカーの保存キー解決に使う）
   // 画像をIDB参照に置き換えてLocalStorageに保存（容量節約）
   const stripped = state.questions.map(q => {
     const s = { ...q };
@@ -7546,6 +7625,7 @@ async function _reloadAppState() {
     state.choiceBookmarks = loadChoiceBookmarks();
     await loadCalcProblems();
     await loadStoredQuestions();
+    migrateHighlightsToOwnerQuestion();   // questions ロード後（実問題idを引ける状態）で再配置
     updateHeaderStats();
     // 出題中・壁打ち中はホームへの強制遷移を行わない（セッションを中断しない）
     const inSession = ['screen-study', 'screen-drill'].some(
@@ -10151,6 +10231,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (migrated) saveQuestions();
   }
 
+  // 合成問題id配下に取り残されたマーカーを実問題idへ移す（questions ロード後に実行）
+  migrateHighlightsToOwnerQuestion();
+
   buildFilters();
   renderHome();
   scheduleMidnightReset();
@@ -10681,7 +10764,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (start >= end) { sel.removeAllRanges(); return; }
 
     sel.removeAllRanges();
-    if (!highlightsData[q.id]) highlightsData[q.id] = [];
+    // 保存先は表示中の問題ではなく **その選択肢を持つ実問題** のバケット。
+    // 合成問題（キーワード出題・出題ジェネレータ）で付けたマーカーも
+    // 通常出題／壁打ちの双方から見えるようにするため。
+    const hkey = hlKey(choiceId, q.id);
+    if (!highlightsData[hkey]) highlightsData[hkey] = [];
 
     // 同じ選択肢・同じ領域(area)の既存マーカーのうち、今回の範囲と重なる／隣接するものは
     // 1つに融合(union)する。これにより「半分マーク→全体を選び直し」で赤太文字が全体に広がる。
@@ -10706,10 +10793,9 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     // 既存マーカーの **内側だけ** をなぞった場合は「解除」（＝ドラッグでのトグルOFF）。
     // はみ出して選んだ場合は下の融合処理で拡張になるので、
     // 「半分マーク→全体を選び直して広げる」は今まで通り動く。
-    const enclosing = highlightsData[q.id].find(h => sameTarget(h) && h.start <= start && h.end >= end);
+    const enclosing = highlightsData[hkey].find(h => sameTarget(h) && h.start <= start && h.end >= end);
     if (enclosing) {
-      highlightsData[q.id] = highlightsData[q.id].filter(h => h !== enclosing);
-      if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+      _hlRemoveEntries([{ key: hkey, h: enclosing }]);
       saveHighlights();
       redraw();
       return;
@@ -10718,7 +10804,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     let mStart = start, mEnd = end, changed = true;
     while (changed) {
       changed = false;
-      for (const h of highlightsData[q.id]) {
+      for (const h of highlightsData[hkey]) {
         if (h._merge || !sameTarget(h)) continue;
         if (h.start <= mEnd && h.end >= mStart) {   // 重なり or 端が接する
           mStart = Math.min(mStart, h.start);
@@ -10732,7 +10818,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     mEnd   = Math.min(fullLen, mEnd);
     if (mStart >= mEnd) return;
     // 融合対象にしなかった範囲外マーカーはここで一緒に捨てる（残しても描画・削除ができない）
-    const kept = highlightsData[q.id].filter(h => {
+    const kept = highlightsData[hkey].filter(h => {
       if (h._merge) return false;
       if (h.choiceId === choiceId && (h.area || 'choice') === area && !inBounds(h)) return false;
       return true;
@@ -10740,7 +10826,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     // マークした実文字列も保存（表示時に再アンカーしてズレを防ぐ）
     const text = _visibleText(targetEl).slice(mStart, mEnd);
     kept.push({ id: crypto.randomUUID(), choiceId, area, start: mStart, end: mEnd, text });
-    highlightsData[q.id] = kept;
+    highlightsData[hkey] = kept;
     markerDisplayOn = true;   // 作成したマーカー（黄色含む）が必ず見えるよう表示ON
     saveHighlights();
     redraw();
@@ -10760,9 +10846,14 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     if (!q) return;
     const hid = mark.dataset.hid;
     if (!hid) return;
-    if (highlightsData[q.id]) {
-      highlightsData[q.id] = highlightsData[q.id].filter(h => h.id !== hid);
-      if (highlightsData[q.id].length === 0) delete highlightsData[q.id];
+    // 保存先は実問題のバケットなので、削除も選択肢から引いたキーで行う
+    const choiceId = inDrill
+      ? state.drillQueue[state.drillIndex].choice.id
+      : mark.closest('[data-cid]')?.dataset.cid;
+    const dkey = hlKey(choiceId, q.id);
+    if (highlightsData[dkey]) {
+      highlightsData[dkey] = highlightsData[dkey].filter(h => h.id !== hid);
+      if (highlightsData[dkey].length === 0) delete highlightsData[dkey];
     }
     saveHighlights();
     if (inDrill) {
