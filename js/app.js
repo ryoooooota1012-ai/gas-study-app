@@ -4659,32 +4659,8 @@ function checkAnswers() {
       });
     }
 
-    // 解説画像
-    const expImgAreaC = document.getElementById('explanation-image-area');
-    if (expImgAreaC) {
-      expImgAreaC.innerHTML = '';
-      if (q.explanationImage) {
-        expImgAreaC.classList.remove('hidden');
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'btn btn-ghost btn-sm explanation-image-toggle-btn';
-        toggleBtn.textContent = '🖼 解説画像を表示';
-        const imgWrap = document.createElement('div');
-        imgWrap.className = 'explanation-image-wrap hidden';
-        const img = document.createElement('img');
-        img.src = q.explanationImage;
-        img.className = 'explanation-image';
-        img.alt = '解説図';
-        img.loading = 'lazy';
-        imgWrap.appendChild(img);
-        toggleBtn.addEventListener('click', () => {
-          const isHidden = imgWrap.classList.toggle('hidden');
-          toggleBtn.textContent = isHidden ? '🖼 解説画像を表示' : '🖼 解説画像を閉じる';
-        });
-        expImgAreaC.append(toggleBtn, imgWrap);
-      } else {
-        expImgAreaC.classList.add('hidden');
-      }
-    }
+    // 解説画像（問題全体）
+    renderQuestionExplanationImage(document.getElementById('explanation-image-area'), q);
 
     if (!_checkNoRecord) {
       recordStudyActivity(1, isRight ? 1 : 0, 1, q.category);
@@ -4765,31 +4741,7 @@ function checkAnswers() {
   });
 
   // 解説画像ボタン（画像がある場合のみ）
-  const expImgArea = document.getElementById('explanation-image-area');
-  if (expImgArea) {
-    expImgArea.innerHTML = '';
-    if (q.explanationImage) {
-      expImgArea.classList.remove('hidden');
-      const toggleBtn = document.createElement('button');
-      toggleBtn.className = 'btn btn-ghost btn-sm explanation-image-toggle-btn';
-      toggleBtn.textContent = '🖼 解説画像を表示';
-      const imgWrap = document.createElement('div');
-      imgWrap.className = 'explanation-image-wrap hidden';
-      const img = document.createElement('img');
-      img.src = q.explanationImage;
-      img.className = 'explanation-image';
-      img.alt = '解説図';
-      img.loading = 'lazy';
-      imgWrap.appendChild(img);
-      toggleBtn.addEventListener('click', () => {
-        const isHidden = imgWrap.classList.toggle('hidden');
-        toggleBtn.textContent = isHidden ? '🖼 解説画像を表示' : '🖼 解説画像を閉じる';
-      });
-      expImgArea.append(toggleBtn, imgWrap);
-    } else {
-      expImgArea.classList.add('hidden');
-    }
-  }
+  renderQuestionExplanationImage(document.getElementById('explanation-image-area'), q);
 
   if (!_checkNoRecord) {
     // 問題レベル履歴（直近3回表示用）
@@ -5913,6 +5865,8 @@ function renderDrillChoice() {
       expEl.classList.add('hidden');
     }
     _setDrillExpImage(c);
+    // 問題全体の解説画像（学習画面と同じトグル）。選択肢ごとの解説画像とは別物
+    renderQuestionExplanationImage(document.getElementById('drill-explanation-image-area'), q);
 
     const { total, correct } = state.drillStats;
     document.getElementById('drill-session-acc').textContent =
@@ -5929,6 +5883,8 @@ function renderDrillChoice() {
     // 未回答：通常の出題状態
     document.getElementById('drill-answer-area').classList.remove('hidden');
     document.getElementById('drill-feedback-area').classList.add('hidden');
+    // 前の選択肢の解説画像が残らないよう消しておく
+    renderQuestionExplanationImage(document.getElementById('drill-explanation-image-area'), null);
     const skipBtn = document.getElementById('btn-drill-skip');
     if (skipBtn) skipBtn.classList.toggle('hidden', state.drillMode !== 'keyword-search' && !q.drillExcluded);
     state.drillAnswered = false;
@@ -5990,6 +5946,8 @@ function answerDrill(userSaysCorrect) {
     expEl.classList.add('hidden');
   }
   _setDrillExpImage(c);
+  // 問題全体の解説画像（学習画面と同じトグル）。選択肢ごとの解説画像とは別物
+  renderQuestionExplanationImage(document.getElementById('drill-explanation-image-area'), q);
 
   // 過去3回ドット更新
   const dotsEl = document.getElementById('drill-history-dots');
@@ -8884,6 +8842,34 @@ function _setCdmExpImage(c) {
   area.innerHTML = '';
   const el = makeChoiceExpImage(c);
   if (el) area.appendChild(el);
+}
+
+/**
+ * 問題全体の解説画像（`q.explanationImage`）をトグルボタン付きで領域に描画する。
+ * 学習（`#explanation-image-area`）と壁打ち（`#drill-explanation-image-area`）で共用。
+ * ⚠️ 選択肢ごとの `c.explanationImage`（常時表示）とは別物。
+ */
+function renderQuestionExplanationImage(areaEl, q) {
+  if (!areaEl) return;
+  areaEl.innerHTML = '';
+  if (!q?.explanationImage) { areaEl.classList.add('hidden'); return; }
+  areaEl.classList.remove('hidden');
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn btn-ghost btn-sm explanation-image-toggle-btn';
+  toggleBtn.textContent = '🖼 解説画像を表示';
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'explanation-image-wrap hidden';
+  const img = document.createElement('img');
+  img.src = q.explanationImage;
+  img.className = 'explanation-image';
+  img.alt = '解説図';
+  img.loading = 'lazy';
+  imgWrap.appendChild(img);
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = imgWrap.classList.toggle('hidden');
+    toggleBtn.textContent = isHidden ? '🖼 解説画像を表示' : '🖼 解説画像を閉じる';
+  });
+  areaEl.append(toggleBtn, imgWrap);
 }
 
 // 壁打ち画面の解説画像を現在の選択肢に合わせて更新する
