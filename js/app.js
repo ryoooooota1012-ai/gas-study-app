@@ -34,7 +34,6 @@ let excludeMasteredStreak = 0;  // 出題開始時の連続正解除外しきい
 const ESSAY_CATEGORIES  = ['法令', '消費機器'];
 const ESSAY_CAT_LABELS  = { '法令': '⚖️ 法令', '消費機器': '🏠 消費機器' };
 let essayPickerOpen     = false;  // 科目選択ポップアップ表示フラグ
-let essayCategory       = null;   // 選択中の科目（'法令' | '消費機器' | null）
 // 壁打ち設定モーダル用
 let drillSetupCats      = new Set();
 let drillSetupYears     = new Set();
@@ -81,6 +80,7 @@ const STUDY_LOG_KEY         = 'gas_study_log_v1';
 const SESSION_RECORDS_KEY   = 'gas_session_records_v1';
 const NOTES_KEY          = 'gas_notes_v1';
 const HIGHLIGHTS_KEY     = 'gas_highlights_v1';
+const ESSAY_NOTES_KEY    = 'gas_essay_notes_v1';
 
 let highlightsData   = {};   // { [qId]: [{id, blockIdx, start, end}] }
 let markerDisplayOn  = false;
@@ -2866,11 +2866,11 @@ function renderTopFilterCard() {
   essayWrap.style.cssText = 'position:relative;';
 
   const essayBtn = document.createElement('button');
-  essayBtn.className = 'top-cat-btn top-cat-essay' + (essayPickerOpen || essayCategory ? ' active' : '');
+  essayBtn.className = 'top-cat-btn top-cat-essay' + (essayPickerOpen ? ' active' : '');
   essayBtn.style.cssText = 'width:100%;margin-top:6px;';
   const essayNameEl = document.createElement('div');
   essayNameEl.className = 'top-cat-name';
-  essayNameEl.textContent = `📝 論述問題練習${essayCategory ? `（${essayCategory}）` : ''}`;
+  essayNameEl.textContent = '📝 論述問題練習';
   essayBtn.appendChild(essayNameEl);
   essayBtn.addEventListener('click', e => {
     e.stopPropagation();   // 直後の「外側クリックで閉じる」に拾われないように
@@ -3198,17 +3198,10 @@ function onCalcFilterClick() {
   renderTopFilterCard();
 }
 
-/**
- * 論述問題練習：科目（法令／消費機器）を選んだときの入口。
- * ⚠️ 出題画面はまだ未実装。現状は選択した科目を保持してボタン表示に反映するだけ。
- *    次のステップでここから論述の出題・採点画面へ遷移させる。
- */
+/** 論述問題練習：科目（法令／消費機器）を選んだら、その科目の模範解答一覧へ */
 function onEssayCategorySelect(cat) {
-  essayCategory = (essayCategory === cat) ? null : cat;   // 同じ科目を選び直したら解除
   renderTopFilterCard();
-  if (essayCategory) {
-    showSyncStatus(`📝 論述問題練習（${essayCategory}）：出題画面は準備中です`);
-  }
+  openEssayList(cat);
 }
 
 // ========== Weakness Report ==========
@@ -7644,6 +7637,7 @@ async function _reloadAppState() {
     loadProgress();
     loadDrillPresets();
     loadHighlights();
+    loadEssayNotes();
     state.bookmarks       = loadBookmarks();
     state.choiceBookmarks = loadChoiceBookmarks();
     await loadCalcProblems();
@@ -7681,6 +7675,7 @@ const BACKUP_LS_KEYS = [
   'gas_pending_verify_v1',
   'gas_tag_readings_v1',
   'gas_external_study_v1',
+  'gas_essay_notes_v1',
 ];
 
 async function exportProgress() {
@@ -10252,6 +10247,323 @@ function openCalcModal(editIndex) {
   document.addEventListener('paste', handleCalcAddImagePaste);
 }
 
+// ========== 論述問題練習（Essay Notes） ==========
+/**
+ * 模範解答を丸ごと登録し、一部を塗りつぶして暗記するモード。
+ *
+ * データ: essayNotes（`gas_essay_notes_v1`）
+ *   [{ id, category:'法令'|'消費機器', title, body, blanks:[{id,start,end,text}], created, updated }]
+ *   blanks = 隠す候補の範囲。`start/end` は **renderText(body) の可視テキスト上のオフセット**、
+ *   `text` はマーカーと同じ再アンカー用の実文字列（本文を編集しても位置が追従する）。
+ *
+ * レベル: ESSAY_LEVEL_PCT[level] の割合ぶんの blanks を **毎回ランダムに** 選んで隠す
+ *         （割合の基準は文字数ではなく blanks の個数）。
+ */
+const ESSAY_LEVEL_PCT = [0, 20, 40, 60, 80, 100];   // index = レベル
+
+let essayNotes      = [];     // 登録済みの模範解答
+let essayListCat    = '法令'; // 一覧で表示中の科目
+let essayCurrentId  = null;   // 練習／編集中のノートid
+let essayLevel      = 1;      // 隠すレベル（0〜5）
+let essayHiddenIds  = new Set();  // 今回隠している blank の id
+let essayEditBlanks = [];     // 編集画面の作業コピー
+
+function loadEssayNotes() {
+  try {
+    const raw = localStorage.getItem(ESSAY_NOTES_KEY);
+    essayNotes = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(essayNotes)) essayNotes = [];
+  } catch { essayNotes = []; }
+}
+
+function saveEssayNotes() {
+  localStorage.setItem(ESSAY_NOTES_KEY, JSON.stringify(essayNotes));
+}
+
+function essayNoteById(id) { return essayNotes.find(n => n.id === id) || null; }
+
+// ── 一覧 ──
+function openEssayList(cat) {
+  if (cat) essayListCat = cat;
+  renderEssayListScreen();
+  showScreen('essay-list');
+}
+
+function renderEssayListScreen() {
+  const titleEl = document.getElementById('essay-list-title');
+  const listEl  = document.getElementById('essay-list');
+  const emptyEl = document.getElementById('essay-list-empty');
+  if (!listEl || !emptyEl) return;
+
+  if (titleEl) titleEl.textContent = `📝 論述問題練習（${essayListCat}）`;
+
+  const notes = essayNotes.filter(n => n.category === essayListCat);
+  listEl.innerHTML = '';
+  emptyEl.classList.toggle('hidden', notes.length > 0);
+
+  notes.forEach(n => {
+    const item = document.createElement('button');
+    item.className = 'essay-list-item';
+    const t = document.createElement('div');
+    t.className = 'essay-list-item-title';
+    t.textContent = n.title || '(無題)';
+    const meta = document.createElement('div');
+    meta.className = 'essay-list-item-meta';
+    meta.textContent = `隠す範囲 ${(n.blanks || []).length}件`;
+    item.append(t, meta);
+    item.addEventListener('click', () => openEssayPractice(n.id));
+    listEl.appendChild(item);
+  });
+}
+
+// ── 練習 ──
+/** レベルに応じて隠す blank を毎回ランダムに選び直す */
+function rerollEssayHidden() {
+  const note = essayNoteById(essayCurrentId);
+  const blanks = (note && note.blanks) || [];
+  const pct = ESSAY_LEVEL_PCT[essayLevel] ?? 0;
+  if (pct <= 0 || blanks.length === 0) { essayHiddenIds = new Set(); return; }
+  if (pct >= 100) { essayHiddenIds = new Set(blanks.map(b => b.id)); return; }
+  const n = Math.max(1, Math.round(blanks.length * pct / 100));
+  essayHiddenIds = new Set(_shuffleInPlace(blanks.slice()).slice(0, n).map(b => b.id));
+}
+
+function openEssayPractice(id) {
+  essayCurrentId = id;
+  rerollEssayHidden();
+  renderEssayPractice();
+  showScreen('essay-practice');
+}
+
+function renderEssayLevelBtns() {
+  const wrap = document.getElementById('essay-level-btns');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  ESSAY_LEVEL_PCT.forEach((pct, lv) => {
+    const b = document.createElement('button');
+    b.className = 'essay-level-btn' + (essayLevel === lv ? ' active' : '');
+    b.textContent = `Lv${lv}（${pct}%）`;
+    b.addEventListener('click', () => {
+      essayLevel = lv;
+      rerollEssayHidden();
+      renderEssayPractice();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function renderEssayPractice() {
+  const note = essayNoteById(essayCurrentId);
+  if (!note) { openEssayList(essayListCat); return; }
+
+  document.getElementById('essay-practice-title').textContent = note.title || '(無題)';
+  renderEssayLevelBtns();
+
+  const bodyEl = document.getElementById('essay-practice-body');
+  bodyEl.innerHTML = renderText(note.body || '');
+
+  // 選ばれた blank を塗りつぶす。位置は毎回テキストから再アンカーしてズレを防ぐ
+  let dirty = false;
+  const dead = [];
+  (note.blanks || []).forEach(b => {
+    if (!essayHiddenIds.has(b.id)) return;
+    const a = _anchorHighlight(bodyEl, b);
+    if (!a.valid) { dead.push(b); return; }   // 本文編集で復元できなくなった範囲
+    if (a.changed) { b.start = a.start; b.end = a.end; dirty = true; }
+    _applyHighlightRange(bodyEl, a.start, a.end, b.id, 'essay-blank');
+  });
+  if (dead.length) {
+    note.blanks = (note.blanks || []).filter(b => !dead.includes(b));
+    dirty = true;
+  }
+  if (dirty) saveEssayNotes();
+
+  // 隠された部分はクリックで表示／非表示をトグル
+  bodyEl.onclick = e => {
+    const m = e.target.closest('mark.essay-blank');
+    if (m) m.classList.toggle('revealed');
+  };
+
+  _updateEssayRevealBtn();
+}
+
+/** 「全部表示／全部隠す」ボタンのラベルを現在の状態に合わせる */
+function _updateEssayRevealBtn() {
+  const btn = document.getElementById('btn-essay-reveal-all');
+  if (!btn) return;
+  const marks = document.querySelectorAll('#essay-practice-body mark.essay-blank');
+  const allRevealed = marks.length > 0 && [...marks].every(m => m.classList.contains('revealed'));
+  btn.textContent = allRevealed ? '🙈 全部隠す' : '👁 全部表示';
+  btn.classList.toggle('hidden', marks.length === 0);
+}
+
+// ── 編集 ──
+function openEssayEdit(id) {
+  essayCurrentId = id;
+  const note = id ? essayNoteById(id) : null;
+  document.getElementById('essay-edit-title').value    = note?.title || '';
+  document.getElementById('essay-edit-body').value     = note?.body  || '';
+  document.getElementById('essay-edit-category').value = note?.category || essayListCat;
+  essayEditBlanks = (note?.blanks || []).map(b => ({ ...b }));
+  document.getElementById('btn-essay-delete').classList.toggle('hidden', !note);
+  renderEssayEditPreview();
+  showScreen('essay-edit');
+}
+
+function renderEssayEditPreview() {
+  const prev = document.getElementById('essay-edit-preview');
+  if (!prev) return;
+  const body = document.getElementById('essay-edit-body').value || '';
+  prev.innerHTML = renderText(body);
+
+  // 指定済みの範囲を赤マーカーで表示。本文を編集していても実文字列で位置を補正する
+  // （ここでは復元できない範囲も **消さない**。入力途中で一時的に一致しないだけの場合があるため、
+  //   実際に落とすのは保存時だけ。）
+  let shown = 0;
+  essayEditBlanks.forEach(b => {
+    const a = _anchorHighlight(prev, b);
+    if (!a.valid) return;
+    b.start = a.start; b.end = a.end;
+    _applyHighlightRange(prev, a.start, a.end, b.id, 'essay-blank-edit');
+    shown++;
+  });
+
+  const countEl = document.getElementById('essay-blank-count');
+  if (countEl) {
+    const total = essayEditBlanks.length;
+    countEl.textContent = shown === total
+      ? `${total}件を指定中`
+      : `${total}件を指定中（うち${total - shown}件は本文と一致せず未表示）`;
+  }
+}
+
+/**
+ * プレビューの操作を1つの mouseup にまとめる。
+ *   ドラッグ（範囲選択あり）→ 隠す範囲を作る（重なり・隣接は1つに融合）
+ *   クリック（範囲選択なし）→ その位置の指定済み範囲を解除
+ * ⚠️ 作成と解除を mouseup / click に分けると、ドラッグ直後に発火する click が
+ *    作ったばかりの範囲を消してしまう。それをフラグで抑えると、click が来ない
+ *    操作（範囲外でドラッグを終える等）でフラグが残り、次の正当なクリックが
+ *    無視される。両方を mouseup で処理すればこの問題自体が起きない。
+ */
+function onEssayPreviewMouseUp(e) {
+  const prev = document.getElementById('essay-edit-preview');
+  if (!prev) return;
+  const sel = window.getSelection();
+
+  // クリック（選択なし）＝ 指定済み範囲の解除
+  if (!sel || sel.isCollapsed || !sel.rangeCount) {
+    const m = e.target.closest?.('mark.essay-blank-edit');
+    if (!m) return;
+    essayEditBlanks = essayEditBlanks.filter(b => b.id !== m.dataset.hid);
+    renderEssayEditPreview();
+    return;
+  }
+
+  const range = sel.getRangeAt(0);
+  const startEl = range.startContainer.nodeType === Node.TEXT_NODE
+    ? range.startContainer.parentElement : range.startContainer;
+  if (!prev.contains(startEl)) return;
+
+  const start = _getTextOffset(prev, range.startContainer, range.startOffset);
+  const end   = _getTextOffset(prev, range.endContainer,   range.endOffset);
+  sel.removeAllRanges();
+  if (start >= end) return;
+
+  // 重なる／端が接する既存範囲を取り込んで1つにまとめる（マーカーと同じ挙動）
+  // ※ 変数名に e は使わない（引数の event と衝突する）
+  let ms = start, me = end, merged = true;
+  const kept = [];
+  while (merged) {
+    merged = false;
+    essayEditBlanks.forEach(b => {
+      if (b._merge) return;
+      if (b.start <= me && b.end >= ms) { ms = Math.min(ms, b.start); me = Math.max(me, b.end); b._merge = true; merged = true; }
+    });
+  }
+  essayEditBlanks.forEach(b => { if (!b._merge) kept.push(b); });
+
+  const full = _visibleText(prev);
+  ms = Math.max(0, ms); me = Math.min(full.length, me);
+  if (ms >= me) { essayEditBlanks.forEach(b => delete b._merge); return; }
+
+  kept.push({ id: crypto.randomUUID(), start: ms, end: me, text: full.slice(ms, me) });
+  essayEditBlanks = kept.sort((a, b) => a.start - b.start);
+  renderEssayEditPreview();
+}
+
+function saveEssayEdit() {
+  const title = document.getElementById('essay-edit-title').value.trim();
+  const body  = document.getElementById('essay-edit-body').value;
+  const cat   = document.getElementById('essay-edit-category').value;
+  if (!title)      { alert('タイトルを入力してください。'); return; }
+  if (!body.trim()){ alert('本文を入力してください。');     return; }
+
+  // 保存する本文で再アンカーし、復元できない範囲だけ落とす
+  const probe = document.createElement('div');
+  probe.innerHTML = renderText(body);
+  const kept = [];
+  let dropped = 0;
+  essayEditBlanks.forEach(b => {
+    const a = _anchorHighlight(probe, b);
+    if (a.valid) kept.push({ id: b.id, start: a.start, end: a.end, text: b.text });
+    else dropped++;
+  });
+  if (dropped > 0 &&
+      !confirm(`本文と一致しなくなった隠す範囲が${dropped}件あります。\nこの${dropped}件を削除して保存しますか？`)) return;
+
+  const now = Date.now();
+  let note = essayCurrentId ? essayNoteById(essayCurrentId) : null;
+  if (note) {
+    Object.assign(note, { title, body, category: cat, blanks: kept, updated: now });
+  } else {
+    note = { id: 'essay_' + now, category: cat, title, body, blanks: kept, created: now, updated: now };
+    essayNotes.push(note);
+    essayCurrentId = note.id;
+  }
+  saveEssayNotes();
+  essayListCat = cat;
+  openEssayPractice(note.id);
+  showSyncStatus('💾 保存しました');
+}
+
+function deleteEssayNote() {
+  const note = essayNoteById(essayCurrentId);
+  if (!note) return;
+  if (!confirm(`「${note.title}」を削除します。\nこの操作は元に戻せません。よろしいですか？`)) return;
+  essayNotes = essayNotes.filter(n => n.id !== note.id);
+  saveEssayNotes();
+  essayCurrentId = null;
+  openEssayList(essayListCat);
+}
+
+/** 論述画面のボタン類を登録（DOMContentLoaded から1回だけ呼ぶ） */
+function initEssayScreens() {
+  document.getElementById('btn-essay-back-home').addEventListener('click', renderHome);
+  document.getElementById('btn-essay-add').addEventListener('click', () => openEssayEdit(null));
+
+  document.getElementById('btn-essay-practice-back').addEventListener('click', () => openEssayList(essayListCat));
+  document.getElementById('btn-essay-practice-edit').addEventListener('click', () => openEssayEdit(essayCurrentId));
+  document.getElementById('btn-essay-reroll').addEventListener('click', () => { rerollEssayHidden(); renderEssayPractice(); });
+  document.getElementById('btn-essay-reveal-all').addEventListener('click', () => {
+    const marks = document.querySelectorAll('#essay-practice-body mark.essay-blank');
+    const allRevealed = marks.length > 0 && [...marks].every(m => m.classList.contains('revealed'));
+    marks.forEach(m => m.classList.toggle('revealed', !allRevealed));
+    _updateEssayRevealBtn();
+  });
+
+  document.getElementById('btn-essay-edit-cancel').addEventListener('click', () => {
+    if (essayCurrentId && essayNoteById(essayCurrentId)) openEssayPractice(essayCurrentId);
+    else openEssayList(essayListCat);
+  });
+  document.getElementById('btn-essay-save').addEventListener('click', saveEssayEdit);
+  document.getElementById('btn-essay-delete').addEventListener('click', deleteEssayNote);
+
+  document.getElementById('essay-edit-body').addEventListener('input', renderEssayEditPreview);
+  // 作成（ドラッグ）も解除（クリック）も mouseup 側で処理する
+  document.getElementById('essay-edit-preview').addEventListener('mouseup', onEssayPreviewMouseUp);
+}
+
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', async () => { try {
   loadAppSettings();
@@ -10261,9 +10573,11 @@ document.addEventListener('DOMContentLoaded', async () => { try {
   await loadCalcProblems();
   migrateQuestionHistory();  // 選択肢historyから問題レベルhistoryを生成（初回のみ）
   loadHighlights();
+  loadEssayNotes();
   state.bookmarks       = loadBookmarks();
   state.choiceBookmarks = loadChoiceBookmarks();
   loadTagReadings();
+  initEssayScreens();
   updateHeaderStats();
 
   if (!await loadStoredQuestions()) {

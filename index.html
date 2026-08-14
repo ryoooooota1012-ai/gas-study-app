@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ガス主任技術者 学習アプリ</title>
-  <link rel="stylesheet" href="css/style.css?v=20260809b">
+  <link rel="stylesheet" href="css/style.css?v=20260809c">
   <style>
     /* カレンダー tier カラー：ヘッダー数字と同じメタルグラデーション */
     .jcal-day{flex-direction:row;}
@@ -1482,6 +1482,78 @@
   </div>
 </div>
 
+<!-- ==================== ESSAY (論述問題練習) LIST ==================== -->
+<div id="screen-essay-list" class="screen hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="btn-essay-back-home" class="btn btn-ghost btn-sm">← 戻る</button>
+      <h2 id="essay-list-title" style="font-size:1rem;font-weight:700;">📝 論述問題練習</h2>
+    </div>
+    <button id="btn-essay-add" class="btn btn-outline btn-sm">＋ 新規登録</button>
+  </div>
+  <div id="essay-list" class="essay-list"></div>
+  <div id="essay-list-empty" class="calc-empty-msg hidden">模範解答が登録されていません<br><span style="font-size:.8rem;">右上の「＋ 新規登録」から登録してください</span></div>
+</div>
+
+<!-- ==================== ESSAY PRACTICE ==================== -->
+<div id="screen-essay-practice" class="screen hidden">
+  <div class="study-header">
+    <button id="btn-essay-practice-back" class="btn btn-ghost btn-sm">← 一覧へ</button>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-essay-reroll" class="btn btn-ghost btn-sm" title="同じレベルで隠す場所を選び直す">🔀 隠し直す</button>
+      <button id="btn-essay-reveal-all" class="btn btn-ghost btn-sm">👁 全部表示</button>
+      <button id="btn-essay-practice-edit" class="btn btn-outline btn-sm">✏️ 編集</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="essay-level-row">
+      <span class="essay-level-label">隠すレベル</span>
+      <div id="essay-level-btns" class="essay-level-btns"></div>
+    </div>
+    <h3 id="essay-practice-title" class="essay-title"></h3>
+    <div id="essay-practice-body" class="essay-body"></div>
+    <div class="essay-hint">隠れている部分はクリックで表示／非表示を切り替えられます</div>
+  </div>
+</div>
+
+<!-- ==================== ESSAY EDIT ==================== -->
+<div id="screen-essay-edit" class="screen hidden">
+  <div class="study-header">
+    <button id="btn-essay-edit-cancel" class="btn btn-ghost btn-sm">← 戻る</button>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-essay-delete" class="btn btn-danger btn-sm hidden">🗑 削除</button>
+      <button id="btn-essay-save" class="btn btn-primary btn-sm">💾 保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="edit-meta-grid" style="margin-bottom:12px;">
+      <div class="edit-meta-item">
+        <label class="edit-label">タイトル</label>
+        <input type="text" id="essay-edit-title" class="edit-input" placeholder="例：①保安規程・保安の確保">
+      </div>
+      <div class="edit-meta-item">
+        <label class="edit-label">科目</label>
+        <select id="essay-edit-category" class="edit-input">
+          <option value="法令">法令</option>
+          <option value="消費機器">消費機器</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="edit-label">本文（模範解答）</label>
+    <textarea id="essay-edit-body" class="edit-textarea" rows="10" placeholder="模範解答の本文を貼り付けてください。改行はそのまま反映されます。[r]…[/r] で赤字にできます。"></textarea>
+
+    <div class="essay-edit-sep">
+      <span class="essay-edit-sep-label">隠す範囲の指定</span>
+      <span id="essay-blank-count" class="essay-blank-count"></span>
+    </div>
+    <div class="essay-hint" style="margin:0 0 8px;">下のプレビューを<strong>ドラッグ</strong>すると隠す範囲になります。<strong>指定済みの範囲をクリック</strong>すると解除できます。</div>
+    <div id="essay-edit-preview" class="essay-body essay-edit-preview"></div>
+  </div>
+</div>
+
 <!-- ==================== CALC ADD MODAL ==================== -->
 <div id="modal-calc-add" class="modal-overlay hidden">
   <div class="modal-box" style="max-width:500px;width:96%;">
@@ -1553,7 +1625,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260809b"></script>
+<script src="js/app.js?v=20260809c"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>

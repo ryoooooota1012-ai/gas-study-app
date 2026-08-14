@@ -4292,3 +4292,93 @@ body.inline-editing .card {
   outline: 2px solid var(--accent, #6366f1);
   background: rgba(99, 102, 241, .12);
 }
+
+/* ==================== 論述問題練習（Essay Notes） ==================== */
+.essay-list { display: flex; flex-direction: column; gap: 8px; }
+.essay-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  text-align: left;
+  width: 100%;
+}
+.essay-list-item:hover { background: var(--surface-1); border-color: var(--primary); }
+.essay-list-item-title { font-weight: 700; font-size: .95rem; flex: 1; }
+.essay-list-item-meta { font-size: .75rem; color: var(--text-3); white-space: nowrap; }
+
+/* 見出し・本文 */
+.essay-title { font-size: 1.15rem; font-weight: 800; margin: 10px 0 12px; line-height: 1.4; }
+.essay-body { font-size: .95rem; line-height: 1.9; white-space: normal; word-break: break-word; }
+
+/* 隠された部分：文字を背景色にして暗転（手書きノートを塗りつぶしたイメージ） */
+mark.essay-blank {
+  background: #1b1b1b;
+  color: transparent;
+  border-radius: 3px;
+  padding: 0 2px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+  transition: background .1s, color .1s;
+}
+mark.essay-blank:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+/* クリックで表示に戻した状態：どこが隠れていたか分かるよう薄い下線を残す */
+mark.essay-blank.revealed {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  border-bottom: 2px solid rgba(94,234,212,.7);
+}
+
+/* 編集画面で指定済みの範囲（赤マーカー風） */
+mark.essay-blank-edit {
+  background: rgba(239,68,68,.32);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(248,113,113,.6);
+}
+mark.essay-blank-edit:hover { background: rgba(239,68,68,.5); }
+
+/* レベル切替 */
+.essay-level-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.essay-level-label { font-size: .78rem; color: var(--text-3); font-weight: 700; }
+.essay-level-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.essay-level-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .12s;
+}
+.essay-level-btn:hover { border-color: #5eead4; color: var(--text-1); }
+.essay-level-btn.active {
+  background: linear-gradient(135deg, #063c3a, #0d9488);
+  border-color: #99f6e4;
+  color: #ecfeff;
+}
+
+.essay-hint { font-size: .76rem; color: var(--text-3); margin-top: 12px; }
+.essay-edit-sep {
+  display: flex; align-items: center; gap: 8px;
+  margin: 18px 0 4px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.essay-edit-sep-label { font-size: .82rem; font-weight: 700; color: var(--text-2); }
+.essay-blank-count { font-size: .76rem; color: var(--text-3); margin-left: auto; }
+.essay-edit-preview {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  min-height: 60px;
+  user-select: text;
+}
