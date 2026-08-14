@@ -10267,6 +10267,8 @@ let essayCurrentId  = null;   // 練習／編集中のノートid
 let essayLevel      = 1;      // 隠すレベル（0〜5）
 let essayHiddenIds  = new Set();  // 今回隠している blank の id
 let essayEditBlanks = [];     // 編集画面の作業コピー
+// 一覧の並び順。'title-asc' | 'title-desc' | 'registered-asc' | 'registered-desc'
+let essaySortMode   = 'title-asc';
 
 function loadEssayNotes() {
   try {
@@ -10282,6 +10284,99 @@ function saveEssayNotes() {
 
 function essayNoteById(id) { return essayNotes.find(n => n.id === id) || null; }
 
+/**
+ * 一覧の並べ替え。
+ * ⚠️ タイトルは NFKC 正規化してから比較すること。丸数字を含む「①②③…⑩」を
+ *    そのまま localeCompare すると **⑩ が ① より前**に来てしまう。
+ *    NFKC で ①→"1"・⑩→"10" に開いてから `numeric:true` で比べれば数値順になる
+ *    （全角英数・半角カナも同時に正規化されるので表記ゆれにも強い）。
+ */
+function sortEssayNotes(notes) {
+  const norm = s => (s || '').normalize('NFKC');
+  const arr = notes.slice();
+  const [key, dir] = essaySortMode.split('-');
+  const sign = dir === 'desc' ? -1 : 1;
+  arr.sort((a, b) => {
+    if (key === 'title') {
+      return sign * norm(a.title).localeCompare(norm(b.title), 'ja', { numeric: true });
+    }
+    return sign * ((a.created || 0) - (b.created || 0));
+  });
+  return arr;
+}
+
+// ── JSON 書き出し／読み込み ──
+function exportEssayNotes() {
+  if (essayNotes.length === 0) { alert('登録された模範解答がありません。'); return; }
+  const payload = {
+    type: 'gas-essay-notes',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    notes: essayNotes,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `essay_notes_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * JSON から模範解答を読み込む。**同じ id は上書き・新しい id は追加**（全消しはしない）。
+ * 書き出した形式（{type,version,notes:[...]}）と、notes 配列そのものの両方を受け付ける。
+ */
+function importEssayNotes(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const incoming = Array.isArray(data) ? data : (data && data.notes);
+      if (!Array.isArray(incoming) || incoming.length === 0) throw new Error('模範解答が入っていません');
+
+      let added = 0, updated = 0, skipped = 0;
+      incoming.forEach(n => {
+        if (!n || typeof n.title !== 'string' || typeof n.body !== 'string') { skipped++; return; }
+        const note = {
+          id:       n.id || ('essay_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+          // 未知の科目が来ても壊れないよう既定の科目に寄せる
+          category: ESSAY_CATEGORIES.includes(n.category) ? n.category : ESSAY_CATEGORIES[0],
+          title:    n.title,
+          body:     n.body,
+          blanks:   (Array.isArray(n.blanks) ? n.blanks : [])
+                      .filter(b => b && Number.isFinite(b.start) && Number.isFinite(b.end) && b.start < b.end)
+                      .map(b => ({ id: b.id || crypto.randomUUID(), start: b.start, end: b.end, text: b.text || '' })),
+          created:  n.created || Date.now(),
+          updated:  Date.now(),
+        };
+        const i = essayNotes.findIndex(x => x.id === note.id);
+        if (i >= 0) { essayNotes[i] = note; updated++; } else { essayNotes.push(note); added++; }
+      });
+      if (added === 0 && updated === 0) throw new Error('取り込める模範解答がありませんでした');
+
+      saveEssayNotes();
+      renderEssayListScreen();
+      alert(`読み込み完了\n新規 ${added}件 / 上書き ${updated}件` + (skipped ? `\n形式不正で読み飛ばし ${skipped}件` : ''));
+    } catch (err) {
+      alert('読み込めませんでした: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+/** 並べ替えボタンの active と ↑↓ を現在の essaySortMode に合わせる */
+function _updateEssaySortBtns() {
+  const [key, dir] = essaySortMode.split('-');
+  const arrow = dir === 'desc' ? ' ↓' : ' ↑';
+  document.querySelectorAll('.essay-sort-btn').forEach(b => {
+    const base = b.dataset.sort === 'title' ? 'タイトル順' : '登録順';
+    const isActive = b.dataset.sort === key;
+    b.classList.toggle('active', isActive);
+    b.textContent = base + (isActive ? arrow : '');
+  });
+}
+
 // ── 一覧 ──
 function openEssayList(cat) {
   if (cat) essayListCat = cat;
@@ -10296,8 +10391,9 @@ function renderEssayListScreen() {
   if (!listEl || !emptyEl) return;
 
   if (titleEl) titleEl.textContent = `📝 論述問題練習（${essayListCat}）`;
+  _updateEssaySortBtns();
 
-  const notes = essayNotes.filter(n => n.category === essayListCat);
+  const notes = sortEssayNotes(essayNotes.filter(n => n.category === essayListCat));
   listEl.innerHTML = '';
   emptyEl.classList.toggle('hidden', notes.length > 0);
 
@@ -10541,6 +10637,28 @@ function deleteEssayNote() {
 function initEssayScreens() {
   document.getElementById('btn-essay-back-home').addEventListener('click', renderHome);
   document.getElementById('btn-essay-add').addEventListener('click', () => openEssayEdit(null));
+
+  // 並べ替え（押すたびに ↑↓ をトグル。非アクティブなボタンを押したらそのキーの昇順から）
+  document.querySelectorAll('.essay-sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.sort === 'title' ? 'title' : 'registered';
+      const [curKey, curDir] = essaySortMode.split('-');
+      essaySortMode = (curKey === key && curDir === 'asc') ? `${key}-desc` : `${key}-asc`;
+      _updateEssaySortBtns();
+      renderEssayListScreen();
+    });
+  });
+
+  document.getElementById('btn-essay-export').addEventListener('click', exportEssayNotes);
+  document.getElementById('btn-essay-import').addEventListener('click', () => {
+    document.getElementById('input-essay-file').click();
+  });
+  document.getElementById('input-essay-file').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    importEssayNotes(file);
+    e.target.value = '';   // 同じファイルを続けて選べるようにリセット
+  });
 
   document.getElementById('btn-essay-practice-back').addEventListener('click', () => openEssayList(essayListCat));
   document.getElementById('btn-essay-practice-edit').addEventListener('click', () => openEssayEdit(essayCurrentId));

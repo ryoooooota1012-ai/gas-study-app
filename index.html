@@ -1489,8 +1489,17 @@
       <button id="btn-essay-back-home" class="btn btn-ghost btn-sm">← 戻る</button>
       <h2 id="essay-list-title" style="font-size:1rem;font-weight:700;">📝 論述問題練習</h2>
     </div>
-    <button id="btn-essay-add" class="btn btn-outline btn-sm">＋ 新規登録</button>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div id="essay-sort-btns" style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm essay-sort-btn active" data-sort="title">タイトル順 ↑</button>
+        <button class="btn btn-ghost btn-sm essay-sort-btn"        data-sort="registered">登録順</button>
+      </div>
+      <button id="btn-essay-export" class="btn btn-ghost btn-sm" title="模範解答をJSONで書き出す">📤 書き出し</button>
+      <button id="btn-essay-import" class="btn btn-ghost btn-sm" title="JSONから模範解答を読み込む">📥 読み込み</button>
+      <button id="btn-essay-add" class="btn btn-outline btn-sm">＋ 新規登録</button>
+    </div>
   </div>
+  <input type="file" id="input-essay-file" accept=".json" class="hidden">
   <div id="essay-list" class="essay-list"></div>
   <div id="essay-list-empty" class="calc-empty-msg hidden">模範解答が登録されていません<br><span style="font-size:.8rem;">右上の「＋ 新規登録」から登録してください</span></div>
 </div>
@@ -1625,7 +1634,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260809c"></script>
+<script src="js/app.js?v=20260809d"></script>
 <script src="https://accounts.google.com/gsi/client" async onload="_gisLoaded()"></script>
 </body>
 </html>
