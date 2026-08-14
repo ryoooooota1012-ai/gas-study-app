@@ -2736,6 +2736,18 @@ body.tier-border-diamond .card {
   border-color: #fdba74;
   box-shadow: 0 4px 16px rgba(251,146,60,.35);
 }
+/* 論述問題練習：ティール（法令=紫／ガス技術=青／基礎=緑／計算=橙 と被らない色） */
+.top-cat-essay {
+  background: linear-gradient(135deg, #042f2e, #0f766e);
+  border-color: #5eead4;
+  color: #ecfeff;
+  padding: 8px 12px;
+}
+.top-cat-essay:hover, .top-cat-essay.active {
+  background: linear-gradient(135deg, #063c3a, #0d9488);
+  border-color: #99f6e4;
+  box-shadow: 0 4px 16px rgba(94,234,212,.35);
+}
 
 .top-cat-name {
   font-size: .85rem;
@@ -3194,6 +3206,12 @@ body.tier-border-diamond .card {
   max-height: 60vh;          /* 画面外へはみ出さないよう内部スクロール */
   overflow-y: auto;
   box-shadow: 0 6px 24px rgba(0,0,0,.5);
+}
+/* ボタン直下に全幅で開くポップアップ（論述問題練習の科目選択） */
+.top-filter-start-popup.is-block {
+  left: 0;
+  right: 0;
+  max-width: none;
 }
 .top-filter-start-mode-btn {
   padding: 10px 16px;

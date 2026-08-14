@@ -29,6 +29,12 @@ let lastUsedFilterYears    = new Set();
 let lastUsedFilterSections = new Set();
 let lastUsedFilterCat      = null;
 let excludeMasteredStreak = 0;  // 出題開始時の連続正解除外しきい値（0=除外なし / 3 / 4 / 5）
+// 論述問題練習（ホームの「🔢 計算問題」ボタン直下）
+// 論述が出題されるのは「法令」と「消費機器」の2科目のみ
+const ESSAY_CATEGORIES  = ['法令', '消費機器'];
+const ESSAY_CAT_LABELS  = { '法令': '⚖️ 法令', '消費機器': '🏠 消費機器' };
+let essayPickerOpen     = false;  // 科目選択ポップアップ表示フラグ
+let essayCategory       = null;   // 選択中の科目（'法令' | '消費機器' | null）
 // 壁打ち設定モーダル用
 let drillSetupCats      = new Set();
 let drillSetupYears     = new Set();
@@ -2854,6 +2860,52 @@ function renderTopFilterCard() {
     card.appendChild(calcBtn);
   }
 
+  // ── 論述問題練習ボタン（計算問題ボタンの直下・同じ見た目） ──
+  // 科目は「法令」「消費機器」の2つのみ。押すと直下に科目選択ポップアップが開く。
+  const essayWrap = document.createElement('div');
+  essayWrap.style.cssText = 'position:relative;';
+
+  const essayBtn = document.createElement('button');
+  essayBtn.className = 'top-cat-btn top-cat-essay' + (essayPickerOpen || essayCategory ? ' active' : '');
+  essayBtn.style.cssText = 'width:100%;margin-top:6px;';
+  const essayNameEl = document.createElement('div');
+  essayNameEl.className = 'top-cat-name';
+  essayNameEl.textContent = `📝 論述問題練習${essayCategory ? `（${essayCategory}）` : ''}`;
+  essayBtn.appendChild(essayNameEl);
+  essayBtn.addEventListener('click', e => {
+    e.stopPropagation();   // 直後の「外側クリックで閉じる」に拾われないように
+    essayPickerOpen = !essayPickerOpen;
+    renderTopFilterCard();
+  });
+  essayWrap.appendChild(essayBtn);
+
+  if (essayPickerOpen) {
+    const essayPopup = document.createElement('div');
+    essayPopup.className = 'top-filter-start-popup is-block';
+    essayPopup.addEventListener('click', e => e.stopPropagation());
+    ESSAY_CATEGORIES.forEach(cat => {
+      const b = document.createElement('button');
+      b.className = 'top-filter-start-mode-btn';
+      b.textContent = ESSAY_CAT_LABELS[cat] || cat;
+      b.addEventListener('click', () => {
+        essayPickerOpen = false;
+        onEssayCategorySelect(cat);
+      });
+      essayPopup.appendChild(b);
+    });
+    essayWrap.appendChild(essayPopup);
+
+    // クリック外で閉じる（出題開始ポップアップと同じ作法）
+    setTimeout(() => {
+      document.addEventListener('click', function closeEssayPopup() {
+        essayPickerOpen = false;
+        renderTopFilterCard();
+        document.removeEventListener('click', closeEssayPopup);
+      }, { once: true });
+    }, 0);
+  }
+  card.appendChild(essayWrap);
+
   // ── サブパネル（開いているカテゴリがある場合） ──
   if (!topFilterOpenCat) return;
 
@@ -3144,6 +3196,19 @@ function onCalcFilterClick() {
   topFilterSubMode = 'year';
   updateHomeStats();
   renderTopFilterCard();
+}
+
+/**
+ * 論述問題練習：科目（法令／消費機器）を選んだときの入口。
+ * ⚠️ 出題画面はまだ未実装。現状は選択した科目を保持してボタン表示に反映するだけ。
+ *    次のステップでここから論述の出題・採点画面へ遷移させる。
+ */
+function onEssayCategorySelect(cat) {
+  essayCategory = (essayCategory === cat) ? null : cat;   // 同じ科目を選び直したら解除
+  renderTopFilterCard();
+  if (essayCategory) {
+    showSyncStatus(`📝 論述問題練習（${essayCategory}）：出題画面は準備中です`);
+  }
 }
 
 // ========== Weakness Report ==========
