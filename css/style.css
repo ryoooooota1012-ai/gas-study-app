@@ -4307,10 +4307,16 @@ body.inline-editing .card {
   transition: background .12s, border-color .12s;
   text-align: left;
   width: 100%;
+  /* ⚠️ button は color / font-family を継承しない（UA既定の黒文字・別フォントになる）。
+     一覧項目を button で作っているので明示指定が必須。div の .calc-practice-item と違い
+     これを省くと暗い背景に黒文字で読めなくなる。 */
+  color: var(--text-1);
+  font-family: inherit;
 }
 .essay-list-item:hover { background: var(--surface-1); border-color: var(--primary); }
 .essay-list-item-title { font-weight: 700; font-size: .95rem; flex: 1; }
-.essay-list-item-meta { font-size: .75rem; color: var(--text-3); white-space: nowrap; }
+/* --text-3 だと暗い背景でコントラスト比 3.0 未満になり読みづらい。副次情報だが --text-2 にする */
+.essay-list-item-meta { font-size: .75rem; color: var(--text-2); white-space: nowrap; }
 
 /* 見出し・本文 */
 .essay-title { font-size: 1.15rem; font-weight: 800; margin: 10px 0 12px; line-height: 1.4; }
@@ -4356,6 +4362,7 @@ mark.essay-blank-edit:hover { background: rgba(239,68,68,.5); }
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-2);
+  font-family: inherit;   /* button は継承しないので明示（.essay-list-item と同じ理由） */
   font-size: .8rem;
   font-weight: 700;
   cursor: pointer;
