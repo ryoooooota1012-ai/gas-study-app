@@ -11107,12 +11107,23 @@ document.addEventListener('DOMContentLoaded', async () => { try {
     const secNames = sortCategories([...secMap.keys()].filter(s => s !== NO_SEC));
     if (secMap.has(NO_SEC)) secNames.push(NO_SEC);
 
+    // 「計算問題だけ」の絞り込み。
+    // ☆選択肢（壁打ち）は元から計算問題を含まない（bookmarkedChoiceItems が除外）ので、
+    // この絞り込みは 📄通常出題 にだけ出す。全部が計算問題のときは通常出題と同じ結果に
+    // なるため出さない（分野フィルターを「2分野以上のときだけ」出すのと同じ考え方）。
+    const addCalcOnlyBtn = qs => {
+      const calcQs = qs.filter(isCalcQuestion);
+      if (calcQs.length === 0 || calcQs.length === qs.length) return;
+      addBtn(`🔢 計算問題だけ（${calcQs.length}問）`, () => startBookmarkNormal(calcQs));
+    };
+
     // メイン画面：全分野まとめての出題ボタン＋（分野が複数あれば）分野別の絞り込み
     const renderMain = () => {
       bookmarkPopup.innerHTML = '';
       addLabel('ブックマーク出題');
       if (bqs.length > 0) {
         addBtn(`📄 通常出題（☆問題 ${bqs.length}問）`, () => startBookmarkNormal(bqs));
+        addCalcOnlyBtn(bqs);
       }
       if (cItems.length > 0) {
         addBtn(`🥊 壁打ち（☆選択肢 ${cItems.length}個）`, () => startBookmarkDrill(cItems));
@@ -11136,6 +11147,7 @@ document.addEventListener('DOMContentLoaded', async () => { try {
       addLabel(`📂 ${sec}`);
       if (qs.length > 0) {
         addBtn(`📄 通常出題（☆問題 ${qs.length}問）`, () => startBookmarkNormal(qs));
+        addCalcOnlyBtn(qs);   // 計算問題は複数分野にまたがるので分野内でも絞れるようにする
       }
       if (items.length > 0) {
         addBtn(`🥊 壁打ち（☆選択肢 ${items.length}個）`, () => startBookmarkDrill(items));
