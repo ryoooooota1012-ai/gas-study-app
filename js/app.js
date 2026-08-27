@@ -1097,6 +1097,33 @@ function computeStreak() {
   return streak;
 }
 
+/**
+ * 「今日の学習」の**選択肢数**に対するティアしきい値（低い順）。
+ * ⚠️ ここが唯一の定義。ヘッダーのティア表示・「次のステータスまで後N問」・
+ *    学習カードの枠線（getTodayTier）はすべてこの配列から導出する。
+ *    以前は同じ数値が3箇所にベタ書きされていて、変更漏れの温床だった。
+ */
+const TODAY_TIER_STEPS = [
+  { min:  40, tier: 'copper'   },   // 銅
+  { min:  80, tier: 'silver'   },   // 銀
+  { min: 120, tier: 'gold'     },   // 金
+  { min: 160, tier: 'platinum' },   // プラチナ
+  { min: 200, tier: 'diamond'  },   // ダイヤ
+];
+
+/** 選択肢数 n に対応するティア名（未達なら ''） */
+function tierForChoices(n) {
+  let t = '';
+  for (const s of TODAY_TIER_STEPS) if (n >= s.min) t = s.tier;
+  return t;
+}
+
+/** 次のティアまでの残り選択肢数（最高ティア到達済みなら 0） */
+function nextTierRemaining(n) {
+  const next = TODAY_TIER_STEPS.find(s => n < s.min);
+  return next ? next.min - n : 0;
+}
+
 function updateHeaderStats() {
   const log          = loadStudyLog();
   const todayStr     = getLocalDateStr();
@@ -1106,12 +1133,8 @@ function updateHeaderStats() {
   const todayChoices = (entry.answered || 0) + extQ * 5;                             // 外部は1問=5選択肢換算
   const todayQs      = (entry.questions || Math.floor((entry.answered || 0) / 5)) + extQ;
 
-  const tierCls = todayChoices >= 250 ? 'hd-tier-diamond'
-                : todayChoices >= 200 ? 'hd-tier-platinum'
-                : todayChoices >= 150 ? 'hd-tier-gold'
-                : todayChoices >= 100 ? 'hd-tier-silver'
-                : todayChoices >=  50 ? 'hd-tier-copper'
-                : '';
+  const tier    = tierForChoices(todayChoices);
+  const tierCls = tier ? 'hd-tier-' + tier : '';
 
   const TIER_CLASSES = ['hd-tier-copper','hd-tier-silver','hd-tier-gold','hd-tier-platinum','hd-tier-diamond'];
   const statsEl  = document.getElementById('hd-today-stats');
@@ -1132,12 +1155,7 @@ function updateHeaderStats() {
 
   const nextMsg = document.getElementById('hd-next-tier-msg');
   if (nextMsg) {
-    const remaining = todayChoices >= 250 ? 0
-                    : todayChoices >= 200 ? 250 - todayChoices
-                    : todayChoices >= 150 ? 200 - todayChoices
-                    : todayChoices >= 100 ? 150 - todayChoices
-                    : todayChoices >=  50 ? 100 - todayChoices
-                    :                       50  - todayChoices;
+    const remaining = nextTierRemaining(todayChoices);
     nextMsg.textContent = remaining > 0 ? `次のステータスまで後${remaining}問` : '';
   }
 
@@ -4288,13 +4306,9 @@ function parseCorrectCount(q) {
 function getTodayTier() {
   const log   = loadStudyLog();
   const entry = log[getLocalDateStr()] || {};
-  const n     = entry.answered || 0;
-  return n >= 250 ? 'diamond'
-       : n >= 200 ? 'platinum'
-       : n >= 150 ? 'gold'
-       : n >= 100 ? 'silver'
-       : n >=  50 ? 'copper'
-       : '';
+  // ※ ここは studyLog の実績のみ（外部学習は含めない）。ヘッダー表示は外部学習も
+  //    加算した todayChoices で判定するため、外部学習を入力した日は両者がずれる。
+  return tierForChoices(entry.answered || 0);
 }
 
 const STUDY_CARD_TIER_CLASSES = [
