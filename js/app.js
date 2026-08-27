@@ -3458,6 +3458,15 @@ function renderCalendar() {
   const eraLabel    = `${toJpEraYear(new Date(yr, mo, 1))}${MONTHS[mo]}`;
 
   // ── 日単位グリッド構築 ──
+  // メダルのしきい値は TODAY_TIER_STEPS（tierForChoices）に従う。ここに数値を書かないこと。
+  // ※ 'copper' のセル生成関数だけ名前が Bronze なので対応表で吸収する。
+  const CAL_CELL = {
+    copper:   _makeBronzeCalCell,
+    silver:   _makeSilverCalCell,
+    gold:     _makeGoldCalCell,
+    platinum: _makePlatinumCalCell,
+    diamond:  _makeDiamondCalCell,
+  };
   let daysHtml = '';
   for (let i = 0; i < firstDow; i++) daysHtml += `<span class="jcal-day jcal-empty"></span>`;
   for (let d = 1; d <= daysInMonth; d++) {
@@ -3465,29 +3474,17 @@ function renderCalendar() {
     const ent  = log[ds];
     const secs = ent ? (ent.secs || 0) : 0;
     const ans  = ent ? (ent.answered || 0) : 0;
-    const tierCls = ans >= 250 ? 'tier-diamond'
-                  : ans >= 200 ? 'tier-platinum'
-                  : ans >= 150 ? 'tier-gold'
-                  : ans >= 100 ? 'tier-silver'
-                  : ans >=  50 ? 'tier-copper'
-                  : 'tier-none';
+    const tier    = tierForChoices(ans);
+    const tierCls = tier ? 'tier-' + tier : 'tier-none';
     const dow    = (firstDow + d - 1) % 7;
     const dowCls = dow === 0 ? 'dow-sun' : dow === 6 ? 'dow-sat' : '';
     const isTd   = ds === todayStr;
     const tipAttr = `data-tip="${ds}" data-ans="${ans}" data-tier="${tierCls}"`;
-    if (tierCls === 'tier-diamond') {
-      daysHtml += `<span class="jcal-day tier-diamond ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr} style="height:36px;padding:0;">${_makeDiamondCalCell(d)}</span>`;
-    } else if (tierCls === 'tier-silver') {
-      daysHtml += `<span class="jcal-day tier-silver ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr} style="height:36px;padding:0;">${_makeSilverCalCell(d)}</span>`;
-    } else if (tierCls === 'tier-copper') {
-      daysHtml += `<span class="jcal-day tier-copper ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr} style="height:36px;padding:0;">${_makeBronzeCalCell(d)}</span>`;
-    } else if (tierCls === 'tier-gold') {
-      daysHtml += `<span class="jcal-day tier-gold ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr} style="height:36px;padding:0;">${_makeGoldCalCell(d)}</span>`;
-    } else if (tierCls === 'tier-platinum') {
-      daysHtml += `<span class="jcal-day tier-platinum ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr} style="height:36px;padding:0;">${_makePlatinumCalCell(d)}</span>`;
-    } else {
-      daysHtml += `<span class="jcal-day ${tierCls} ${dowCls}${isTd ? ' jcal-today' : ''}" ${tipAttr}>${d}</span>`;
-    }
+    const makeCell = CAL_CELL[tier];
+    const cls = `jcal-day ${tierCls} ${dowCls}${isTd ? ' jcal-today' : ''}`;
+    daysHtml += makeCell
+      ? `<span class="${cls}" ${tipAttr} style="height:36px;padding:0;">${makeCell(d)}</span>`
+      : `<span class="${cls}" ${tipAttr}>${d}</span>`;
   }
 
   // ── 累計集計 ──
